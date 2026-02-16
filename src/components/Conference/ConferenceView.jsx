@@ -1,0 +1,96 @@
+import React, { useState } from 'react';
+import { ArrowRight } from 'lucide-react';
+import ModernTemplate from './Templates/ModernTemplate';
+import ClassicTemplate from './Templates/ClassicTemplate';
+import RoleBasedDashboard from '../Dashboard/RoleBasedDashboard';
+import PaperSubmission from './Templates/PaperSubmission';
+
+const ConferenceView = ({ conf, role, onBack }) => {
+  const [viewMode, setViewMode] = useState('home');
+
+  return (
+    <div className="flex flex-col min-h-screen font-sans bg-[#0f1117] text-slate-200">
+      
+      {/* Navigation */}
+      <nav className="bg-[#0f1117]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div className="flex items-center gap-6">
+          <button 
+            onClick={onBack} 
+            className="group flex items-center gap-3 text-sm font-medium text-slate-400 hover:text-white transition-colors"
+          >
+            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white/10 border border-white/5">
+              <ArrowRight className="rotate-180" size={14}/> 
+            </div>
+            Back to Hub
+          </button>
+
+          <div className="h-6 w-px bg-white/10"></div>
+
+          <span className="font-bold text-white truncate max-w-xs tracking-wide">
+            {conf.name}
+          </span>
+        </div>
+        
+        {/* Right Side Buttons */}
+        <div className="flex bg-black/40 p-1.5 rounded-full border border-white/5">
+          
+          {/* Site Preview */}
+          <button 
+            onClick={() => setViewMode('home')}
+            className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${
+              viewMode === 'home' 
+                ? 'bg-white text-black shadow-lg' 
+                : 'text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            Site Preview
+          </button>
+
+          {/* Dashboard */}
+          {role && (
+            <button 
+              onClick={() => setViewMode('dashboard')}
+              className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${
+                viewMode === 'dashboard' 
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/40' 
+                  : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              {role === 'organizer' ? 'Admin Panel' : 'Dashboard'}
+            </button>
+          )}
+
+          {/* Submit Paper */}
+          <button 
+            onClick={() => setViewMode('submitPaper')}
+            className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${
+              viewMode === 'submitPaper'
+                ? 'bg-green-600 text-white shadow-lg shadow-green-500/40'
+                : 'text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            Submit Paper
+          </button>
+
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <div className="flex-1 bg-black overflow-y-auto relative">
+        {viewMode === 'home' ? (
+          conf.template === 'classic' ? (
+            <ClassicTemplate conf={conf} />
+          ) : (
+            <ModernTemplate conf={conf} />
+          )
+        ) : viewMode === 'dashboard' ? (
+          <RoleBasedDashboard conf={conf} role={role} />
+        ) : (
+          <PaperSubmission />
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ConferenceView;
