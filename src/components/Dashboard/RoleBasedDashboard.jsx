@@ -8,33 +8,27 @@ import ConferencePage from './ConferencePage';
 
 const RoleBasedDashboard = ({ conf, role: propRole, onBack }) => {
   const { user } = useApp();
-  const [role, setRole] = useState(propRole ?? null);
-  const [loading, setLoading] = useState(!propRole); // skip loading if role already known
+  const [role, setRole] = useState(null);
+  const [loading, setLoading] = useState(true); // always load fresh from DB
 
   const confId = conf?.conference_id ?? conf?.id;
 
   useEffect(() => {
-    // If we already have a role passed in, trust it — no need to re-fetch
-    if (propRole) {
-      setRole(propRole);
-      setLoading(false);
-      return;
-    }
     if (!user || !confId) return;
     verifyRole();
-  }, [user, confId, propRole]);
+  }, [user, confId]);
 
   const verifyRole = async () => {
     setLoading(true);
 
-    // 1. Check if this user is the conference head (always organizer)
+    // 1. Conference head is always organizer
     if (conf?.conference_head_id === user.id) {
       setRole('organizer');
       setLoading(false);
       return;
     }
 
-    // 2. Check conference_user table for an assigned role
+    // 2. Always fetch fresh from DB — never trust propRole
     const { data, error } = await supabase
       .from('conference_user')
       .select('role')
@@ -44,13 +38,7 @@ const RoleBasedDashboard = ({ conf, role: propRole, onBack }) => {
 
     if (error) console.error('Role lookup error:', error);
 
-    // Only set role if a real non-null role exists
-    if (data?.role) {
-      setRole(data.role);
-    } else {
-      setRole(null); // visitor / no role
-    }
-
+    setRole(data?.role || null);
     setLoading(false);
   };
 

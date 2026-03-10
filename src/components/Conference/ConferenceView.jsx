@@ -1,20 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
 import ModernTemplate from './Templates/ModernTemplate';
 import ClassicTemplate from './Templates/ClassicTemplate';
 import RoleBasedDashboard from '../Dashboard/RoleBasedDashboard';
 import PaperSubmission from './Templates/PaperSubmission';
+import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
 
 const ConferenceView = ({ conf, role: propRole, onBack }) => {
   const { user } = useApp();
   const [viewMode, setViewMode] = useState('home');
+  const [resolvedRole, setResolvedRole] = useState(propRole || null);
 
+  const confId = conf?.conference_id ?? conf?.id;
   const displayTitle = conf.title ?? conf.name ?? 'Untitled Conference';
 
-  // Derive role: trust propRole if given, otherwise check if user is conference head
-  const role = propRole || (user?.id && conf?.conference_head_id === user.id ? 'organizer' : null);
-  const hasRole = !!role;
+  useEffect(() => {
+    if (!user || !confId) return;
+
+    if (conf?.conference_head_id === user.id) {
+      setResolvedRole('organizer');
+      return;
+    }
+
+    supabase
+      .from('conference_user')
+      .select('role')
+      .eq('conference_id', confId)
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        setResolvedRole(data?.role || null);
+      });
+  }, [user, confId]);
+
+  const hasRole = !!resolvedRole;  // ← only this, no "role" variable
 
   return (
     <div className="flex flex-col min-h-screen font-sans bg-[#0f1117] text-slate-200">
@@ -72,7 +92,7 @@ const ConferenceView = ({ conf, role: propRole, onBack }) => {
         ) : viewMode === 'dashboard' ? (
           <RoleBasedDashboard
             conf={conf}
-            role={role}
+            role={resolvedRole}
             onBack={onBack}
           />
         ) : (

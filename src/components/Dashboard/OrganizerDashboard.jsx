@@ -100,7 +100,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
 
   /* forms */
   const [mForm, setMForm]   = useState({ email:'', role:'reviewer' });
-  const [tmForm, setTmForm] = useState({ name:'', description:'', color:'#6366f1' });
+  const [tmForm, setTmForm] = useState({ name:'', description:'', color:'#6366f1', head_id:'' });
   const [tkForm, setTkForm] = useState({ title:'', description:'', team_id:'', assignee_id:'', priority:'medium', due_date:'' });
   const [nForm, setNForm]   = useState({ title:'', message:'', target_role:'all', target_team_id:'' });
 
@@ -113,14 +113,36 @@ const accepted = confPapers.filter(p => p.status === 'accepted').length;
 const rejected = confPapers.filter(p => p.status === 'rejected').length;
 
   /* ── fetch ── */
-  const fetchMembers = useCallback(async () => {
-    setLM(true);
-    const { data } = await supabase.from('conference_user')
-      .select('id, user_id, role, email, full_name, created_at')
-      .eq('conference_id', confId).order('created_at', { ascending: false });
-    setMembers(data || []);
-    setLM(false);
-  }, [confId]);
+const fetchMembers = useCallback(async () => {
+  setLM(true);
+  const { data, error } = await supabase
+    .from('conference_user')
+    .select(`
+      id,
+      user_id,
+      role,
+      email,
+      full_name,
+      joined_at,
+      users (
+        user_name,
+        user_email
+      )
+    `)
+    .eq('conference_id', confId)
+    .order('joined_at', { ascending: false });
+
+  if (error) console.error('fetchMembers error:', error);
+
+  const enriched = (data || []).map(m => ({
+    ...m,
+    email:     m.email     || m.users?.user_email || '',
+    full_name: m.full_name || m.users?.user_name  || '',
+  }));
+
+  setMembers(enriched);
+  setLM(false);
+}, [confId]);
 
   const fetchTeams = useCallback(async () => {
     setLT(true);
@@ -157,15 +179,70 @@ const rejected = confPapers.filter(p => p.status === 'rejected').length;
   const addMember = async () => {
     if (!mForm.email.trim()) return;
     setSaving(true);
-    const { error } = await supabase.from('conference_user').insert([{ conference_id: confId, email: mForm.email.trim().toLowerCase(), role: mForm.role, created_at: new Date().toISOString() }]);
+
+    // 1. Find the user by email in the users table
+    const { data: foundUser, error: userError } = await supabase
+      .from('users')
+      .select('user_id, user_name, user_email')
+      .eq('user_email', mForm.email.trim().toLowerCase())
+      .maybeSingle();
+
+    if (userError || !foundUser) {
+      alert('No account found with that email. The person must sign up first.');
+      setSaving(false);
+      return;
+    }
+
+    // 2. Check if already a member
+    const { data: existing } = await supabase
+      .from('conference_user')
+      .select('id')
+      .eq('conference_id', confId)
+      .eq('user_id', foundUser.user_id)
+      .maybeSingle();
+
+    if (existing) {
+      alert('This person is already a member of this conference.');
+      setSaving(false);
+      return;
+    }
+
+    // 3. Insert into conference_user
+      const { error: insertError } = await supabase
+        .from('conference_user')
+        .insert([{
+          conference_id: confId,
+          user_id:       foundUser.user_id,
+          email:         foundUser.user_email,
+          full_name:     foundUser.user_name,
+          role:          mForm.role,
+          joined_at:     new Date().toISOString(),  // ← was created_at
+        }]);
+
     setSaving(false);
-    if (!error) { setModal(null); setMForm({ email:'', role:'reviewer' }); fetchMembers(); }
-    else alert(error.message);
+
+    if (insertError) {
+      alert(insertError.message);
+    } else {
+      setModal(null);
+      setMForm({ email: '', role: 'reviewer' });
+      fetchMembers();
+    }
   };
   const updateRole = async (id, role) => {
-    await supabase.from('conference_user').update({ role }).eq('id', id);
-    setMembers(ms => ms.map(m => m.id === id ? { ...m, role } : m));
-  };
+  const { error } = await supabase
+    .from('conference_user')
+    .update({ role })
+    .eq('id', id);
+
+  if (error) {
+    console.error('updateRole error:', error);
+    alert(error.message);
+    return;
+  }
+
+  setMembers(ms => ms.map(m => m.id === id ? { ...m, role } : m));
+};
   const removeMember = async (id) => {
     await supabase.from('conference_user').delete().eq('id', id);
     fetchMembers(); fetchTeams();
@@ -173,19 +250,32 @@ const rejected = confPapers.filter(p => p.status === 'rejected').length;
 
   /* ── team CRUD ── */
   const createTeam = async () => {
-    if (!tmForm.name.trim()) return;
-    setSaving(true);
-    const { error } = await supabase.from('conference_teams').insert([{ conference_id: confId, name: tmForm.name.trim(), description: tmForm.description.trim(), color: tmForm.color, created_at: new Date().toISOString() }]);
-    setSaving(false);
-    if (!error) { setModal(null); setTmForm({ name:'', description:'', color:'#6366f1' }); fetchTeams(); }
-    else alert(error.message);
-  };
-  const saveTeam = async () => {
-    if (!tmForm.name.trim()) return;
-    setSaving(true);
-    await supabase.from('conference_teams').update({ name: tmForm.name.trim(), description: tmForm.description.trim(), color: tmForm.color }).eq('id', modalData.id);
-    setSaving(false); setModal(null); fetchTeams();
-  };
+  if (!tmForm.name.trim()) return;
+  setSaving(true);
+  const { error } = await supabase.from('conference_teams').insert([{
+    conference_id: confId,
+    name: tmForm.name.trim(),
+    description: tmForm.description.trim(),
+    color: tmForm.color,
+    head_id: tmForm.head_id || null,   // ← add this
+    created_at: new Date().toISOString()
+  }]);
+  setSaving(false);
+  if (!error) { setModal(null); setTmForm({ name:'', description:'', color:'#6366f1', head_id:'' }); fetchTeams(); }
+  else alert(error.message);
+};
+
+const saveTeam = async () => {
+  if (!tmForm.name.trim()) return;
+  setSaving(true);
+  await supabase.from('conference_teams').update({
+    name: tmForm.name.trim(),
+    description: tmForm.description.trim(),
+    color: tmForm.color,
+    head_id: tmForm.head_id || null,   // ← add this
+  }).eq('id', modalData.id);
+  setSaving(false); setModal(null); fetchTeams();
+};
   const deleteTeam = async (id) => {
     await supabase.from('team_members').delete().eq('team_id', id);
     await supabase.from('conference_teams').delete().eq('id', id);
@@ -244,7 +334,16 @@ const rejected = confPapers.filter(p => p.status === 'rejected').length;
   const filteredMembers = members.filter(m => !memberSearch || mName(m).toLowerCase().includes(memberSearch.toLowerCase()) || m.email?.toLowerCase().includes(memberSearch.toLowerCase()));
   const filteredPapers  = confPapers.filter(p => paperFilter === 'all' || p.status === paperFilter);
 
-  const openEditTeam = (t) => { setModalData(t); setTmForm({ name: t.name, description: t.description || '', color: t.color || '#6366f1' }); setModal('editTeam'); };
+  const openEditTeam = (t) => {
+  setModalData(t);
+  setTmForm({
+    name: t.name,
+    description: t.description || '',
+    color: t.color || '#6366f1',
+    head_id: t.head_id || '',          // ← add this
+  });
+  setModal('editTeam');
+};
   const openEditTask = (t) => { setModalData(t); setTkForm({ title: t.title, description: t.description || '', team_id: t.team_id || '', assignee_id: t.assignee_id || '', priority: t.priority || 'medium', due_date: t.due_date || '' }); setModal('editTask'); };
 
   const nav = [
@@ -463,7 +562,16 @@ const rejected = confPapers.filter(p => p.status === 'rejected').length;
                               <div className="font-semibold text-white text-sm">{team.name}</div>
                               {team.description && <div className="text-xs text-slate-500 mt-0.5">{team.description}</div>}
                             </div>
-                            <span className="text-xs text-slate-500 font-semibold">{team.memberList.length} member{team.memberList.length!==1?'s':''}</span>
+                            <div className="flex items-center gap-3">
+                              {team.head_id && members.find(m => m.id === team.head_id) && (
+                                <span className="text-xs text-indigo-400/70 font-medium">
+                                  Head: {mName(members.find(m => m.id === team.head_id))}
+                                </span>
+                              )}
+                              <span className="text-xs text-slate-500 font-semibold">
+                                {team.memberList.length} member{team.memberList.length !== 1 ? 's' : ''}
+                              </span>
+                            </div>
                             <button onClick={e=>{e.stopPropagation();openEditTeam(team);}} className="p-1.5 rounded-lg text-slate-600 hover:text-white hover:bg-white/8 transition-all"><Edit2 size={13}/></button>
                             <button onClick={e=>{e.stopPropagation();if(window.confirm(`Delete team "${team.name}"?`))deleteTeam(team.id);}} className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"><Trash2 size={13}/></button>
                             <ChevronDown size={15} className={cls('text-slate-600 transition-transform',isOpen&&'rotate-180')}/>
@@ -476,6 +584,20 @@ const rejected = confPapers.filter(p => p.status === 'rejected').length;
                               {/* current members */}
                               <div>
                                 <div className="text-[11px] text-slate-600 uppercase tracking-wider font-bold mb-2">Members ({teamMembers.length})</div>
+                                {(() => {
+                                  const head = team.head_id
+                                    ? members.find(m => m.id === team.head_id)
+                                    : null;
+                                  return head ? (
+                                    <div className="flex items-center gap-2 mb-3 bg-indigo-500/8 border border-indigo-500/15 rounded-lg px-3 py-2 w-fit">
+                                      <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white">
+                                        {mName(head)[0]?.toUpperCase()}
+                                      </div>
+                                      <span className="text-xs text-indigo-300 font-semibold">{mName(head)}</span>
+                                      <span className="text-[9px] text-indigo-400/60 uppercase tracking-wider font-bold">Head</span>
+                                    </div>
+                                  ) : null;
+                                })()}
                                 {teamMembers.length === 0
                                   ? <p className="text-xs text-slate-600 italic">No members yet</p>
                                   : (
@@ -638,21 +760,62 @@ const rejected = confPapers.filter(p => p.status === 'rejected').length;
       )}
 
       {(modal === 'createTeam' || modal === 'editTeam') && (
-        <Modal title={modal==='createTeam'?'Create Team':'Edit Team'} onClose={()=>setModal(null)}>
+        <Modal title={modal === 'createTeam' ? 'Create Team' : 'Edit Team'} onClose={() => setModal(null)}>
           <div className="space-y-4">
-            <Field label="Team Name"><Input placeholder="e.g. Review Committee" value={tmForm.name} onChange={e=>setTmForm({...tmForm,name:e.target.value})}/></Field>
-            <Field label="Description (optional)"><Input placeholder="What does this team do?" value={tmForm.description} onChange={e=>setTmForm({...tmForm,description:e.target.value})}/></Field>
+            <Field label="Team Name">
+              <Input
+                placeholder="e.g. Review Committee"
+                value={tmForm.name}
+                onChange={e => setTmForm({ ...tmForm, name: e.target.value })}
+              />
+            </Field>
+            <Field label="Description (optional)">
+              <Input
+                placeholder="What does this team do?"
+                value={tmForm.description}
+                onChange={e => setTmForm({ ...tmForm, description: e.target.value })}
+              />
+            </Field>
+
+            {/* ── NEW: Team Head selector ── */}
+            <Field label="Team Head (optional)">
+              <Sel
+                value={tmForm.head_id}
+                onChange={e => setTmForm({ ...tmForm, head_id: e.target.value })}
+              >
+                <option value="">— No team head —</option>
+                {members.map(m => (
+                  <option key={m.id} value={m.id} className="bg-[#0d1117]">
+                    {mName(m)} ({m.role})
+                  </option>
+                ))}
+              </Sel>
+            </Field>
+
             <Field label="Team Color">
               <div className="flex gap-2 flex-wrap">
-                {TEAM_COLORS.map(c=>(
-                  <button key={c} onClick={()=>setTmForm({...tmForm,color:c})} className={cls('w-8 h-8 rounded-lg transition-all border-2',tmForm.color===c?'border-white scale-110':'border-transparent hover:scale-105')} style={{backgroundColor:c}}/>
+                {TEAM_COLORS.map(c => (
+                  <button
+                    key={c}
+                    onClick={() => setTmForm({ ...tmForm, color: c })}
+                    className={`w-8 h-8 rounded-lg transition-all border-2 ${
+                      tmForm.color === c ? 'border-white scale-110' : 'border-transparent hover:scale-105'
+                    }`}
+                    style={{ backgroundColor: c }}
+                  />
                 ))}
               </div>
             </Field>
           </div>
           <div className="flex gap-3 mt-6">
-            <Btn variant="secondary" className="flex-1" onClick={()=>setModal(null)}>Cancel</Btn>
-            <Btn className="flex-1" onClick={modal==='createTeam'?createTeam:saveTeam} disabled={saving||!tmForm.name.trim()}>{saving?'Saving…':modal==='createTeam'?'Create Team':'Save Changes'}</Btn>
+            <Btn variant="secondary" className="flex-1" onClick={() => setModal(null)}>Cancel</Btn>
+            <Btn
+              className="flex-1"
+              onClick={modal === 'createTeam' ? createTeam : saveTeam}
+              disabled={saving || !tmForm.name.trim()}
+            >
+              {saving ? 'Saving…' : modal === 'createTeam' ? 'Create Team' : 'Save Changes'}
+            </Btn>
           </div>
         </Modal>
       )}

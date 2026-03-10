@@ -3,7 +3,7 @@ import { FileText, CheckCircle, XCircle, Clock, Star, ChevronDown, Eye, Send } f
 import { useApp } from '../../context/AppContext';
 
 const ReviewerDashboard = ({ conf, onBack }) => {
-  const { papers, updatePaperStatus } = useApp();
+  const { papers = [], updatePaperStatus } = useApp();
   const confId = conf.conference_id || conf.id;
   const confPapers = papers.filter(p => p.confId === confId);
   const pendingPapers  = confPapers.filter(p => p.status === 'pending');
