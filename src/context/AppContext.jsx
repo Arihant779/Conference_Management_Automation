@@ -1,81 +1,79 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../Supabase/supabaseclient';
 
-const AppContext = createContext();
-
-export const useApp = () => {
-  const context = useContext(AppContext);
-  if (!context) {
-    throw new Error('useApp must be used within AppProvider');
-  }
-  return context;
-};
+const AppContext = createContext(null);
 
 export const AppProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [conferences, setConferences] = useState([]);
-  const [papers, setPapers] = useState([]);
-  const [tasks, setTasks] = useState([]);
+  const [user, setUser] = useState(null);           // Supabase auth user object
+  const [conferences, setConferences] = useState([]); // list of conferences
+  const [loading, setLoading] = useState(true);     // initial auth check in progress
 
-  // 🔥 Auto-login if session exists
+  /* ── Restore session on mount & listen to auth changes ─────────── */
   useEffect(() => {
-    const getUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (data?.user) {
-        setUser(data.user);
-      }
-    };
-    getUser();
+    // 1. Check for an existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // 2. Subscribe to future auth events (login / logout / token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
+  /* ── Load conferences for the logged-in user ────────────────────── */
+  useEffect(() => {
+    if (!user) {
+      setConferences([]);
+      return;
+    }
+    fetchConferences();
+  }, [user]);
+
+  const fetchConferences = async () => {
+    const { data, error } = await supabase
+      .from('conference')
+      .select('*')
+      .order('start_date', { ascending: true });
+
+    if (!error && data) setConferences(data);
+  };
+
+  /* ── Sign out ───────────────────────────────────────────────────── */
   const logout = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    setConferences([]);
   };
 
-  const createConference = (data) => {
-    const newConf = {
-      ...data,
-      id: `c${Date.now()}`,
-      organizerId: user.id,
-      roles: { [user.id]: 'organizer' }
-    };
-    setConferences([...conferences, newConf]);
-  };
-
-  const addPaper = (paper) => setPapers([...papers, paper]);
-
-  const updatePaperStatus = (id, status, score) => {
-    setPapers(papers.map(p =>
-      p.id === id ? { ...p, status, reviewScore: score } : p
-    ));
-  };
-
-  const addTask = (task) => setTasks([...tasks, task]);
-
-  const toggleTask = (id) => {
-    setTasks(tasks.map(t =>
-      t.id === id ? { ...t, status: t.status === 'done' ? 'pending' : 'done' } : t
-    ));
-  };
-
-  const value = {
-    user,
-    setUser,   // 🔥 IMPORTANT
-    conferences,
-    papers,
-    tasks,
-    logout,
-    createConference,
-    addPaper,
-    updatePaperStatus,
-    addTask,
-    toggleTask
+  /* ── Add a newly created conference to local state ──────────────── */
+  const addConference = (conf) => {
+    setConferences((prev) => [conf, ...prev]);
   };
 
   return (
-    <AppContext.Provider value={value}>
+    <AppContext.Provider value={{
+      user,
+      setUser,          // used by AuthModule for immediate redirect after login/signup
+      conferences,
+      setConferences,
+      fetchConferences,
+      addConference,
+      logout,
+      loading,
+    }}>
       {children}
     </AppContext.Provider>
   );
 };
+
+export const useApp = () => {
+  const ctx = useContext(AppContext);
+  if (!ctx) throw new Error('useApp must be used inside <AppProvider>');
+  return ctx;
+};
+
+export default AppContext;

@@ -6,7 +6,7 @@ const ModernTemplate = ({ conf }) => {
     <div className="animate-in fade-in duration-500 bg-[#020617] min-h-screen text-slate-200">
       <div 
         className="h-[600px] w-full bg-cover bg-center relative" 
-        style={{ backgroundImage: `url(${conf.banner || 'https://via.placeholder.com/1500'})` }}
+        style={{ backgroundImage: `url(${conf.banner_url || 'https://via.placeholder.com/1500'})` }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-slate-900/40 via-slate-900/80 to-[#020617]"></div>
         <div className="absolute inset-0 flex items-center justify-center text-center p-6">
