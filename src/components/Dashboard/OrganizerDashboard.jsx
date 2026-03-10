@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
-
+import EmailComposer from './EmailComposer';
 /* ─── helpers ─────────────────────────────────────────────── */
 const cls = (...c) => c.filter(Boolean).join(' ');
 
@@ -54,7 +54,6 @@ const Sel = ({ children, className, ...props }) => (
 const Textarea = ({ className, ...props }) => (
   <textarea {...props} className={cls('w-full bg-white/5 border border-white/8 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none resize-none text-white placeholder-slate-600 transition-colors', className)} />
 );
-
 const Btn = ({ variant = 'primary', children, className, ...props }) => {
   const base = 'px-4 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 justify-center disabled:opacity-40 disabled:cursor-not-allowed';
   const v = {
@@ -64,7 +63,6 @@ const Btn = ({ variant = 'primary', children, className, ...props }) => {
   };
   return <button {...props} className={cls(base, v[variant], className)}>{children}</button>;
 };
-
 const Empty = ({ icon: Icon, msg, action }) => (
   <div className="py-16 text-center border border-dashed border-white/8 rounded-2xl">
     <Icon size={28} className="text-slate-700 mx-auto mb-3" />
@@ -104,45 +102,51 @@ const OrganizerDashboard = ({ conf, onBack }) => {
   const [tkForm, setTkForm] = useState({ title:'', description:'', team_id:'', assignee_id:'', priority:'medium', due_date:'' });
   const [nForm, setNForm]   = useState({ title:'', message:'', target_role:'all', target_team_id:'' });
 
-  /* derived */
-  /* derived */
+  /* speakers */
+  const [spTopic, setSpTopic]     = useState('');
+  const [spLimit, setSpLimit]     = useState(10);
+  const [spSource, setSpSource]   = useState(5);
+  const [spLoading, setSpLoading] = useState(false);
+  const [spResults, setSpResults] = useState([]);
+  const [spError, setSpError]     = useState('');
 
-const confPapers = (papers || []).filter(p => p.confId === confId);
-const pendingCount = confPapers.filter(p => p.status === 'pending').length;
-const accepted = confPapers.filter(p => p.status === 'accepted').length;
-const rejected = confPapers.filter(p => p.status === 'rejected').length;
+  /* derived */
+  const confPapers   = (papers || []).filter(p => p.confId === confId);
+  const pendingCount = confPapers.filter(p => p.status === 'pending').length;
+  const accepted     = confPapers.filter(p => p.status === 'accepted').length;
+  const rejected     = confPapers.filter(p => p.status === 'rejected').length;
 
   /* ── fetch ── */
-const fetchMembers = useCallback(async () => {
-  setLM(true);
-  const { data, error } = await supabase
-    .from('conference_user')
-    .select(`
-      id,
-      user_id,
-      role,
-      email,
-      full_name,
-      joined_at,
-      users (
-        user_name,
-        user_email
-      )
-    `)
-    .eq('conference_id', confId)
-    .order('joined_at', { ascending: false });
+  const fetchMembers = useCallback(async () => {
+    setLM(true);
+    const { data, error } = await supabase
+      .from('conference_user')
+      .select(`
+        id,
+        user_id,
+        role,
+        email,
+        full_name,
+        joined_at,
+        users (
+          user_name,
+          user_email
+        )
+      `)
+      .eq('conference_id', confId)
+      .order('joined_at', { ascending: false });
 
-  if (error) console.error('fetchMembers error:', error);
+    if (error) console.error('fetchMembers error:', error);
 
-  const enriched = (data || []).map(m => ({
-    ...m,
-    email:     m.email     || m.users?.user_email || '',
-    full_name: m.full_name || m.users?.user_name  || '',
-  }));
+    const enriched = (data || []).map(m => ({
+      ...m,
+      email:     m.email     || m.users?.user_email || '',
+      full_name: m.full_name || m.users?.user_name  || '',
+    }));
 
-  setMembers(enriched);
-  setLM(false);
-}, [confId]);
+    setMembers(enriched);
+    setLM(false);
+  }, [confId]);
 
   const fetchTeams = useCallback(async () => {
     setLT(true);
@@ -180,7 +184,6 @@ const fetchMembers = useCallback(async () => {
     if (!mForm.email.trim()) return;
     setSaving(true);
 
-    // 1. Find the user by email in the users table
     const { data: foundUser, error: userError } = await supabase
       .from('users')
       .select('user_id, user_name, user_email')
@@ -193,7 +196,6 @@ const fetchMembers = useCallback(async () => {
       return;
     }
 
-    // 2. Check if already a member
     const { data: existing } = await supabase
       .from('conference_user')
       .select('id')
@@ -207,20 +209,18 @@ const fetchMembers = useCallback(async () => {
       return;
     }
 
-    // 3. Insert into conference_user
-      const { error: insertError } = await supabase
-        .from('conference_user')
-        .insert([{
-          conference_id: confId,
-          user_id:       foundUser.user_id,
-          email:         foundUser.user_email,
-          full_name:     foundUser.user_name,
-          role:          mForm.role,
-          joined_at:     new Date().toISOString(),  // ← was created_at
-        }]);
+    const { error: insertError } = await supabase
+      .from('conference_user')
+      .insert([{
+        conference_id: confId,
+        user_id:       foundUser.user_id,
+        email:         foundUser.user_email,
+        full_name:     foundUser.user_name,
+        role:          mForm.role,
+        joined_at:     new Date().toISOString(),
+      }]);
 
     setSaving(false);
-
     if (insertError) {
       alert(insertError.message);
     } else {
@@ -229,20 +229,16 @@ const fetchMembers = useCallback(async () => {
       fetchMembers();
     }
   };
+
   const updateRole = async (id, role) => {
-  const { error } = await supabase
-    .from('conference_user')
-    .update({ role })
-    .eq('id', id);
+    const { error } = await supabase
+      .from('conference_user')
+      .update({ role })
+      .eq('id', id);
+    if (error) { console.error('updateRole error:', error); alert(error.message); return; }
+    setMembers(ms => ms.map(m => m.id === id ? { ...m, role } : m));
+  };
 
-  if (error) {
-    console.error('updateRole error:', error);
-    alert(error.message);
-    return;
-  }
-
-  setMembers(ms => ms.map(m => m.id === id ? { ...m, role } : m));
-};
   const removeMember = async (id) => {
     await supabase.from('conference_user').delete().eq('id', id);
     fetchMembers(); fetchTeams();
@@ -250,43 +246,46 @@ const fetchMembers = useCallback(async () => {
 
   /* ── team CRUD ── */
   const createTeam = async () => {
-  if (!tmForm.name.trim()) return;
-  setSaving(true);
-  const { error } = await supabase.from('conference_teams').insert([{
-    conference_id: confId,
-    name: tmForm.name.trim(),
-    description: tmForm.description.trim(),
-    color: tmForm.color,
-    head_id: tmForm.head_id || null,   // ← add this
-    created_at: new Date().toISOString()
-  }]);
-  setSaving(false);
-  if (!error) { setModal(null); setTmForm({ name:'', description:'', color:'#6366f1', head_id:'' }); fetchTeams(); }
-  else alert(error.message);
-};
+    if (!tmForm.name.trim()) return;
+    setSaving(true);
+    const { error } = await supabase.from('conference_teams').insert([{
+      conference_id: confId,
+      name:          tmForm.name.trim(),
+      description:   tmForm.description.trim(),
+      color:         tmForm.color,
+      head_id:       tmForm.head_id || null,
+      created_at:    new Date().toISOString(),
+    }]);
+    setSaving(false);
+    if (!error) { setModal(null); setTmForm({ name:'', description:'', color:'#6366f1', head_id:'' }); fetchTeams(); }
+    else alert(error.message);
+  };
 
-const saveTeam = async () => {
-  if (!tmForm.name.trim()) return;
-  setSaving(true);
-  await supabase.from('conference_teams').update({
-    name: tmForm.name.trim(),
-    description: tmForm.description.trim(),
-    color: tmForm.color,
-    head_id: tmForm.head_id || null,   // ← add this
-  }).eq('id', modalData.id);
-  setSaving(false); setModal(null); fetchTeams();
-};
+  const saveTeam = async () => {
+    if (!tmForm.name.trim()) return;
+    setSaving(true);
+    await supabase.from('conference_teams').update({
+      name:        tmForm.name.trim(),
+      description: tmForm.description.trim(),
+      color:       tmForm.color,
+      head_id:     tmForm.head_id || null,
+    }).eq('id', modalData.id);
+    setSaving(false); setModal(null); fetchTeams();
+  };
+
   const deleteTeam = async (id) => {
     await supabase.from('team_members').delete().eq('team_id', id);
     await supabase.from('conference_teams').delete().eq('id', id);
     fetchTeams(); fetchTasks();
   };
+
   const addToTeam = async (teamId, confUserId) => {
     const m = members.find(m => m.id === confUserId);
     if (!m) return;
     await supabase.from('team_members').insert([{ team_id: teamId, conference_id: confId, conference_user_id: confUserId, user_id: m.user_id }]);
     fetchTeams();
   };
+
   const removeFromTeam = async (teamId, confUserId) => {
     await supabase.from('team_members').delete().eq('team_id', teamId).eq('conference_user_id', confUserId);
     fetchTeams();
@@ -296,22 +295,42 @@ const saveTeam = async () => {
   const createTask = async () => {
     if (!tkForm.title.trim()) return;
     setSaving(true);
-    const { error } = await supabase.from('conference_tasks').insert([{ conference_id: confId, title: tkForm.title.trim(), description: tkForm.description || null, team_id: tkForm.team_id || null, assignee_id: tkForm.assignee_id || null, priority: tkForm.priority, due_date: tkForm.due_date || null, status: 'pending', created_at: new Date().toISOString() }]);
+    const { error } = await supabase.from('conference_tasks').insert([{
+      conference_id: confId,
+      title:         tkForm.title.trim(),
+      description:   tkForm.description || null,
+      team_id:       tkForm.team_id || null,
+      assignee_id:   tkForm.assignee_id || null,
+      priority:      tkForm.priority,
+      due_date:      tkForm.due_date || null,
+      status:        'pending',
+      created_at:    new Date().toISOString(),
+    }]);
     setSaving(false);
     if (!error) { setModal(null); setTkForm({ title:'', description:'', team_id:'', assignee_id:'', priority:'medium', due_date:'' }); fetchTasks(); }
     else alert(error.message);
   };
+
   const saveTask = async () => {
     if (!tkForm.title.trim()) return;
     setSaving(true);
-    await supabase.from('conference_tasks').update({ title: tkForm.title.trim(), description: tkForm.description || null, team_id: tkForm.team_id || null, assignee_id: tkForm.assignee_id || null, priority: tkForm.priority, due_date: tkForm.due_date || null }).eq('id', modalData.id);
+    await supabase.from('conference_tasks').update({
+      title:       tkForm.title.trim(),
+      description: tkForm.description || null,
+      team_id:     tkForm.team_id || null,
+      assignee_id: tkForm.assignee_id || null,
+      priority:    tkForm.priority,
+      due_date:    tkForm.due_date || null,
+    }).eq('id', modalData.id);
     setSaving(false); setModal(null); fetchTasks();
   };
+
   const toggleTask = async (task) => {
     const s = task.status === 'done' ? 'pending' : 'done';
     await supabase.from('conference_tasks').update({ status: s }).eq('id', task.id);
     setTasks(ts => ts.map(t => t.id === task.id ? { ...t, status: s } : t));
   };
+
   const deleteTask = async (id) => {
     await supabase.from('conference_tasks').delete().eq('id', id);
     setTasks(ts => ts.filter(t => t.id !== id));
@@ -321,10 +340,40 @@ const saveTeam = async () => {
   const sendNotif = async () => {
     if (!nForm.title.trim() || !nForm.message.trim()) return;
     setSaving(true);
-    const payload = { conference_id: confId, title: nForm.title.trim(), message: nForm.message.trim(), target_role: nForm.target_role === 'all' ? null : nForm.target_role, target_team_id: nForm.target_team_id || null, created_at: new Date().toISOString() };
+    const payload = {
+      conference_id:  confId,
+      title:          nForm.title.trim(),
+      message:        nForm.message.trim(),
+      target_role:    nForm.target_role === 'all' ? null : nForm.target_role,
+      target_team_id: nForm.target_team_id || null,
+      created_at:     new Date().toISOString(),
+    };
     const { error } = await supabase.from('notifications').insert([payload]);
     setSaving(false);
-    if (!error) { setNotifs(p => [{ ...payload, id: Date.now() }, ...p]); setModal(null); setNForm({ title:'', message:'', target_role:'all', target_team_id:'' }); }
+    if (!error) {
+      setNotifs(p => [{ ...payload, id: Date.now() }, ...p]);
+      setModal(null);
+      setNForm({ title:'', message:'', target_role:'all', target_team_id:'' });
+    }
+  };
+
+  /* ── speakers ── */
+  const findSpeakers = async () => {
+    if (!spTopic.trim()) return;
+    setSpLoading(true);
+    setSpError('');
+    setSpResults([]);
+    try {
+      const res = await fetch(
+        `http://localhost:4000/api/speakers?topic=${encodeURIComponent(spTopic)}&limit=${spLimit}&source=${spSource}`
+      );
+      if (!res.ok) throw new Error('Server error');
+      const data = await res.json();
+      setSpResults(data);
+    } catch (err) {
+      setSpError('Failed to fetch speakers. Make sure your backend is running.');
+    }
+    setSpLoading(false);
   };
 
   /* ── ui helpers ── */
@@ -335,25 +384,26 @@ const saveTeam = async () => {
   const filteredPapers  = confPapers.filter(p => paperFilter === 'all' || p.status === paperFilter);
 
   const openEditTeam = (t) => {
-  setModalData(t);
-  setTmForm({
-    name: t.name,
-    description: t.description || '',
-    color: t.color || '#6366f1',
-    head_id: t.head_id || '',          // ← add this
-  });
-  setModal('editTeam');
-};
-  const openEditTask = (t) => { setModalData(t); setTkForm({ title: t.title, description: t.description || '', team_id: t.team_id || '', assignee_id: t.assignee_id || '', priority: t.priority || 'medium', due_date: t.due_date || '' }); setModal('editTask'); };
+    setModalData(t);
+    setTmForm({ name: t.name, description: t.description || '', color: t.color || '#6366f1', head_id: t.head_id || '' });
+    setModal('editTeam');
+  };
+  const openEditTask = (t) => {
+    setModalData(t);
+    setTkForm({ title: t.title, description: t.description || '', team_id: t.team_id || '', assignee_id: t.assignee_id || '', priority: t.priority || 'medium', due_date: t.due_date || '' });
+    setModal('editTask');
+  };
 
-  const nav = [
-    { id:'overview',      label:'Overview',      icon:BarChart2,   badge: null },
-    { id:'papers',        label:'Papers',         icon:FileText,    badge: pendingCount || null },
-    { id:'members',       label:'Members',        icon:Users,       badge: null },
-    { id:'teams',         label:'Teams',          icon:Layers,      badge: null },
-    { id:'tasks',         label:'Tasks',          icon:CheckSquare, badge: tasks.filter(t=>t.status!=='done').length || null },
-    { id:'notifications', label:'Notifications',  icon:Bell,        badge: null },
-  ];
+const nav = [
+  { id:'overview',      label:'Overview',      icon:BarChart2,   badge: null },
+  { id:'papers',        label:'Papers',        icon:FileText,    badge: pendingCount || null },
+  { id:'members',       label:'Members',       icon:Users,       badge: null },
+  { id:'teams',         label:'Teams',         icon:Layers,      badge: null },
+  { id:'tasks',         label:'Tasks',         icon:CheckSquare, badge: tasks.filter(t=>t.status!=='done').length || null },
+  { id:'notifications', label:'Notifications', icon:Bell,        badge: null },
+  { id:'emails',        label:'Emails',        icon:Send,        badge: null }, // ← ADD
+  { id:'speakers',      label:'Find Speakers', icon:Users,       badge: null },
+];
 
   /* ══════════════════════════════════════════════════════════
      RENDER
@@ -403,10 +453,10 @@ const saveTeam = async () => {
               <div><h2 className="text-2xl font-bold text-white">Event Overview</h2><p className="text-slate-500 text-sm mt-0.5">Real-time conference metrics</p></div>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  { label:'Members',    value:members.length,                          color:'text-indigo-400', bg:'bg-indigo-500/8' },
-                  { label:'Teams',      value:teams.length,                            color:'text-purple-400', bg:'bg-purple-500/8' },
-                  { label:'Papers',     value:confPapers.length,                       color:'text-blue-400',   bg:'bg-blue-500/8'   },
-                  { label:'Open Tasks', value:tasks.filter(t=>t.status!=='done').length, color:'text-amber-400', bg:'bg-amber-500/8' },
+                  { label:'Members',    value:members.length,                            color:'text-indigo-400', bg:'bg-indigo-500/8' },
+                  { label:'Teams',      value:teams.length,                              color:'text-purple-400', bg:'bg-purple-500/8' },
+                  { label:'Papers',     value:confPapers.length,                         color:'text-blue-400',   bg:'bg-blue-500/8'   },
+                  { label:'Open Tasks', value:tasks.filter(t=>t.status!=='done').length, color:'text-amber-400',  bg:'bg-amber-500/8'  },
                 ].map(({ label, value, color, bg }) => (
                   <div key={label} className={cls('rounded-xl p-5 border border-white/6', bg)}>
                     <div className={cls('text-3xl font-bold mb-1', color)}>{value}</div>
@@ -541,7 +591,7 @@ const saveTeam = async () => {
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <div><h2 className="text-2xl font-bold text-white">Teams</h2><p className="text-slate-500 text-sm mt-0.5">{teams.length} teams</p></div>
-                <Btn onClick={()=>{setTmForm({name:'',description:'',color:'#6366f1'});setModal('createTeam');}}><Plus size={15}/>Create Team</Btn>
+                <Btn onClick={()=>{setTmForm({name:'',description:'',color:'#6366f1',head_id:''});setModal('createTeam');}}><Plus size={15}/>Create Team</Btn>
               </div>
               {loadingTeams ? <LoadingRows/> : teams.length === 0
                 ? <Empty icon={Layers} msg="No teams yet." action={{label:'+ Create Team',onClick:()=>setModal('createTeam')}}/>
@@ -580,14 +630,11 @@ const saveTeam = async () => {
                           {/* expanded body */}
                           {isOpen && (
                             <div className="border-t border-white/5 px-5 py-5 space-y-5 bg-black/20">
-
                               {/* current members */}
                               <div>
                                 <div className="text-[11px] text-slate-600 uppercase tracking-wider font-bold mb-2">Members ({teamMembers.length})</div>
                                 {(() => {
-                                  const head = team.head_id
-                                    ? members.find(m => m.id === team.head_id)
-                                    : null;
+                                  const head = team.head_id ? members.find(m => m.id === team.head_id) : null;
                                   return head ? (
                                     <div className="flex items-center gap-2 mb-3 bg-indigo-500/8 border border-indigo-500/15 rounded-lg px-3 py-2 w-fit">
                                       <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white">
@@ -727,6 +774,151 @@ const saveTeam = async () => {
               }
             </div>
           )}
+
+          {section === 'emails' && <EmailComposer conf={conf} senderRole="organizer" />}
+
+          {/* ═══ SPEAKERS ═══ */}
+          {section === 'speakers' && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold text-white">Find Speakers</h2>
+                <p className="text-slate-500 text-sm mt-0.5">Discover potential speakers for your conference using AI</p>
+              </div>
+
+              {/* Input card */}
+              <div className="bg-[#0d1117] border border-white/6 rounded-2xl p-6 space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2">
+                    <Field label="Research Topic">
+                      <Input
+                        placeholder="e.g. Artificial Intelligence, Quantum Computing..."
+                        value={spTopic}
+                        onChange={e => setSpTopic(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && findSpeakers()}
+                      />
+                    </Field>
+                  </div>
+                  <Field label="Max Results">
+                    <Sel value={spLimit} onChange={e => setSpLimit(Number(e.target.value))}>
+                      {[5, 10, 15, 20].map(n => (
+                        <option key={n} value={n} className="bg-[#0d1117]">{n} speakers</option>
+                      ))}
+                    </Sel>
+                  </Field>
+                </div>
+
+                <Field label="Speaker Source">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                    {[
+                      { key: 1, label: '🇮🇳 Indian'    },
+                      { key: 2, label: '🌍 Foreign'    },
+                      { key: 3, label: '💼 LinkedIn'   },
+                      { key: 4, label: '🎓 IIT / NIT'  },
+                      { key: 5, label: '⭐ All Sources' },
+                    ].map(({ key, label }) => (
+                      <button
+                        key={key}
+                        onClick={() => setSpSource(key)}
+                        className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all ${
+                          spSource === key
+                            ? 'bg-indigo-600 border-indigo-500 text-white'
+                            : 'border-white/8 text-slate-500 hover:text-white hover:border-white/20'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </Field>
+
+                <Btn
+                  onClick={findSpeakers}
+                  disabled={spLoading || !spTopic.trim()}
+                  className="w-full py-3 justify-center"
+                >
+                  {spLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Searching... this may take a moment
+                    </>
+                  ) : (
+                    <>
+                      <Users size={15} /> Find Speakers
+                    </>
+                  )}
+                </Btn>
+
+                {spError && (
+                  <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-sm text-red-400">
+                    {spError}
+                  </div>
+                )}
+              </div>
+
+              {/* Loading skeleton */}
+              {spLoading && (
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-32 bg-white/3 border border-white/5 rounded-2xl animate-pulse" />
+                  ))}
+                </div>
+              )}
+
+              {/* Results */}
+              {!spLoading && spResults.length > 0 && (
+                <div className="space-y-4">
+                  <div className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                    {spResults.length} Speaker{spResults.length !== 1 ? 's' : ''} Found
+                  </div>
+                  {spResults.map((speaker, i) => (
+                    <div key={i} className="bg-[#0d1117] border border-white/6 rounded-2xl p-6 hover:border-white/12 transition-all">
+                      <div className="flex items-start justify-between gap-4 mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shrink-0">
+                            {speaker.name?.[0]?.toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="font-bold text-white text-base">{speaker.name}</div>
+                            {speaker.organization && (
+                              <div className="text-xs text-slate-500 mt-0.5">{speaker.organization}</div>
+                            )}
+                          </div>
+                        </div>
+                        {speaker.relevance_score !== undefined && (
+                          <div className="shrink-0 text-center bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-3 py-2">
+                            <div className="text-lg font-bold text-indigo-400">{speaker.relevance_score}</div>
+                            <div className="text-[9px] text-slate-600 uppercase font-bold tracking-wider">Score</div>
+                          </div>
+                        )}
+                      </div>
+                      {speaker.profile && (
+                        <p className="text-sm text-slate-400 leading-relaxed mb-4">{speaker.profile}</p>
+                      )}
+                      {speaker.linkedin && (
+                        <a
+                          href={speaker.linkedin}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-semibold transition-colors"
+                        >
+                          View LinkedIn →
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Empty state */}
+              {!spLoading && spResults.length === 0 && spTopic && !spError && (
+                <div className="py-16 text-center border border-dashed border-white/8 rounded-2xl">
+                  <Users size={28} className="text-slate-700 mx-auto mb-3" />
+                  <p className="text-slate-500 text-sm">No speakers found. Try a different topic.</p>
+                </div>
+              )}
+            </div>
+          )}
+
         </main>
       </div>
 
@@ -738,7 +930,10 @@ const saveTeam = async () => {
             <Field label="Email Address"><Input type="email" placeholder="member@example.com" value={mForm.email} onChange={e=>setMForm({...mForm,email:e.target.value})}/></Field>
             <Field label="Role">
               <Sel value={mForm.role} onChange={e=>setMForm({...mForm,role:e.target.value})}>
-                <option value="reviewer">Reviewer</option><option value="presenter">Presenter</option><option value="organizer">Organizer</option><option value="member">Member</option>
+                <option value="reviewer">Reviewer</option>
+                <option value="presenter">Presenter</option>
+                <option value="organizer">Organizer</option>
+                <option value="member">Member</option>
               </Sel>
             </Field>
           </div>
@@ -763,44 +958,24 @@ const saveTeam = async () => {
         <Modal title={modal === 'createTeam' ? 'Create Team' : 'Edit Team'} onClose={() => setModal(null)}>
           <div className="space-y-4">
             <Field label="Team Name">
-              <Input
-                placeholder="e.g. Review Committee"
-                value={tmForm.name}
-                onChange={e => setTmForm({ ...tmForm, name: e.target.value })}
-              />
+              <Input placeholder="e.g. Review Committee" value={tmForm.name} onChange={e => setTmForm({ ...tmForm, name: e.target.value })}/>
             </Field>
             <Field label="Description (optional)">
-              <Input
-                placeholder="What does this team do?"
-                value={tmForm.description}
-                onChange={e => setTmForm({ ...tmForm, description: e.target.value })}
-              />
+              <Input placeholder="What does this team do?" value={tmForm.description} onChange={e => setTmForm({ ...tmForm, description: e.target.value })}/>
             </Field>
-
-            {/* ── NEW: Team Head selector ── */}
             <Field label="Team Head (optional)">
-              <Sel
-                value={tmForm.head_id}
-                onChange={e => setTmForm({ ...tmForm, head_id: e.target.value })}
-              >
+              <Sel value={tmForm.head_id} onChange={e => setTmForm({ ...tmForm, head_id: e.target.value })}>
                 <option value="">— No team head —</option>
                 {members.map(m => (
-                  <option key={m.id} value={m.id} className="bg-[#0d1117]">
-                    {mName(m)} ({m.role})
-                  </option>
+                  <option key={m.id} value={m.id} className="bg-[#0d1117]">{mName(m)} ({m.role})</option>
                 ))}
               </Sel>
             </Field>
-
             <Field label="Team Color">
               <div className="flex gap-2 flex-wrap">
                 {TEAM_COLORS.map(c => (
-                  <button
-                    key={c}
-                    onClick={() => setTmForm({ ...tmForm, color: c })}
-                    className={`w-8 h-8 rounded-lg transition-all border-2 ${
-                      tmForm.color === c ? 'border-white scale-110' : 'border-transparent hover:scale-105'
-                    }`}
+                  <button key={c} onClick={() => setTmForm({ ...tmForm, color: c })}
+                    className={`w-8 h-8 rounded-lg transition-all border-2 ${tmForm.color === c ? 'border-white scale-110' : 'border-transparent hover:scale-105'}`}
                     style={{ backgroundColor: c }}
                   />
                 ))}
@@ -809,11 +984,7 @@ const saveTeam = async () => {
           </div>
           <div className="flex gap-3 mt-6">
             <Btn variant="secondary" className="flex-1" onClick={() => setModal(null)}>Cancel</Btn>
-            <Btn
-              className="flex-1"
-              onClick={modal === 'createTeam' ? createTeam : saveTeam}
-              disabled={saving || !tmForm.name.trim()}
-            >
+            <Btn className="flex-1" onClick={modal === 'createTeam' ? createTeam : saveTeam} disabled={saving || !tmForm.name.trim()}>
               {saving ? 'Saving…' : modal === 'createTeam' ? 'Create Team' : 'Save Changes'}
             </Btn>
           </div>
@@ -860,7 +1031,10 @@ const saveTeam = async () => {
             <div className="grid grid-cols-2 gap-4">
               <Field label="Target Role">
                 <Sel value={nForm.target_role} onChange={e=>setNForm({...nForm,target_role:e.target.value})}>
-                  <option value="all">All Members</option><option value="presenter">Presenters</option><option value="reviewer">Reviewers</option><option value="organizer">Organizers</option>
+                  <option value="all">All Members</option>
+                  <option value="presenter">Presenters</option>
+                  <option value="reviewer">Reviewers</option>
+                  <option value="organizer">Organizers</option>
                 </Sel>
               </Field>
               <Field label="Target Team">
@@ -874,7 +1048,9 @@ const saveTeam = async () => {
           </div>
           <div className="flex gap-3 mt-6">
             <Btn variant="secondary" className="flex-1" onClick={()=>setModal(null)}>Cancel</Btn>
-            <Btn className="flex-1" onClick={sendNotif} disabled={saving||!nForm.title.trim()||!nForm.message.trim()}><Send size={14}/>{saving?'Sending…':'Send'}</Btn>
+            <Btn className="flex-1" onClick={sendNotif} disabled={saving||!nForm.title.trim()||!nForm.message.trim()}>
+              <Send size={14}/>{saving?'Sending…':'Send'}
+            </Btn>
           </div>
         </Modal>
       )}

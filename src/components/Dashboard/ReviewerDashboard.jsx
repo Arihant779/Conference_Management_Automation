@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FileText, CheckCircle, XCircle, Clock, Star, ChevronDown, Eye, Send } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import MemberNotifications from './MemberNotifications';
 
 const ReviewerDashboard = ({ conf, onBack }) => {
   const { papers = [], updatePaperStatus } = useApp();
@@ -187,6 +188,9 @@ const ReviewerDashboard = ({ conf, onBack }) => {
             ))}
           </div>
         )}
+      </div>
+      <div className="border-t border-white/5 pt-8">
+        <MemberNotifications conf={conf} />
       </div>
     </div>
   );
