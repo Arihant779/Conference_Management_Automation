@@ -46,7 +46,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
     setLoadingRoles(false);
   };
 
-  const myConfs    = conferences.filter((c) => roleMap[c.conference_id]);
+  const myConfs = conferences.filter((c) => roleMap[c.conference_id]);
   const otherConfs = conferences.filter((c) => !roleMap[c.conference_id]);
 
   const filterConfs = (list) =>
@@ -63,21 +63,21 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
   const roleColors = {
     organizer: 'from-violet-500 to-purple-600',
     presenter: 'from-blue-500 to-cyan-600',
-    reviewer:  'from-amber-500 to-orange-600',
+    reviewer: 'from-amber-500 to-orange-600',
   };
 
   const roleBadgeStyle = {
     organizer: 'bg-violet-500/15 text-violet-300 border-violet-500/30',
     presenter: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
-    reviewer:  'bg-amber-500/15 text-amber-300 border-amber-500/30',
+    reviewer: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
   };
 
   const ConfCard = ({ conf }) => {
     const role = roleMap[conf.conference_id] ?? null;
     const dateLabel = conf.start_date
       ? new Date(conf.start_date).toLocaleDateString('en-US', {
-          year: 'numeric', month: 'short', day: 'numeric',
-        })
+        year: 'numeric', month: 'short', day: 'numeric',
+      })
       : 'Date TBD';
 
     return (
@@ -118,11 +118,10 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
 
           <button
             onClick={() => onSelectConf(conf, role)}
-            className={`w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 ${
-              role
+            className={`w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 ${role
                 ? 'bg-white text-black hover:bg-slate-100'
                 : 'bg-white/6 text-slate-300 hover:bg-white/12 border border-white/10'
-            }`}
+              }`}
           >
             {role ? 'Open Dashboard' : 'View Conference'}
             <ChevronRight size={15} />
@@ -224,9 +223,9 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
           {[
             { label: 'My Conferences', value: myConfs.length, color: 'text-indigo-400' },
-            { label: 'As Organizer',   value: myConfs.filter(c => roleMap[c.conference_id] === 'organizer').length, color: 'text-violet-400' },
-            { label: 'As Reviewer',    value: myConfs.filter(c => roleMap[c.conference_id] === 'reviewer').length,  color: 'text-amber-400' },
-            { label: 'As Presenter',   value: myConfs.filter(c => roleMap[c.conference_id] === 'presenter').length, color: 'text-blue-400' },
+            { label: 'As Organizer', value: myConfs.filter(c => roleMap[c.conference_id] === 'organizer').length, color: 'text-violet-400' },
+            { label: 'As Reviewer', value: myConfs.filter(c => roleMap[c.conference_id] === 'reviewer').length, color: 'text-amber-400' },
+            { label: 'As Presenter', value: myConfs.filter(c => roleMap[c.conference_id] === 'presenter').length, color: 'text-blue-400' },
           ].map(({ label, value, color }) => (
             <div key={label} className="bg-[#0d1117] border border-white/6 rounded-xl p-4">
               <div className={`text-2xl font-bold ${color}`}>{value}</div>
@@ -240,17 +239,16 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
       <main className="max-w-7xl mx-auto px-6 pb-16">
         <div className="flex gap-1 mb-8 bg-white/4 p-1 rounded-xl w-fit border border-white/6">
           {[
-            { key: 'my',  label: `My Conferences (${myConfs.length})`  },
+            { key: 'my', label: `My Conferences (${myConfs.length})` },
             { key: 'all', label: `Explore (${otherConfs.length})` },
           ].map(({ key, label }) => (
             <button
               key={key}
               onClick={() => setActiveTab(key)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                activeTab === key
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === key
                   ? 'bg-white text-black shadow-sm'
                   : 'text-slate-500 hover:text-slate-300'
-              }`}
+                }`}
             >
               {label}
             </button>
@@ -260,8 +258,8 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {loadingRoles
             ? [...Array(3)].map((_, i) => (
-                <div key={i} className="h-80 bg-white/3 border border-white/5 rounded-2xl animate-pulse" />
-              ))
+              <div key={i} className="h-80 bg-white/3 border border-white/5 rounded-2xl animate-pulse" />
+            ))
             : visibleConfs.length > 0
               ? visibleConfs.map((c) => <ConfCard key={c.conference_id} conf={c} />)
               : <EmptyState />

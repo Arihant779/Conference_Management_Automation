@@ -11,21 +11,21 @@ import { useApp } from '../../context/AppContext';
 const cls = (...c) => c.filter(Boolean).join(' ');
 
 const RECIPIENT_GROUPS = [
-  { key: 'all',        label: 'All Members',   color: 'text-indigo-400',  bg: 'bg-indigo-500/10  border-indigo-500/25'  },
-  { key: 'organizer',  label: 'Organizers',    color: 'text-violet-400',  bg: 'bg-violet-500/10  border-violet-500/25'  },
-  { key: 'reviewer',   label: 'Reviewers',     color: 'text-amber-400',   bg: 'bg-amber-500/10   border-amber-500/25'   },
-  { key: 'presenter',  label: 'Presenters',    color: 'text-blue-400',    bg: 'bg-blue-500/10    border-blue-500/25'    },
-  { key: 'member',     label: 'Guests',        color: 'text-slate-400',   bg: 'bg-slate-500/10   border-slate-500/25'   },
-  { key: 'speaker',    label: 'Speakers',      color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/25' },
-  { key: 'custom',     label: 'Custom Emails', color: 'text-pink-400',    bg: 'bg-pink-500/10    border-pink-500/25'    },
+  { key: 'all', label: 'All Members', color: 'text-indigo-400', bg: 'bg-indigo-500/10  border-indigo-500/25' },
+  { key: 'organizer', label: 'Organizers', color: 'text-violet-400', bg: 'bg-violet-500/10  border-violet-500/25' },
+  { key: 'reviewer', label: 'Reviewers', color: 'text-amber-400', bg: 'bg-amber-500/10   border-amber-500/25' },
+  { key: 'presenter', label: 'Presenters', color: 'text-blue-400', bg: 'bg-blue-500/10    border-blue-500/25' },
+  { key: 'member', label: 'Guests', color: 'text-slate-400', bg: 'bg-slate-500/10   border-slate-500/25' },
+  { key: 'speaker', label: 'Speakers', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/25' },
+  { key: 'custom', label: 'Custom Emails', color: 'text-pink-400', bg: 'bg-pink-500/10    border-pink-500/25' },
 ];
 
 const TONE_OPTIONS = [
-  { key: 'formal',       label: 'Formal'       },
-  { key: 'friendly',     label: 'Friendly'     },
-  { key: 'urgent',       label: 'Urgent'       },
-  { key: 'celebratory',  label: 'Celebratory'  },
-  { key: 'informational',label: 'Informational'},
+  { key: 'formal', label: 'Formal' },
+  { key: 'friendly', label: 'Friendly' },
+  { key: 'urgent', label: 'Urgent' },
+  { key: 'celebratory', label: 'Celebratory' },
+  { key: 'informational', label: 'Informational' },
 ];
 
 /* ─── sub components ──────────────────────────────────────── */
@@ -60,7 +60,7 @@ const EmailComposer = ({ conf, senderRole = 'organizer' }) => {
   const confId = conf?.conference_id ?? conf?.id;
 
   /* ── state ── */
-  const [members, setMembers]               = useState([]);
+  const [members, setMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
 
   // step: 'compose' | 'preview' | 'sent'
@@ -68,23 +68,23 @@ const EmailComposer = ({ conf, senderRole = 'organizer' }) => {
 
   // recipients
   const [selectedGroups, setSelectedGroups] = useState([]);
-  const [customEmails, setCustomEmails]     = useState('');
+  const [customEmails, setCustomEmails] = useState('');
   const [customEmailList, setCustomEmailList] = useState([]);
-  const [customInput, setCustomInput]       = useState('');
+  const [customInput, setCustomInput] = useState('');
 
   // content
-  const [subject, setSubject]     = useState('');
-  const [intent, setIntent]       = useState('');
-  const [tone, setTone]           = useState('formal');
+  const [subject, setSubject] = useState('');
+  const [intent, setIntent] = useState('');
+  const [tone, setTone] = useState('formal');
   const [generatedBody, setGeneratedBody] = useState('');
-  const [editedBody, setEditedBody]       = useState('');
-  const [isEditing, setIsEditing]         = useState(false);
+  const [editedBody, setEditedBody] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
 
   // ui
   const [generating, setGenerating] = useState(false);
-  const [sending, setSending]       = useState(false);
-  const [genError, setGenError]     = useState('');
-  const [sendError, setSendError]   = useState('');
+  const [sending, setSending] = useState(false);
+  const [genError, setGenError] = useState('');
+  const [sendError, setSendError] = useState('');
   const [showRecipients, setShowRecipients] = useState(false);
 
   /* ── fetch members ── */
@@ -97,8 +97,8 @@ const EmailComposer = ({ conf, senderRole = 'organizer' }) => {
 
     const enriched = (data || []).map(m => ({
       ...m,
-      email:     m.email     || m.users?.user_email || '',
-      full_name: m.full_name || m.users?.user_name  || '',
+      email: m.email || m.users?.user_email || '',
+      full_name: m.full_name || m.users?.user_name || '',
     }));
     setMembers(enriched);
     setLoadingMembers(false);

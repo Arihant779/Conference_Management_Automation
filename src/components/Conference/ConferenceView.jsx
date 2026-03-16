@@ -1,4 +1,4 @@
-import React, { useState,useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
 import ModernTemplate from './Templates/ModernTemplate';
 import ClassicTemplate from './Templates/ClassicTemplate';
@@ -106,9 +106,8 @@ const ConferenceView = ({ conf, role: propRole, onBack }) => {
 const NavTab = ({ active, onClick, activeClass, children }) => (
   <button
     onClick={onClick}
-    className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${
-      active ? activeClass : 'text-slate-500 hover:text-slate-300'
-    }`}
+    className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${active ? activeClass : 'text-slate-500 hover:text-slate-300'
+      }`}
   >
     {children}
   </button>

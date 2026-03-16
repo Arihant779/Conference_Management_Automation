@@ -2,11 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   BarChart2, FileText, Users, CheckSquare, Bell, Plus, X, Send,
   ChevronDown, CheckCircle, XCircle, MapPin, Edit2, Trash2,
-  Search, Layers, Clock
+  Search, Layers, Clock, MessageSquare
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
 import EmailComposer from './EmailComposer';
+import FeedbackManager from './FeedbackManager';
 /* ─── helpers ─────────────────────────────────────────────── */
 const cls = (...c) => c.filter(Boolean).join(' ');
 
@@ -395,14 +396,15 @@ const OrganizerDashboard = ({ conf, onBack }) => {
   };
 
 const nav = [
-  { id:'overview',      label:'Overview',      icon:BarChart2,   badge: null },
-  { id:'papers',        label:'Papers',        icon:FileText,    badge: pendingCount || null },
-  { id:'members',       label:'Members',       icon:Users,       badge: null },
-  { id:'teams',         label:'Teams',         icon:Layers,      badge: null },
-  { id:'tasks',         label:'Tasks',         icon:CheckSquare, badge: tasks.filter(t=>t.status!=='done').length || null },
-  { id:'notifications', label:'Notifications', icon:Bell,        badge: null },
-  { id:'emails',        label:'Emails',        icon:Send,        badge: null }, // ← ADD
-  { id:'speakers',      label:'Find Speakers', icon:Users,       badge: null },
+  { id:'overview',      label:'Overview',      icon:BarChart2,     badge: null },
+  { id:'papers',        label:'Papers',        icon:FileText,      badge: pendingCount || null },
+  { id:'members',       label:'Members',       icon:Users,         badge: null },
+  { id:'teams',         label:'Teams',         icon:Layers,        badge: null },
+  { id:'tasks',         label:'Tasks',         icon:CheckSquare,   badge: tasks.filter(t=>t.status!=='done').length || null },
+  { id:'feedback',      label:'Feedback',      icon:MessageSquare, badge: null },
+  { id:'notifications', label:'Notifications', icon:Bell,          badge: null },
+  { id:'emails',        label:'Emails',        icon:Send,          badge: null },
+  { id:'speakers',      label:'Find Speakers', icon:Users,         badge: null },
 ];
 
   /* ══════════════════════════════════════════════════════════
@@ -774,6 +776,8 @@ const nav = [
               }
             </div>
           )}
+
+          {section === 'feedback' && <FeedbackManager conf={conf} />}
 
           {section === 'emails' && <EmailComposer conf={conf} senderRole="organizer" />}
 

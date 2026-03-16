@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Calendar, MapPin, FileText, Globe, ArrowRight, Upload, X, Clock } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import FeedbackForm from './FeedbackForm';
 
 /**
  * ConferencePage
@@ -171,6 +172,11 @@ const ConferencePage = ({ conf, onBack }) => {
             <p className="text-slate-400 leading-relaxed">{conf.description}</p>
           </div>
         )}
+
+        {/* Feedback */}
+        <div className="border-t border-white/5 pt-8">
+          <FeedbackForm conf={conf} />
+        </div>
 
       </div>
 
