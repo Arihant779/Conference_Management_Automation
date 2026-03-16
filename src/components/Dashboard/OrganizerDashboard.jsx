@@ -7,6 +7,7 @@ import {
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
 import EmailComposer from './EmailComposer';
+import PaperAllocation from './PaperAllocation';
 /* ─── helpers ─────────────────────────────────────────────── */
 const cls = (...c) => c.filter(Boolean).join(' ');
 
@@ -401,8 +402,9 @@ const nav = [
   { id:'teams',         label:'Teams',         icon:Layers,      badge: null },
   { id:'tasks',         label:'Tasks',         icon:CheckSquare, badge: tasks.filter(t=>t.status!=='done').length || null },
   { id:'notifications', label:'Notifications', icon:Bell,        badge: null },
-  { id:'emails',        label:'Emails',        icon:Send,        badge: null }, // ← ADD
+  { id:'emails',        label:'Emails',        icon:Send,        badge: null },
   { id:'speakers',      label:'Find Speakers', icon:Users,       badge: null },
+  { id:'allocation',    label:'Paper Allocation', icon:FileText, badge: null },
 ];
 
   /* ══════════════════════════════════════════════════════════
@@ -776,6 +778,9 @@ const nav = [
           )}
 
           {section === 'emails' && <EmailComposer conf={conf} senderRole="organizer" />}
+
+          {/* ═══ PAPER ALLOCATION ═══ */}
+          {section === 'allocation' && <PaperAllocation conf={conf} />}
 
           {/* ═══ SPEAKERS ═══ */}
           {section === 'speakers' && (
