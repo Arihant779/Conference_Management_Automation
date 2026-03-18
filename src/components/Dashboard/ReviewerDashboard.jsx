@@ -27,8 +27,8 @@ const ReviewerDashboard = ({ conf, onBack }) => {
     <button
       onClick={() => setScores(s => ({ ...s, [paperId]: score }))}
       className={`w-9 h-9 rounded-lg text-xs font-bold transition-all border ${scores[paperId] === score
-          ? 'bg-indigo-600 border-indigo-500 text-white'
-          : 'border-white/8 text-slate-500 hover:border-white/20 hover:text-white'
+        ? 'bg-indigo-600 border-indigo-500 text-white'
+        : 'border-white/8 text-slate-500 hover:border-white/20 hover:text-white'
         }`}
     >
       {score}
@@ -178,8 +178,8 @@ const ReviewerDashboard = ({ conf, onBack }) => {
               <div key={paper.id} className="bg-[#0d1117]/50 border border-white/4 rounded-xl px-5 py-3.5 flex items-center justify-between opacity-70">
                 <span className="text-sm text-slate-400 font-medium">{paper.title}</span>
                 <span className={`text-xs font-bold px-2.5 py-1 rounded-md border uppercase tracking-wider ${paper.status === 'accepted'
-                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                    : 'bg-red-500/10 text-red-400 border-red-500/20'
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                  : 'bg-red-500/10 text-red-400 border-red-500/20'
                   }`}>
                   {paper.status}
                 </span>

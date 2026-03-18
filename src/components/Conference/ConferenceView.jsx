@@ -34,7 +34,38 @@ const ConferenceView = ({ conf, role: propRole, onBack }) => {
       });
   }, [user, confId]);
 
-  const hasRole = !!resolvedRole;  // ← only this, no "role" variable
+  const hasRole = !!resolvedRole;
+  const isOrganizer = resolvedRole === 'organizer';
+
+  // Save handler lives here — keeps templates free of direct Supabase imports
+  const handleSave = async (pageData) => {
+    const { error } = await supabase
+      .from('conference')
+      .update({
+        tagline: pageData.tagline,
+        description: pageData.description,
+        contact_email: pageData.contact_email,
+        contact_phone: pageData.contact_phone,
+        website: pageData.website,
+        twitter: pageData.twitter,
+        linkedin: pageData.linkedin,
+        schedule: pageData.schedule,
+        speakers: pageData.speakers,
+        sponsors: pageData.sponsors,
+        important_dates: pageData.important_dates,
+        venue_name: pageData.venue_name,
+        venue_address: pageData.venue_address,
+        venue_description: pageData.venue_description,
+        capacity: pageData.capacity,
+        registration_fee_general: pageData.registration_fee_general,
+        registration_fee_student: pageData.registration_fee_student,
+        registration_fee_early: pageData.registration_fee_early,
+        about_extra: pageData.about_extra,
+      })
+      .eq('conference_id', confId);
+
+    if (error) throw new Error(error.message);
+  };
 
   return (
     <div className="flex flex-col min-h-screen font-sans bg-[#0f1117] text-slate-200">
@@ -87,14 +118,10 @@ const ConferenceView = ({ conf, role: propRole, onBack }) => {
       <div className="flex-1 bg-black overflow-y-auto relative">
         {viewMode === 'home' ? (
           conf.template === 'classic'
-            ? <ClassicTemplate conf={conf} />
-            : <ModernTemplate conf={conf} />
+            ? <ClassicTemplate conf={conf} isOrganizer={isOrganizer} onSave={handleSave} />
+            : <ModernTemplate conf={conf} isOrganizer={isOrganizer} onSave={handleSave} />
         ) : viewMode === 'dashboard' ? (
-          <RoleBasedDashboard
-            conf={conf}
-            role={resolvedRole}
-            onBack={onBack}
-          />
+          <RoleBasedDashboard conf={conf} role={resolvedRole} onBack={onBack} />
         ) : (
           <PaperSubmission conf={conf} />
         )}

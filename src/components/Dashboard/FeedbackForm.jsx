@@ -12,12 +12,12 @@ const FeedbackForm = ({ conf }) => {
   const { user } = useApp();
   const confId = conf.conference_id || conf.id;
 
-  const [form, setForm]             = useState(null);
-  const [questions, setQuestions]   = useState([]);
-  const [answers, setAnswers]       = useState({});
-  const [loading, setLoading]       = useState(true);
+  const [form, setForm] = useState(null);
+  const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState({});
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted]   = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [alreadyDone, setAlreadyDone] = useState(false);
 
   /* ── fetch published form ── */
@@ -72,12 +72,12 @@ const FeedbackForm = ({ conf }) => {
     const rows = questions.map(q => {
       const val = answers[q.id];
       return {
-        question_id:   q.id,
-        form_id:       form.id,
-        user_id:       user.id,
-        answer_bool:   q.question_type === 'yes_no'      ? val ?? null     : null,
-        answer_rating: q.question_type === 'rating'      ? val ?? null     : null,
-        answer_text:   q.question_type === 'descriptive' ? val ?? null     : null,
+        question_id: q.id,
+        form_id: form.id,
+        user_id: user.id,
+        answer_bool: q.question_type === 'yes_no' ? val ?? null : null,
+        answer_rating: q.question_type === 'rating' ? val ?? null : null,
+        answer_text: q.question_type === 'descriptive' ? val ?? null : null,
       };
     }).filter(r => r.answer_bool !== null || r.answer_rating !== null || r.answer_text !== null);
 

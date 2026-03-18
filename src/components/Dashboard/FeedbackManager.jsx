@@ -11,18 +11,18 @@ const cls = (...c) => c.filter(Boolean).join(' ');
 const Btn = ({ variant = 'primary', children, className, ...props }) => {
   const base = 'px-4 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 justify-center disabled:opacity-40 disabled:cursor-not-allowed';
   const v = {
-    primary:   'bg-indigo-600 hover:bg-indigo-500 text-white',
+    primary: 'bg-indigo-600 hover:bg-indigo-500 text-white',
     secondary: 'border border-white/10 text-slate-400 hover:text-white hover:bg-white/5',
-    danger:    'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20',
-    success:   'bg-emerald-600 hover:bg-emerald-500 text-white',
+    danger: 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20',
+    success: 'bg-emerald-600 hover:bg-emerald-500 text-white',
   };
   return <button {...props} className={cls(base, v[variant], className)}>{children}</button>;
 };
 
 const QUESTION_TYPES = [
-  { value: 'yes_no',      label: 'Yes / No',       icon: ToggleLeft, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-  { value: 'rating',      label: 'Rating (★ 1-5)', icon: Star,       color: 'text-amber-400',   bg: 'bg-amber-500/10 border-amber-500/20' },
-  { value: 'descriptive', label: 'Descriptive',     icon: AlignLeft,  color: 'text-blue-400',    bg: 'bg-blue-500/10 border-blue-500/20' },
+  { value: 'yes_no', label: 'Yes / No', icon: ToggleLeft, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+  { value: 'rating', label: 'Rating (★ 1-5)', icon: Star, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
+  { value: 'descriptive', label: 'Descriptive', icon: AlignLeft, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20' },
 ];
 
 /* ═════════════════════════════════════════════════════════════════
@@ -31,21 +31,21 @@ const QUESTION_TYPES = [
 const FeedbackManager = ({ conf }) => {
   const confId = conf.conference_id || conf.id;
 
-  const [form, setForm]               = useState(null);      // the feedback_forms row
-  const [questions, setQuestions]      = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [saving, setSaving]           = useState(false);
+  const [form, setForm] = useState(null);      // the feedback_forms row
+  const [questions, setQuestions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
 
   // add-question form
-  const [showAdd, setShowAdd]         = useState(false);
-  const [newType, setNewType]         = useState('yes_no');
-  const [newText, setNewText]         = useState('');
+  const [showAdd, setShowAdd] = useState(false);
+  const [newType, setNewType] = useState('yes_no');
+  const [newText, setNewText] = useState('');
 
   // inline edit
-  const [editingId, setEditingId]     = useState(null);
-  const [editText, setEditText]       = useState('');
-  const [editType, setEditType]       = useState('');
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState('');
+  const [editType, setEditType] = useState('');
 
   /* ── fetch / create form ── */
   const fetchForm = useCallback(async () => {
@@ -98,10 +98,10 @@ const FeedbackManager = ({ conf }) => {
     }
     setSaving(true);
     const { error } = await supabase.from('feedback_questions').insert([{
-      form_id:       form.id,
+      form_id: form.id,
       question_text: newText.trim(),
       question_type: newType,
-      sort_order:    questions.length,
+      sort_order: questions.length,
     }]);
     if (error) console.error('[FeedbackManager] add question error:', error);
     setSaving(false);
@@ -147,10 +147,10 @@ const FeedbackManager = ({ conf }) => {
     if (willPublish) {
       await supabase.from('notifications').insert([{
         conference_id: confId,
-        title:         'Feedback Form Updated',
-        message:       'The feedback form has been updated. Please share your responses!',
-        target_role:   null,
-        created_at:    new Date().toISOString(),
+        title: 'Feedback Form Updated',
+        message: 'The feedback form has been updated. Please share your responses!',
+        target_role: null,
+        created_at: new Date().toISOString(),
       }]);
     }
 
@@ -201,13 +201,13 @@ const FeedbackManager = ({ conf }) => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Btn variant="secondary" onClick={() => setShowAdd(true)}><Plus size={15}/>Add Question</Btn>
+          <Btn variant="secondary" onClick={() => setShowAdd(true)}><Plus size={15} />Add Question</Btn>
           <Btn
             variant={form?.is_published ? 'danger' : 'success'}
             onClick={togglePublish}
             disabled={saving || questions.length === 0}
           >
-            <Send size={14}/>
+            <Send size={14} />
             {form?.is_published ? 'Unpublish' : 'Save & Publish'}
           </Btn>
         </div>
@@ -268,7 +268,7 @@ const FeedbackManager = ({ conf }) => {
                     <div className="flex gap-2">
                       <Btn variant="secondary" className="text-xs py-2" onClick={cancelEdit}>Cancel</Btn>
                       <Btn className="text-xs py-2" onClick={saveEdit} disabled={saving || !editText.trim()}>
-                        <Save size={13}/>Save
+                        <Save size={13} />Save
                       </Btn>
                     </div>
                   </div>
@@ -283,13 +283,13 @@ const FeedbackManager = ({ conf }) => {
                       <div className="text-sm font-medium text-white">{q.question_text}</div>
                       <div className="flex items-center gap-2 mt-1">
                         <span className={cls('text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase tracking-wider', info.bg, info.color)}>
-                          <Icon size={10} className="inline mr-1" style={{verticalAlign: '-1px'}}/>{info.label}
+                          <Icon size={10} className="inline mr-1" style={{ verticalAlign: '-1px' }} />{info.label}
                         </span>
                       </div>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => startEdit(q)} className="p-1.5 rounded-lg text-slate-600 hover:text-white hover:bg-white/8 transition-all"><Edit2 size={13}/></button>
-                      <button onClick={() => deleteQuestion(q.id)} className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"><Trash2 size={13}/></button>
+                      <button onClick={() => startEdit(q)} className="p-1.5 rounded-lg text-slate-600 hover:text-white hover:bg-white/8 transition-all"><Edit2 size={13} /></button>
+                      <button onClick={() => deleteQuestion(q.id)} className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"><Trash2 size={13} /></button>
                     </div>
                   </div>
                 )}
@@ -307,7 +307,7 @@ const FeedbackManager = ({ conf }) => {
             className="w-full py-3 justify-center"
             onClick={() => setShowSummary(true)}
           >
-            <Eye size={16}/>View Summary
+            <Eye size={16} />View Summary
           </Btn>
         </div>
       )}
@@ -319,7 +319,7 @@ const FeedbackManager = ({ conf }) => {
           <div className="bg-[#0d1117] border border-white/10 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-bold text-white">Add Question</h3>
-              <button onClick={() => setShowAdd(false)} className="p-1.5 rounded-lg hover:bg-white/8 text-slate-500 hover:text-white transition-all"><X size={17}/></button>
+              <button onClick={() => setShowAdd(false)} className="p-1.5 rounded-lg hover:bg-white/8 text-slate-500 hover:text-white transition-all"><X size={17} /></button>
             </div>
 
             <div className="space-y-4">
@@ -373,7 +373,7 @@ const FeedbackManager = ({ conf }) => {
                 )}
                 {newType === 'rating' && (
                   <div className="flex gap-1">
-                    {[1,2,3,4,5].map(s => <Star key={s} size={20} className="text-amber-500/40" />)}
+                    {[1, 2, 3, 4, 5].map(s => <Star key={s} size={20} className="text-amber-500/40" />)}
                   </div>
                 )}
                 {newType === 'descriptive' && (

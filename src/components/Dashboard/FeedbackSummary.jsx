@@ -4,20 +4,20 @@ import { supabase } from '../../Supabase/supabaseclient';
 
 /* ── Sentiment word lists ─────────────────────────────────────── */
 const POSITIVE_WORDS = new Set([
-  'great','good','excellent','amazing','wonderful','fantastic','love','loved','best',
-  'awesome','perfect','outstanding','brilliant','superb','impressive','helpful',
-  'happy','enjoy','enjoyed','clear','nice','well','beautiful','pleased','positive',
-  'recommend','valuable','informative','insightful','inspiring','organized','smooth',
-  'friendly','supportive','useful','efficient','effective','innovative','exciting',
-  'remarkable','satisfied','delighted','fabulous','incredible','thank','thanks'
+  'great', 'good', 'excellent', 'amazing', 'wonderful', 'fantastic', 'love', 'loved', 'best',
+  'awesome', 'perfect', 'outstanding', 'brilliant', 'superb', 'impressive', 'helpful',
+  'happy', 'enjoy', 'enjoyed', 'clear', 'nice', 'well', 'beautiful', 'pleased', 'positive',
+  'recommend', 'valuable', 'informative', 'insightful', 'inspiring', 'organized', 'smooth',
+  'friendly', 'supportive', 'useful', 'efficient', 'effective', 'innovative', 'exciting',
+  'remarkable', 'satisfied', 'delighted', 'fabulous', 'incredible', 'thank', 'thanks'
 ]);
 const NEGATIVE_WORDS = new Set([
-  'bad','poor','terrible','horrible','awful','worst','hate','boring','confusing',
-  'unclear','slow','disappointing','disappointed','waste','useless','difficult',
-  'frustrating','annoying','complicated','problem','issue','lacking','weak','fail',
-  'failed','missing','inadequate','mediocre','unorganized','chaotic','rude',
-  'unhelpful','unpleasant','negative','overcrowded','noisy','late','delayed',
-  'unsatisfied','worse','unprofessional','disorganized','unfriendly'
+  'bad', 'poor', 'terrible', 'horrible', 'awful', 'worst', 'hate', 'boring', 'confusing',
+  'unclear', 'slow', 'disappointing', 'disappointed', 'waste', 'useless', 'difficult',
+  'frustrating', 'annoying', 'complicated', 'problem', 'issue', 'lacking', 'weak', 'fail',
+  'failed', 'missing', 'inadequate', 'mediocre', 'unorganized', 'chaotic', 'rude',
+  'unhelpful', 'unpleasant', 'negative', 'overcrowded', 'noisy', 'late', 'delayed',
+  'unsatisfied', 'worse', 'unprofessional', 'disorganized', 'unfriendly'
 ]);
 
 const analyzeSentiment = (text) => {
@@ -46,7 +46,7 @@ const DonutChart = ({ yes, no, yesLabel = 'Yes', noLabel = 'No', yesColor = '#10
   const toRad = d => (d - 90) * (Math.PI / 180);
   const arc = (start, end) => {
     const s = { x: cx + r * Math.cos(toRad(start)), y: cy + r * Math.sin(toRad(start)) };
-    const e = { x: cx + r * Math.cos(toRad(end)),   y: cy + r * Math.sin(toRad(end)) };
+    const e = { x: cx + r * Math.cos(toRad(end)), y: cy + r * Math.sin(toRad(end)) };
     const large = end - start > 180 ? 1 : 0;
     return `M ${cx} ${cy} L ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y} Z`;
   };
@@ -65,13 +65,13 @@ const DonutChart = ({ yes, no, yesLabel = 'Yes', noLabel = 'No', yesColor = '#10
       </svg>
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full" style={{backgroundColor: yesColor}} />
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: yesColor }} />
           <span className="text-sm text-slate-300 font-medium">{yesLabel}</span>
           <span className="text-sm font-bold text-white ml-auto">{yesPct}%</span>
           <span className="text-xs text-slate-600">({yes})</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full" style={{backgroundColor: noColor}} />
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: noColor }} />
           <span className="text-sm text-slate-300 font-medium">{noLabel}</span>
           <span className="text-sm font-bold text-white ml-auto">{noPct}%</span>
           <span className="text-xs text-slate-600">({no})</span>
@@ -91,7 +91,7 @@ const RatingBarChart = ({ distribution, total, average }) => {
       {/* Average display */}
       <div className="flex items-center gap-3 mb-2">
         <div className="flex gap-0.5">
-          {[1,2,3,4,5].map(s => (
+          {[1, 2, 3, 4, 5].map(s => (
             <Star key={s} size={18} className={s <= Math.round(average) ? 'text-amber-400 fill-amber-400' : 'text-slate-700'} />
           ))}
         </div>
@@ -101,7 +101,7 @@ const RatingBarChart = ({ distribution, total, average }) => {
 
       {/* Bars */}
       <div className="space-y-2">
-        {[5,4,3,2,1].map(star => {
+        {[5, 4, 3, 2, 1].map(star => {
           const count = distribution[star] || 0;
           const pct = total > 0 ? (count / total) * 100 : 0;
           return (
@@ -159,9 +159,9 @@ const SentimentBar = ({ positive, negative, neutral, total }) => {
 
       {/* Combined bar */}
       <div className="h-4 bg-white/4 rounded-full overflow-hidden flex">
-        <div className="h-full bg-emerald-500 transition-all duration-700" style={{width: `${posPct}%`}} />
-        <div className="h-full bg-slate-500 transition-all duration-700" style={{width: `${neuPct}%`}} />
-        <div className="h-full bg-red-500 transition-all duration-700" style={{width: `${negPct}%`}} />
+        <div className="h-full bg-emerald-500 transition-all duration-700" style={{ width: `${posPct}%` }} />
+        <div className="h-full bg-slate-500 transition-all duration-700" style={{ width: `${neuPct}%` }} />
+        <div className="h-full bg-red-500 transition-all duration-700" style={{ width: `${negPct}%` }} />
       </div>
       <div className="text-xs text-slate-600 text-center">{total} total response{total !== 1 ? 's' : ''}</div>
     </div>
@@ -258,7 +258,7 @@ const FeedbackSummary = ({ form, questions, confId, onClose }) => {
           <div>
             <h3 className="text-lg font-bold text-white">Feedback Summary</h3>
             <div className="flex items-center gap-3 mt-0.5">
-              <span className="text-xs text-slate-500 flex items-center gap-1"><Users size={11}/>{uniqueUsers.size} respondent{uniqueUsers.size !== 1 ? 's' : ''}</span>
+              <span className="text-xs text-slate-500 flex items-center gap-1"><Users size={11} />{uniqueUsers.size} respondent{uniqueUsers.size !== 1 ? 's' : ''}</span>
               <span className="text-xs text-slate-600">·</span>
               <span className="text-xs text-slate-500">{responses.length} total answers</span>
               <span className="relative flex h-2 w-2 ml-1">
@@ -268,7 +268,7 @@ const FeedbackSummary = ({ form, questions, confId, onClose }) => {
               <span className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Live</span>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/8 text-slate-500 hover:text-white transition-all"><X size={17}/></button>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/8 text-slate-500 hover:text-white transition-all"><X size={17} /></button>
         </div>
 
         {/* Content */}
