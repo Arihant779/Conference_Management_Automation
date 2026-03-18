@@ -7,41 +7,42 @@ import {
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
 import EmailComposer from './EmailComposer';
+import PaperAllocation from './PaperAllocation';
 /* ─── helpers ─────────────────────────────────────────────── */
 const cls = (...c) => c.filter(Boolean).join(' ');
 
 const ROLE_STYLE = {
   organizer: 'bg-violet-500/10 text-violet-300 border-violet-500/25',
-  reviewer:  'bg-amber-500/10  text-amber-300  border-amber-500/25',
+  reviewer: 'bg-amber-500/10  text-amber-300  border-amber-500/25',
   presenter: 'bg-blue-500/10   text-blue-300   border-blue-500/25',
-  member:    'bg-slate-500/10  text-slate-300  border-slate-500/25',
+  member: 'bg-slate-500/10  text-slate-300  border-slate-500/25',
 };
 const PRIORITY_STYLE = {
-  high:   'bg-red-500/10 text-red-400 border-red-500/20',
+  high: 'bg-red-500/10 text-red-400 border-red-500/20',
   medium: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  low:    'bg-slate-500/10 text-slate-400 border-slate-500/20',
+  low: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
 };
 const TEAM_COLORS = [
-  '#6366f1','#8b5cf6','#ec4899','#f59e0b',
-  '#10b981','#3b82f6','#ef4444','#06b6d4',
+  '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b',
+  '#10b981', '#3b82f6', '#ef4444', '#06b6d4',
 ];
 
 /* volunteer role id → display label (matches ROLES array from UserDashboard) */
 const VOLUNTEER_ROLE_LABELS = {
-  logistics_head:    'Logistics Team',
-  outreach_head:     'Outreach Team',
-  technical_head:    'Technical Team',
+  logistics_head: 'Logistics Team',
+  outreach_head: 'Outreach Team',
+  technical_head: 'Technical Team',
   registration_head: 'Registration Team',
-  sponsorship_head:  'Sponsorship Team',
-  hospitality_head:  'Hospitality Team',
-  publication_head:  'Publications Team',
-  finance_head:      'Finance Team',
-  program_coord:     'Program Coordinator',
-  social_coord:      'Social Media Coord.',
-  volunteer_coord:   'Volunteer Coordinator',
-  design_lead:       'Design Lead',
-  web_lead:          'Website Lead',
-  security_coord:    'Security Coordinator',
+  sponsorship_head: 'Sponsorship Team',
+  hospitality_head: 'Hospitality Team',
+  publication_head: 'Publications Team',
+  finance_head: 'Finance Team',
+  program_coord: 'Program Coordinator',
+  social_coord: 'Social Media Coord.',
+  volunteer_coord: 'Volunteer Coordinator',
+  design_lead: 'Design Lead',
+  web_lead: 'Website Lead',
+  security_coord: 'Security Coordinator',
 };
 
 /* Ordered list of preset team types — same 14 roles volunteers pick from */
@@ -106,9 +107,9 @@ const Textarea = ({ className, ...props }) => (
 const Btn = ({ variant = 'primary', children, className, ...props }) => {
   const base = 'px-4 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 justify-center disabled:opacity-40 disabled:cursor-not-allowed';
   const v = {
-    primary:   'bg-indigo-600 hover:bg-indigo-500 text-white',
+    primary: 'bg-indigo-600 hover:bg-indigo-500 text-white',
     secondary: 'border border-white/10 text-slate-400 hover:text-white hover:bg-white/5',
-    danger:    'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20',
+    danger: 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20',
   };
   return <button {...props} className={cls(base, v[variant], className)}>{children}</button>;
 };
@@ -286,11 +287,11 @@ const VolunteerCandidatePanel = ({
       ) : (
         <div className="max-h-64 overflow-y-auto space-y-1.5 pr-0.5">
           {candidates.map(c => {
-            const isVolTab     = filterMode === 'volunteers';
+            const isVolTab = filterMode === 'volunteers';
             const isAlreadyMember = memberUserIds.has(c.user_id ?? c.user_id);
-            const domains      = (c.volunteer_domains || []).slice(0, 2);
-            const isAdding     = adding === (c.user_id);
-            const key          = c.user_id || c.id;
+            const domains = (c.volunteer_domains || []).slice(0, 2);
+            const isAdding = adding === (c.user_id);
+            const key = c.user_id || c.id;
 
             return (
               <div
@@ -368,46 +369,46 @@ const OrganizerDashboard = ({ conf, onBack }) => {
   useApp(); // context kept for potential future use
   const confId = conf.conference_id || conf.id;
 
-  const [section, setSection]           = useState('overview');
-  const [members, setMembers]           = useState([]);
-  const [loadingMembers, setLM]         = useState(true);
-  const [teams, setTeams]               = useState([]);
-  const [loadingTeams, setLT]           = useState(true);
-  const [tasks, setTasks]               = useState([]);
-  const [loadingTasks, setLTasks]       = useState(true);
-  const [notifs, setNotifs]             = useState([]);
-  const [modal, setModal]               = useState(null);
-  const [modalData, setModalData]       = useState(null);
-  const [saving, setSaving]             = useState(false);
+  const [section, setSection] = useState('overview');
+  const [members, setMembers] = useState([]);
+  const [loadingMembers, setLM] = useState(true);
+  const [teams, setTeams] = useState([]);
+  const [loadingTeams, setLT] = useState(true);
+  const [tasks, setTasks] = useState([]);
+  const [loadingTasks, setLTasks] = useState(true);
+  const [notifs, setNotifs] = useState([]);
+  const [modal, setModal] = useState(null);
+  const [modalData, setModalData] = useState(null);
+  const [saving, setSaving] = useState(false);
   const [memberSearch, setMemberSearch] = useState('');
   const [expandedTeam, setExpandedTeam] = useState(null);
-  const [paperFilter, setPaperFilter]   = useState('all');
+  const [paperFilter, setPaperFilter] = useState('all');
 
   /* All platform users who have set volunteer preferences */
   const [allVolunteers, setAllVolunteers] = useState([]);
 
   /* forms */
-  const [mForm, setMForm]   = useState({ email: '', role: 'reviewer' });
+  const [mForm, setMForm] = useState({ email: '', role: 'reviewer' });
   // type: volunteer role id | 'custom'
   const [tmForm, setTmForm] = useState({ name: '', type: '', description: '', color: '#6366f1', head_id: '' });
   const [tkForm, setTkForm] = useState({ title: '', description: '', team_id: '', assignee_id: '', priority: 'medium', due_date: '' });
-  const [nForm, setNForm]   = useState({ title: '', message: '', target_role: 'all', target_team_id: '' });
+  const [nForm, setNForm] = useState({ title: '', message: '', target_role: 'all', target_team_id: '' });
 
   /* speakers */
-  const [spTopic, setSpTopic]     = useState('');
-  const [spLimit, setSpLimit]     = useState(10);
-  const [spSource, setSpSource]   = useState(5);
+  const [spTopic, setSpTopic] = useState('');
+  const [spLimit, setSpLimit] = useState(10);
+  const [spSource, setSpSource] = useState(5);
   const [spLoading, setSpLoading] = useState(false);
   const [spResults, setSpResults] = useState([]);
-  const [spError, setSpError]     = useState('');
+  const [spError, setSpError] = useState('');
 
   /* ── local papers state (fetched directly — not from AppContext) ── */
-  const [confPapers, setConfPapers]   = useState([]);
-  const [loadingPapers, setLP]        = useState(true);
+  const [confPapers, setConfPapers] = useState([]);
+  const [loadingPapers, setLP] = useState(true);
 
   const pendingCount = confPapers.filter(p => p.status === 'pending').length;
-  const accepted     = confPapers.filter(p => p.status === 'accepted').length;
-  const rejected     = confPapers.filter(p => p.status === 'rejected').length;
+  const accepted = confPapers.filter(p => p.status === 'accepted').length;
+  const rejected = confPapers.filter(p => p.status === 'rejected').length;
 
   /* ── fetch ──────────────────────────────────────────────────────────── */
   const fetchMembers = useCallback(async () => {
@@ -422,8 +423,8 @@ const OrganizerDashboard = ({ conf, onBack }) => {
 
     const enriched = (data || []).map(m => ({
       ...m,
-      email:     m.email     || m.users?.user_email || '',
-      full_name: m.full_name || m.users?.user_name  || '',
+      email: m.email || m.users?.user_email || '',
+      full_name: m.full_name || m.users?.user_name || '',
     }));
     setMembers(enriched);
     setLM(false);
@@ -463,14 +464,54 @@ const OrganizerDashboard = ({ conf, onBack }) => {
         status,
         file_url,
         author_id,
-        users ( user_name, user_email )
+        users ( user_name, user_email ),
+        paper_assignments ( status )
       `)
       .eq('conference_id', confId)
       .order('paper_id', { ascending: false });
 
     if (error) console.error('fetchPapers error:', error);
-    setConfPapers(data || []);
+    
+    // Client-side deduplication (prioritize the one with assignments)
+    const paperMap = {};
+    (data || []).forEach(p => {
+      const title = p.paper_title || 'Untitled';
+      const hasAssign = p.paper_assignments?.length > 0;
+      if (!paperMap[title] || (hasAssign && !paperMap[title].paper_assignments?.length)) {
+        paperMap[title] = p;
+      }
+    });
+
+    const deduped = Object.values(paperMap);
+    setConfPapers(deduped);
     setLP(false);
+
+    // Auto-sync consensus status to DB and local state
+    const syncConsensus = async () => {
+      let stateChanged = false;
+      const updatedList = deduped.map(p => {
+        if (p.paper_assignments?.length > 0) {
+          const reviewed = p.paper_assignments.filter(a => a.status === 'accepted' || a.status === 'rejected');
+          if (reviewed.length > 0) {
+            const acc = reviewed.filter(a => a.status === 'accepted').length;
+            const percentage = (acc / reviewed.length) * 100;
+            const consensus = percentage > 66 ? 'accepted' : 'rejected';
+            
+            if (p.status !== consensus) {
+              console.log(`Syncing consensus for "${p.paper_title}": ${p.status} -> ${consensus}`);
+              supabase.from('paper').update({ status: consensus }).eq('paper_id', p.paper_id).then();
+              stateChanged = true;
+              return { ...p, status: consensus };
+            }
+          }
+        }
+        return p;
+      });
+
+      if (stateChanged) setConfPapers(updatedList);
+    };
+
+    syncConsensus();
   }, [confId]);
 
   const updatePaperStatus = async (paperId, newStatus) => {
@@ -571,11 +612,11 @@ const OrganizerDashboard = ({ conf, onBack }) => {
       .from('conference_user')
       .insert([{
         conference_id: confId,
-        user_id:       foundUser.user_id,
-        email:         foundUser.user_email,
-        full_name:     foundUser.user_name,
-        role:          mForm.role,
-        joined_at:     new Date().toISOString(),
+        user_id: foundUser.user_id,
+        email: foundUser.user_email,
+        full_name: foundUser.user_name,
+        role: mForm.role,
+        joined_at: new Date().toISOString(),
       }]);
 
     setSaving(false);
@@ -607,11 +648,11 @@ const OrganizerDashboard = ({ conf, onBack }) => {
     setSaving(true);
     const { error } = await supabase.from('conference_teams').insert([{
       conference_id: confId,
-      name:          tmForm.name.trim(),
-      description:   tmForm.description.trim(),
-      color:         tmForm.color,
-      head_id:       tmForm.head_id || null,
-      created_at:    new Date().toISOString(),
+      name: tmForm.name.trim(),
+      description: tmForm.description.trim(),
+      color: tmForm.color,
+      head_id: tmForm.head_id || null,
+      created_at: new Date().toISOString(),
     }]);
     setSaving(false);
     if (!error) {
@@ -625,10 +666,10 @@ const OrganizerDashboard = ({ conf, onBack }) => {
     if (!tmForm.name.trim()) return;
     setSaving(true);
     await supabase.from('conference_teams').update({
-      name:        tmForm.name.trim(),
+      name: tmForm.name.trim(),
       description: tmForm.description.trim(),
-      color:       tmForm.color,
-      head_id:     tmForm.head_id || null,
+      color: tmForm.color,
+      head_id: tmForm.head_id || null,
     }).eq('id', modalData.id);
     setSaving(false);
     setModal(null);
@@ -658,11 +699,11 @@ const OrganizerDashboard = ({ conf, onBack }) => {
       .from('conference_user')
       .insert([{
         conference_id: confId,
-        user_id:       volunteer.user_id,
-        email:         volunteer.user_email || '',
-        full_name:     volunteer.user_name  || '',
-        role:          'member',
-        joined_at:     new Date().toISOString(),
+        user_id: volunteer.user_id,
+        email: volunteer.user_email || '',
+        full_name: volunteer.user_name || '',
+        role: 'member',
+        joined_at: new Date().toISOString(),
       }])
       .select('id')
       .single();
@@ -676,10 +717,10 @@ const OrganizerDashboard = ({ conf, onBack }) => {
     const m = members.find(m => m.id === confUserId);
     if (!m) return;
     await supabase.from('team_members').insert([{
-      team_id:             teamId,
-      conference_id:       confId,
-      conference_user_id:  confUserId,
-      user_id:             m.user_id,
+      team_id: teamId,
+      conference_id: confId,
+      conference_user_id: confUserId,
+      user_id: m.user_id,
     }]);
     fetchTeams();
   };
@@ -695,14 +736,14 @@ const OrganizerDashboard = ({ conf, onBack }) => {
     setSaving(true);
     const { error } = await supabase.from('conference_tasks').insert([{
       conference_id: confId,
-      title:         tkForm.title.trim(),
-      description:   tkForm.description || null,
-      team_id:       tkForm.team_id     || null,
-      assignee_id:   tkForm.assignee_id || null,
-      priority:      tkForm.priority,
-      due_date:      tkForm.due_date    || null,
-      status:        'pending',
-      created_at:    new Date().toISOString(),
+      title: tkForm.title.trim(),
+      description: tkForm.description || null,
+      team_id: tkForm.team_id || null,
+      assignee_id: tkForm.assignee_id || null,
+      priority: tkForm.priority,
+      due_date: tkForm.due_date || null,
+      status: 'pending',
+      created_at: new Date().toISOString(),
     }]);
     setSaving(false);
     if (!error) {
@@ -716,12 +757,12 @@ const OrganizerDashboard = ({ conf, onBack }) => {
     if (!tkForm.title.trim()) return;
     setSaving(true);
     await supabase.from('conference_tasks').update({
-      title:       tkForm.title.trim(),
+      title: tkForm.title.trim(),
       description: tkForm.description || null,
-      team_id:     tkForm.team_id     || null,
+      team_id: tkForm.team_id || null,
       assignee_id: tkForm.assignee_id || null,
-      priority:    tkForm.priority,
-      due_date:    tkForm.due_date    || null,
+      priority: tkForm.priority,
+      due_date: tkForm.due_date || null,
     }).eq('id', modalData.id);
     setSaving(false);
     setModal(null);
@@ -744,12 +785,12 @@ const OrganizerDashboard = ({ conf, onBack }) => {
     if (!nForm.title.trim() || !nForm.message.trim()) return;
     setSaving(true);
     const payload = {
-      conference_id:  confId,
-      title:          nForm.title.trim(),
-      message:        nForm.message.trim(),
-      target_role:    nForm.target_role === 'all' ? null : nForm.target_role,
+      conference_id: confId,
+      title: nForm.title.trim(),
+      message: nForm.message.trim(),
+      target_role: nForm.target_role === 'all' ? null : nForm.target_role,
       target_team_id: nForm.target_team_id || null,
-      created_at:     new Date().toISOString(),
+      created_at: new Date().toISOString(),
     };
     const { error } = await supabase.from('notifications').insert([payload]);
     setSaving(false);
@@ -780,8 +821,8 @@ const OrganizerDashboard = ({ conf, onBack }) => {
   };
 
   /* ── ui helpers ──────────────────────────────────────────────────────── */
-  const mName      = (m) => m?.full_name || m?.email || m?.user_id?.substring(0, 8) || '?';
-  const teamName   = (id) => teams.find(t => t.id === id)?.name || '—';
+  const mName = (m) => m?.full_name || m?.email || m?.user_id?.substring(0, 8) || '?';
+  const teamName = (id) => teams.find(t => t.id === id)?.name || '—';
   const assigneeName = (id) => {
     const m = members.find(m => m.id === id || m.user_id === id);
     return m ? mName(m) : '—';
@@ -802,30 +843,35 @@ const OrganizerDashboard = ({ conf, onBack }) => {
   const openEditTask = (t) => {
     setModalData(t);
     setTkForm({
-      title:       t.title,
-      description: t.description  || '',
-      team_id:     t.team_id      || '',
-      assignee_id: t.assignee_id  || '',
-      priority:    t.priority     || 'medium',
-      due_date:    t.due_date     || '',
+      title: t.title,
+      description: t.description || '',
+      team_id: t.team_id || '',
+      assignee_id: t.assignee_id || '',
+      priority: t.priority || 'medium',
+      due_date: t.due_date || '',
     });
     setModal('editTask');
   };
 
-const nav = [
-  { id:'overview',      label:'Overview',      icon:BarChart2,   badge: null },
-  { id:'papers',        label:'Papers',        icon:FileText,    badge: pendingCount || null },
-  { id:'members',       label:'Members',       icon:Users,       badge: null },
-  { id:'teams',         label:'Teams',         icon:Layers,      badge: null },
-  { id:'tasks',         label:'Tasks',         icon:CheckSquare, badge: tasks.filter(t=>t.status!=='done').length || null },
-  { id:'notifications', label:'Notifications', icon:Bell,        badge: null },
-  { id:'emails',        label:'Emails',        icon:Send,        badge: null }, // ← ADD
-  { id:'speakers',      label:'Find Speakers', icon:Users,       badge: null },
-];
+  const nav = [
+    { id: 'overview', label: 'Overview', icon: BarChart2, badge: null },
+    { id: 'papers', label: 'Papers', icon: FileText, badge: pendingCount || null },
+    { id: 'members', label: 'Members', icon: Users, badge: null },
+    { id: 'teams', label: 'Teams', icon: Layers, badge: null },
+    { id: 'tasks', label: 'Tasks', icon: CheckSquare, badge: tasks.filter(t => t.status !== 'done').length || null },
+    { id: 'notifications', label: 'Notifications', icon: Bell, badge: null },
+    { id: 'emails', label: 'Emails', icon: Send, badge: null },
+    { id: 'speakers', label: 'Find Speakers', icon: Users, badge: null },
+    { id: 'allocation', label: 'Paper Allocation', icon: FileText, badge: null },
+  ];
 
   /* ══════════════════════════════════════════════════════════════════════
      RENDER
   ══════════════════════════════════════════════════════════════════════ */
+  /* ── Derived Volunteer Data (Mocked or extracted if available) ── */
+  const volunteerMap = {}; // Fallback empty map for now to prevent crashes
+  const volunteersCount = 0;
+
   return (
     <div className="min-h-screen bg-[#080b11] text-slate-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -888,9 +934,9 @@ const nav = [
               </div>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  { label: 'Members',    value: members.length,                             color: 'text-indigo-400', bg: 'bg-indigo-500/8' },
-                  { label: 'Teams',      value: teams.length,                               color: 'text-purple-400', bg: 'bg-purple-500/8' },
-                  { label: 'Papers',     value: confPapers.length,                          color: 'text-blue-400',   bg: 'bg-blue-500/8'   },
+                  { label: 'Members', value: members.length, color: 'text-indigo-400', bg: 'bg-indigo-500/8' },
+                  { label: 'Teams', value: teams.length, color: 'text-purple-400', bg: 'bg-purple-500/8' },
+                  { label: 'Papers', value: confPapers.length, color: 'text-blue-400', bg: 'bg-blue-500/8' },
                   { label: 'Open Tasks', value: tasks.filter(t => t.status !== 'done').length, color: 'text-amber-400', bg: 'bg-amber-500/8' },
                 ].map(({ label, value, color, bg }) => (
                   <div key={label} className={cls('rounded-xl p-5 border border-white/6', bg)}>
@@ -934,8 +980,8 @@ const nav = [
                   </div>
                   <div className="h-2.5 bg-white/5 rounded-full overflow-hidden flex">
                     <div className="bg-emerald-500 h-full" style={{ width: `${(accepted / confPapers.length) * 100}%` }} />
-                    <div className="bg-red-500 h-full"     style={{ width: `${(rejected / confPapers.length) * 100}%` }} />
-                    <div className="bg-amber-500 h-full"   style={{ width: `${(pendingCount / confPapers.length) * 100}%` }} />
+                    <div className="bg-red-500 h-full" style={{ width: `${(rejected / confPapers.length) * 100}%` }} />
+                    <div className="bg-amber-500 h-full" style={{ width: `${(pendingCount / confPapers.length) * 100}%` }} />
                   </div>
                   <div className="flex gap-5 mt-3 text-xs text-slate-500">
                     {[['bg-emerald-500', 'Accepted', accepted], ['bg-red-500', 'Rejected', rejected], ['bg-amber-500', 'Pending', pendingCount]].map(([c, l, v]) => (
@@ -1003,8 +1049,8 @@ const nav = [
                 {/* Filter tabs */}
                 <div className="flex gap-1 bg-white/4 p-1 rounded-xl w-fit border border-white/6">
                   {[
-                    ['all',      `All (${confPapers.length})`],
-                    ['pending',  `Pending (${pendingCount})`],
+                    ['all', `All (${confPapers.length})`],
+                    ['pending', `Pending (${pendingCount})`],
                     ['accepted', `Accepted (${accepted})`],
                     ['rejected', `Rejected (${rejected})`],
                   ].map(([k, l]) => (
@@ -1063,6 +1109,30 @@ const nav = [
                                   {paper.abstract}
                                 </p>
                               )}
+                              {paper.paper_assignments?.length > 0 && (
+                                <div className="flex gap-2 mt-2">
+                                  {(() => {
+                                    const acc = paper.paper_assignments.filter(a => a.status === 'accepted').length;
+                                    const rej = paper.paper_assignments.filter(a => a.status === 'rejected').length;
+                                    const pen = paper.paper_assignments.filter(a => a.status === 'pending').length;
+                                    return (
+                                      <>
+                                        <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                          <CheckCircle size={10} /> {acc} Accept
+                                        </span>
+                                        <span className="text-[10px] font-bold text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                          <XCircle size={10} /> {rej} Reject
+                                        </span>
+                                        {pen > 0 && (
+                                          <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                            <Clock size={10} /> {pen} Pending
+                                          </span>
+                                        )}
+                                      </>
+                                    );
+                                  })()}
+                                </div>
+                              )}
                             </div>
                           </div>
 
@@ -1071,10 +1141,10 @@ const nav = [
                             <span className={cls(
                               'px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider border',
                               paper.status === 'accepted' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                              paper.status === 'rejected' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                              'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                                paper.status === 'rejected' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                                  'bg-amber-500/10 text-amber-400 border-amber-500/20'
                             )}>
-                              {paper.status === 'pending' ? 'Under Review' : paper.status}
+                              {paper.status === 'accepted' || paper.status === 'rejected' ? paper.status : 'Pending'}
                             </span>
 
                             <div className="flex items-center gap-1.5">
@@ -1145,8 +1215,8 @@ const nav = [
                 : (
                   <div className="space-y-2">
                     {filteredMembers.map(m => {
-                      const prefs   = volunteerMap[m.user_id];
-                      const hasVol  = prefs?.volunteer_roles?.length > 0;
+                      const prefs = volunteerMap[m.user_id];
+                      const hasVol = prefs?.volunteer_roles?.length > 0;
                       return (
                         <div key={m.id} className="bg-[#0d1117] border border-white/6 rounded-xl px-5 py-3.5 flex items-center gap-4 hover:border-white/10 transition-all">
                           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
@@ -1216,12 +1286,12 @@ const nav = [
                 : (
                   <div className="space-y-3">
                     {teams.map(team => {
-                      const isOpen     = expandedTeam === team.id;
+                      const isOpen = expandedTeam === team.id;
                       const teamMembers = team.memberList
                         .map(tm => members.find(m => m.id === tm.conference_user_id || m.user_id === tm.user_id))
                         .filter(Boolean);
-                      const nonMembers  = members.filter(m => !team.memberList.some(tm => tm.conference_user_id === m.id));
-                      const teamTasks   = tasks.filter(t => t.team_id === team.id);
+                      const nonMembers = members.filter(m => !team.memberList.some(tm => tm.conference_user_id === m.id));
+                      const teamTasks = tasks.filter(t => t.team_id === team.id);
 
                       return (
                         <div key={team.id} className="bg-[#0d1117] border border-white/6 rounded-xl overflow-hidden">
@@ -1380,9 +1450,9 @@ const nav = [
                         <div className="flex-1 min-w-0">
                           <div className={cls('text-sm font-medium', task.status === 'done' ? 'line-through text-slate-600' : 'text-slate-200')}>{task.title}</div>
                           <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                            {task.team_id     && <span className="text-[10px] text-slate-600 flex items-center gap-1"><Layers size={9} />{teamName(task.team_id)}</span>}
+                            {task.team_id && <span className="text-[10px] text-slate-600 flex items-center gap-1"><Layers size={9} />{teamName(task.team_id)}</span>}
                             {task.assignee_id && <span className="text-[10px] text-slate-600 flex items-center gap-1"><Users size={9} />{assigneeName(task.assignee_id)}</span>}
-                            {task.due_date    && <span className="text-[10px] text-slate-600 flex items-center gap-1"><Clock size={9} />{new Date(task.due_date).toLocaleDateString()}</span>}
+                            {task.due_date && <span className="text-[10px] text-slate-600 flex items-center gap-1"><Clock size={9} />{new Date(task.due_date).toLocaleDateString()}</span>}
                           </div>
                         </div>
                         <span className={cls('text-[10px] font-bold px-2 py-0.5 rounded border uppercase', PRIORITY_STYLE[task.priority || 'medium'])}>{task.priority || 'med'}</span>
@@ -1417,7 +1487,7 @@ const nav = [
                         <div className="flex justify-between items-start mb-2">
                           <div className="font-semibold text-white text-sm">{n.title}</div>
                           <div className="flex items-center gap-2 shrink-0">
-                            {n.target_role    && <span className="text-[10px] text-slate-500 bg-white/5 border border-white/8 px-2 py-0.5 rounded-md uppercase font-bold">{n.target_role}</span>}
+                            {n.target_role && <span className="text-[10px] text-slate-500 bg-white/5 border border-white/8 px-2 py-0.5 rounded-md uppercase font-bold">{n.target_role}</span>}
                             {n.target_team_id && <span className="text-[10px] text-indigo-400 bg-indigo-500/8 border border-indigo-500/15 px-2 py-0.5 rounded-md font-bold">{teamName(n.target_team_id)}</span>}
                             <span className="text-xs text-slate-600">{new Date(n.created_at).toLocaleDateString()}</span>
                           </div>
@@ -1464,10 +1534,10 @@ const nav = [
                 <Field label="Speaker Source">
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                     {[
-                      { key: 1, label: '🇮🇳 Indian'    },
-                      { key: 2, label: '🌍 Foreign'    },
-                      { key: 3, label: '💼 LinkedIn'   },
-                      { key: 4, label: '🎓 IIT / NIT'  },
+                      { key: 1, label: '🇮🇳 Indian' },
+                      { key: 2, label: '🌍 Foreign' },
+                      { key: 3, label: '💼 LinkedIn' },
+                      { key: 4, label: '🎓 IIT / NIT' },
                       { key: 5, label: '⭐ All Sources' },
                     ].map(({ key, label }) => (
                       <button
@@ -1664,7 +1734,7 @@ const nav = [
                   teamMembers={[]}
                   teamTypeId={tmForm.type !== 'custom' ? tmForm.type : null}
                   confId={confId}
-                  onAdd={() => {}}
+                  onAdd={() => { }}
                   onAddVolunteer={() => Promise.resolve(null)}
                 />
                 <p className="text-[10px] text-slate-600 mt-2">
