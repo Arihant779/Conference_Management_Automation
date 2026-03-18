@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, Calendar, CheckCircle, Award, Upload, Clock, ChevronRight, AlertCircle, X } from 'lucide-react';
+import { FileText, Calendar, CheckCircle, Award, Upload, Clock, ChevronRight, AlertCircle, X ,Plus} from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 const PresenterDashboard = ({ conf, onBack }) => {

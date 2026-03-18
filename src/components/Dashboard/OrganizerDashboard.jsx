@@ -2,11 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   BarChart2, FileText, Users, CheckSquare, Bell, Plus, X, Send,
   ChevronDown, CheckCircle, XCircle, MapPin, Edit2, Trash2,
-  Search, Layers, Clock, Sparkles, Star, Check,
+  Search, Layers, Clock, Sparkles, Star, Check,Settings
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
 import EmailComposer from './EmailComposer';
+import EmailSettings from './EmailSettings';
+
 
 /* ─── helpers ──────────────────────────────────────────────────────────────── */
 const cls = (...c) => c.filter(Boolean).join(' ');
@@ -828,6 +830,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
     { id: 'tasks',         label: 'Tasks',          icon: CheckSquare, badge: tasks.filter(t => t.status !== 'done').length || null },
     { id: 'notifications', label: 'Notifications',  icon: Bell,        badge: null },
     { id: 'emails',        label: 'Emails',         icon: Send,        badge: null },
+    { id: 'emailSettings', label: 'Email Settings',  icon: Settings,    badge: null }, 
     { id: 'speakers',      label: 'Find Speakers',  icon: Users,       badge: null },
   ];
 
@@ -1439,7 +1442,16 @@ const OrganizerDashboard = ({ conf, onBack }) => {
             </div>
           )}
 
-          {section === 'emails' && <EmailComposer conf={conf} senderRole="organizer" />}
+          {section === 'emails' && (
+            <EmailComposer
+              conf={conf}
+              senderRole="organizer"
+              onOpenEmailSettings={() => setSection('emailSettings')}
+            />
+          )}
+          {section === 'emailSettings' && (
+            <EmailSettings conf={conf} />
+          )}
 
           {/* ═══ SPEAKERS ═══ */}
           {section === 'speakers' && (
