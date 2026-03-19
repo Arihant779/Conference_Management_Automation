@@ -2,12 +2,16 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   BarChart2, FileText, Users, CheckSquare, Bell, Plus, X, Send,
   ChevronDown, CheckCircle, XCircle, MapPin, Edit2, Trash2,
-  Search, Layers, Clock, Sparkles, Star, Check,
+  Search, Layers, Clock, Sparkles, Star, Check, Settings
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
 import EmailComposer from './EmailComposer';
 import PaperAllocation from './PaperAllocation';
+/* ─── helpers ─────────────────────────────────────────────── */
+import EmailSettings from './EmailSettings';
+
+import FeedbackManager from './FeedbackManager';
 /* ─── helpers ─────────────────────────────────────────────── */
 const cls = (...c) => c.filter(Boolean).join(' ');
 
@@ -471,7 +475,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
       .order('paper_id', { ascending: false });
 
     if (error) console.error('fetchPapers error:', error);
-    
+
     // Client-side deduplication (prioritize the one with assignments)
     const paperMap = {};
     (data || []).forEach(p => {
@@ -494,7 +498,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
           const total = p.paper_assignments.length;
           const acc = p.paper_assignments.filter(a => a.status === 'accepted').length;
           const pen = p.paper_assignments.filter(a => a.status === 'pending').length;
-          
+
           let consensus = 'pending';
           if (total > 0) {
             const threshold = 0.66;
@@ -506,13 +510,13 @@ const OrganizerDashboard = ({ conf, onBack }) => {
               consensus = 'pending';
             }
           }
-          
+
           if (p.status !== consensus) {
             console.log(`Syncing consensus for "${p.paper_title}": ${p.status} -> ${consensus}`);
-            supabase.from('paper').upsert({ 
-              paper_id: p.paper_id, 
-              status: consensus, 
-              conference_id: confId 
+            supabase.from('paper').upsert({
+              paper_id: p.paper_id,
+              status: consensus,
+              conference_id: confId
             }, { onConflict: 'paper_id' }).then();
             stateChanged = true;
             return { ...p, status: consensus };
@@ -530,10 +534,10 @@ const OrganizerDashboard = ({ conf, onBack }) => {
   const updatePaperStatus = async (paperId, newStatus) => {
     const { error } = await supabase
       .from('paper')
-      .upsert({ 
-        paper_id: paperId, 
-        status: newStatus, 
-        conference_id: confId 
+      .upsert({
+        paper_id: paperId,
+        status: newStatus,
+        conference_id: confId
       }, { onConflict: 'paper_id' });
     if (error) { console.error('updatePaperStatus error:', error); return; }
     setConfPapers(prev =>
@@ -869,6 +873,14 @@ const OrganizerDashboard = ({ conf, onBack }) => {
     setModal('editTask');
   };
 
+  /* Count how many conference members have volunteer prefs set */
+  // Build a quick lookup from allVolunteers for use in members list badges
+  const volunteerMap = Object.fromEntries(
+    allVolunteers.map(u => [u.user_id, { volunteer_roles: u.volunteer_roles || [], volunteer_domains: u.volunteer_domains || [] }])
+  );
+  const volunteersCount = allVolunteers.length;
+
+
   const nav = [
     { id: 'overview', label: 'Overview', icon: BarChart2, badge: null },
     { id: 'papers', label: 'Papers', icon: FileText, badge: pendingCount || null },
@@ -879,14 +891,13 @@ const OrganizerDashboard = ({ conf, onBack }) => {
     { id: 'emails', label: 'Emails', icon: Send, badge: null },
     { id: 'speakers', label: 'Find Speakers', icon: Users, badge: null },
     { id: 'allocation', label: 'Paper Allocation', icon: FileText, badge: null },
+    { id: 'feedback', label: 'Feedback', icon: Star, badge: null },
+
   ];
 
   /* ══════════════════════════════════════════════════════════════════════
      RENDER
   ══════════════════════════════════════════════════════════════════════ */
-  /* ── Derived Volunteer Data (Mocked or extracted if available) ── */
-  const volunteerMap = {}; // Fallback empty map for now to prevent crashes
-  const volunteersCount = 0;
 
   return (
     <div className="min-h-screen bg-[#080b11] text-slate-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -1517,7 +1528,20 @@ const OrganizerDashboard = ({ conf, onBack }) => {
             </div>
           )}
 
-          {section === 'emails' && <EmailComposer conf={conf} senderRole="organizer" />}
+
+
+          {section === 'feedback' && <FeedbackManager conf={conf} />}
+
+          {section === 'emails' && (
+            <EmailComposer
+              conf={conf}
+              senderRole="organizer"
+              onOpenEmailSettings={() => setSection('emailSettings')}
+            />
+          )}
+          {section === 'emailSettings' && (
+            <EmailSettings conf={conf} />
+          )}
 
           {/* ═══ PAPER ALLOCATION ═══ */}
           {section === 'allocation' && <PaperAllocation conf={conf} />}

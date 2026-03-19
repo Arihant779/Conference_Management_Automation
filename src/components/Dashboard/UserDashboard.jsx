@@ -48,20 +48,20 @@ const DOMAINS = {
 };
 
 const ROLES = [
-  { id: 'logistics_head',    name: 'Logistics Team',        emoji: '🚚', color: '#f59e0b', desc: 'Venue, transport, accommodation & on-site ops' },
-  { id: 'outreach_head',     name: 'Outreach Team',         emoji: '📢', color: '#6366f1', desc: 'Marketing, social media & external communications' },
-  { id: 'technical_head',    name: 'Technical Team',        emoji: '⚙️', color: '#06b6d4', desc: 'AV equipment, live streams & technical support' },
-  { id: 'registration_head', name: 'Registration Team',     emoji: '📋', color: '#10b981', desc: 'Attendee registration, badges & check-ins' },
-  { id: 'sponsorship_head',  name: 'Sponsorship Team',      emoji: '🤝', color: '#8b5cf6', desc: 'Identify and coordinate with conference sponsors' },
-  { id: 'hospitality_head',  name: 'Hospitality Team',      emoji: '🏨', color: '#f43f5e', desc: 'Catering, guest relations & VIP arrangements' },
-  { id: 'publication_head',  name: 'Publications Team',     emoji: '📝', color: '#3b82f6', desc: 'Proceedings, journals & editorial coordination' },
-  { id: 'finance_head',      name: 'Finance Team',          emoji: '💰', color: '#eab308', desc: 'Budget tracking, reimbursements & expenses' },
-  { id: 'program_coord',     name: 'Program Coordinator',   emoji: '🗓️', color: '#ec4899', desc: 'Schedule sessions, speakers & workshops' },
-  { id: 'social_coord',      name: 'Social Media Coord.',   emoji: '📱', color: '#14b8a6', desc: 'Real-time updates on Twitter, LinkedIn & Instagram' },
-  { id: 'volunteer_coord',   name: 'Volunteer Coordinator', emoji: '👥', color: '#f97316', desc: 'Onboard, train & manage fellow volunteers' },
-  { id: 'design_lead',       name: 'Design Lead',           emoji: '🎨', color: '#a855f7', desc: 'Branding, banners, posters & visual assets' },
-  { id: 'web_lead',          name: 'Website Lead',          emoji: '🌐', color: '#0ea5e9', desc: 'Build & maintain the conference website & portal' },
-  { id: 'security_coord',    name: 'Security Coordinator',  emoji: '🔒', color: '#64748b', desc: 'Access control & on-site safety protocols' },
+  { id: 'logistics_head', name: 'Logistics Team', emoji: '🚚', color: '#f59e0b', desc: 'Venue, transport, accommodation & on-site ops' },
+  { id: 'outreach_head', name: 'Outreach Team', emoji: '📢', color: '#6366f1', desc: 'Marketing, social media & external communications' },
+  { id: 'technical_head', name: 'Technical Team', emoji: '⚙️', color: '#06b6d4', desc: 'AV equipment, live streams & technical support' },
+  { id: 'registration_head', name: 'Registration Team', emoji: '📋', color: '#10b981', desc: 'Attendee registration, badges & check-ins' },
+  { id: 'sponsorship_head', name: 'Sponsorship Team', emoji: '🤝', color: '#8b5cf6', desc: 'Identify and coordinate with conference sponsors' },
+  { id: 'hospitality_head', name: 'Hospitality Team', emoji: '🏨', color: '#f43f5e', desc: 'Catering, guest relations & VIP arrangements' },
+  { id: 'publication_head', name: 'Publications Team', emoji: '📝', color: '#3b82f6', desc: 'Proceedings, journals & editorial coordination' },
+  { id: 'finance_head', name: 'Finance Team', emoji: '💰', color: '#eab308', desc: 'Budget tracking, reimbursements & expenses' },
+  { id: 'program_coord', name: 'Program Coordinator', emoji: '🗓️', color: '#ec4899', desc: 'Schedule sessions, speakers & workshops' },
+  { id: 'social_coord', name: 'Social Media Coord.', emoji: '📱', color: '#14b8a6', desc: 'Real-time updates on Twitter, LinkedIn & Instagram' },
+  { id: 'volunteer_coord', name: 'Volunteer Coordinator', emoji: '👥', color: '#f97316', desc: 'Onboard, train & manage fellow volunteers' },
+  { id: 'design_lead', name: 'Design Lead', emoji: '🎨', color: '#a855f7', desc: 'Branding, banners, posters & visual assets' },
+  { id: 'web_lead', name: 'Website Lead', emoji: '🌐', color: '#0ea5e9', desc: 'Build & maintain the conference website & portal' },
+  { id: 'security_coord', name: 'Security Coordinator', emoji: '🔒', color: '#64748b', desc: 'Access control & on-site safety protocols' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -69,11 +69,11 @@ const ROLES = [
 // ─────────────────────────────────────────────────────────────────────────────
 
 const VolunteerPreferencesModal = ({ userId, onClose, onSaved }) => {
-  const [step, setStep]                       = useState(0);
+  const [step, setStep] = useState(0);
   const [selectedDomains, setSelectedDomains] = useState(new Set());
-  const [selectedRoles, setSelectedRoles]     = useState(new Set());
-  const [search, setSearch]                   = useState('');
-  const [saving, setSaving]                   = useState(false);
+  const [selectedRoles, setSelectedRoles] = useState(new Set());
+  const [search, setSearch] = useState('');
+  const [saving, setSaving] = useState(false);
 
   // Load existing prefs — use the live auth session uid so RLS is satisfied
   useEffect(() => {
@@ -90,7 +90,7 @@ const VolunteerPreferencesModal = ({ userId, onClose, onSaved }) => {
 
       console.log('[VolunteerPrefs] load prefs → uid:', uid, 'data:', data, 'error:', error);
       if (data?.volunteer_domains?.length) setSelectedDomains(new Set(data.volunteer_domains));
-      if (data?.volunteer_roles?.length)   setSelectedRoles(new Set(data.volunteer_roles));
+      if (data?.volunteer_roles?.length) setSelectedRoles(new Set(data.volunteer_roles));
     })();
   }, [userId]);
 
@@ -165,7 +165,7 @@ const VolunteerPreferencesModal = ({ userId, onClose, onSaved }) => {
     // 3. Perform the update.
     const payload = {
       volunteer_domains: [...selectedDomains],
-      volunteer_roles:   [...selectedRoles],
+      volunteer_roles: [...selectedRoles],
     };
     console.log('[VolunteerPrefs] updating with payload:', payload);
 
@@ -230,11 +230,10 @@ const VolunteerPreferencesModal = ({ userId, onClose, onSaved }) => {
                   <button
                     key={item}
                     onClick={() => toggleDomain(item)}
-                    className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all duration-150 ${
-                      selectedDomains.has(item)
+                    className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all duration-150 ${selectedDomains.has(item)
                         ? 'bg-indigo-500/15 border-indigo-500/50 text-indigo-300'
                         : 'bg-white/3 border-white/8 text-slate-500 hover:border-indigo-500/30 hover:text-indigo-400 hover:bg-indigo-500/7'
-                    }`}
+                      }`}
                   >
                     {selectedDomains.has(item) && <Check size={10} className="inline mr-1 -mt-0.5" />}
                     {item}
@@ -257,11 +256,10 @@ const VolunteerPreferencesModal = ({ userId, onClose, onSaved }) => {
             <button
               key={role.id}
               onClick={() => toggleRole(role.id)}
-              className={`text-left p-4 rounded-xl border transition-all duration-150 ${
-                sel
+              className={`text-left p-4 rounded-xl border transition-all duration-150 ${sel
                   ? 'bg-indigo-500/10 border-indigo-500/45'
                   : 'bg-white/2 border-white/6 hover:bg-indigo-500/5 hover:border-indigo-500/25'
-              }`}
+                }`}
             >
               <div
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-sm mb-2.5"
@@ -415,11 +413,10 @@ const VolunteerPreferencesModal = ({ userId, onClose, onSaved }) => {
               <button
                 disabled={!current.canContinue || saving}
                 onClick={step < 2 ? () => { setStep((s) => s + 1); setSaveError(''); } : handleSave}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                  current.canContinue && !saving
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${current.canContinue && !saving
                     ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20'
                     : 'bg-indigo-600/25 text-indigo-300/40 cursor-not-allowed'
-                }`}
+                  }`}
               >
                 {saving ? 'Saving…' : step < 2 ? 'Continue' : 'Save Preferences'}
                 {!saving && <ChevronRight size={15} />}
@@ -466,14 +463,14 @@ const NotificationsPanel = ({ onClose }) => (
 const roleBadgeStyle = {
   organizer: 'bg-violet-500/15 text-violet-300 border-violet-500/30',
   presenter: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
-  reviewer:  'bg-amber-500/15 text-amber-300 border-amber-500/30',
+  reviewer: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
 };
 
 const ConfCard = ({ conf, role, onSelectConf }) => {
   const dateLabel = conf.start_date
     ? new Date(conf.start_date).toLocaleDateString('en-US', {
-        year: 'numeric', month: 'short', day: 'numeric',
-      })
+      year: 'numeric', month: 'short', day: 'numeric',
+    })
     : 'Date TBD';
 
   return (
@@ -491,9 +488,8 @@ const ConfCard = ({ conf, role, onSelectConf }) => {
         <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117] via-[#0d1117]/20 to-transparent" />
         {role && (
           <div
-            className={`absolute top-3 right-3 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-widest border backdrop-blur-sm ${
-              roleBadgeStyle[role] || 'bg-white/10 text-white border-white/20'
-            }`}
+            className={`absolute top-3 right-3 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-widest border backdrop-blur-sm ${roleBadgeStyle[role] || 'bg-white/10 text-white border-white/20'
+              }`}
           >
             {role}
           </div>
@@ -516,11 +512,10 @@ const ConfCard = ({ conf, role, onSelectConf }) => {
         </div>
         <button
           onClick={() => onSelectConf(conf, role)}
-          className={`w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 ${
-            role
+          className={`w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 ${role
               ? 'bg-white text-black hover:bg-slate-100'
               : 'bg-white/6 text-slate-300 hover:bg-white/12 border border-white/10'
-          }`}
+            }`}
         >
           {role ? 'Open Dashboard' : 'View Conference'}
           <ChevronRight size={15} />
@@ -570,13 +565,13 @@ const EmptyState = ({ activeTab, onCreateConf }) => (
 const UserDashboard = ({ onSelectConf, onCreateConf }) => {
   const { user, conferences, logout, fetchConferences } = useApp();
 
-  const [activeTab, setActiveTab]               = useState('my');
-  const [search, setSearch]                     = useState('');
-  const [roleMap, setRoleMap]                   = useState({});
-  const [loadingRoles, setLoadingRoles]         = useState(true);
+  const [activeTab, setActiveTab] = useState('my');
+  const [search, setSearch] = useState('');
+  const [roleMap, setRoleMap] = useState({});
+  const [loadingRoles, setLoadingRoles] = useState(true);
   const [showVolunteerModal, setShowVolunteerModal] = useState(false);
-  const [showNotifications, setShowNotifications]   = useState(false);
-  const [volunteerPrefs, setVolunteerPrefs]     = useState(null);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [volunteerPrefs, setVolunteerPrefs] = useState(null);
 
   const displayName =
     user?.user_metadata?.full_name ||
@@ -629,7 +624,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
   }, [user]);
 
   // ── Derived lists ────────────────────────────────────────────────────────
-  const myConfs    = conferences.filter((c) => roleMap[c.conference_id]);
+  const myConfs = conferences.filter((c) => roleMap[c.conference_id]);
   const otherConfs = conferences.filter((c) => !roleMap[c.conference_id]);
 
   const filterConfs = (list) =>
@@ -645,9 +640,9 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
 
   const stats = [
     { label: 'My Conferences', value: myConfs.length, color: 'text-indigo-400' },
-    { label: 'As Organizer',   value: myConfs.filter((c) => roleMap[c.conference_id] === 'organizer').length, color: 'text-violet-400' },
-    { label: 'As Reviewer',    value: myConfs.filter((c) => roleMap[c.conference_id] === 'reviewer').length,  color: 'text-amber-400' },
-    { label: 'As Presenter',   value: myConfs.filter((c) => roleMap[c.conference_id] === 'presenter').length, color: 'text-blue-400' },
+    { label: 'As Organizer', value: myConfs.filter((c) => roleMap[c.conference_id] === 'organizer').length, color: 'text-violet-400' },
+    { label: 'As Reviewer', value: myConfs.filter((c) => roleMap[c.conference_id] === 'reviewer').length, color: 'text-amber-400' },
+    { label: 'As Presenter', value: myConfs.filter((c) => roleMap[c.conference_id] === 'presenter').length, color: 'text-blue-400' },
   ];
 
   const hasVolunteerPrefs =
@@ -698,11 +693,10 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
             {/* Volunteer preferences button */}
             <button
               onClick={() => setShowVolunteerModal(true)}
-              className={`hidden md:flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all border ${
-                hasVolunteerPrefs
+              className={`hidden md:flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all border ${hasVolunteerPrefs
                   ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/15'
                   : 'bg-white/4 border-white/8 text-slate-400 hover:bg-white/8 hover:text-slate-200'
-              }`}
+                }`}
               title="Set volunteer preferences"
             >
               <Sparkles size={13} />
@@ -758,11 +752,10 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
             {/* Mobile volunteer prefs */}
             <button
               onClick={() => setShowVolunteerModal(true)}
-              className={`md:hidden flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-semibold border transition-all ${
-                hasVolunteerPrefs
+              className={`md:hidden flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-semibold border transition-all ${hasVolunteerPrefs
                   ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300'
                   : 'bg-white/5 border-white/10 text-slate-400'
-              }`}
+                }`}
             >
               <Sparkles size={13} />
               Preferences
@@ -836,17 +829,16 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
         {/* Tab switcher */}
         <div className="flex gap-1 mb-8 bg-white/4 p-1 rounded-xl w-fit border border-white/6">
           {[
-            { key: 'my',  label: `My Conferences (${myConfs.length})`  },
+            { key: 'my', label: `My Conferences (${myConfs.length})` },
             { key: 'all', label: `Explore (${otherConfs.length})` },
           ].map(({ key, label }) => (
             <button
               key={key}
               onClick={() => setActiveTab(key)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                activeTab === key
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === key
                   ? 'bg-white text-black shadow-sm'
                   : 'text-slate-500 hover:text-slate-300'
-              }`}
+                }`}
             >
               {label}
             </button>
@@ -897,7 +889,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
           onSaved={(prefs) => {
             setVolunteerPrefs({
               volunteer_domains: prefs.domains,
-              volunteer_roles:   prefs.roles,
+              volunteer_roles: prefs.roles,
             });
           }}
         />

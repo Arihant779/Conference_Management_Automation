@@ -3,14 +3,15 @@ import { FileText, CheckCircle, XCircle, Clock, Star, ChevronDown, Eye, Send, Lo
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
 import MemberNotifications from './MemberNotifications';
+import FeedbackForm from './FeedbackForm';
 
 const ReviewerDashboard = ({ conf, onBack }) => {
   const { user } = useApp();
   const confId = conf.conference_id || conf.id;
-  
+
   const [assignedPapers, setAssignedPapers] = useState([]);
   const [loadingPapers, setLoadingPapers] = useState(true);
-  
+
   const pendingPapers = assignedPapers.filter(a => a.status === 'pending');
   const reviewedPapers = assignedPapers.filter(a => a.status !== 'pending');
 
@@ -37,7 +38,7 @@ const ReviewerDashboard = ({ conf, onBack }) => {
       .eq('conference_id', confId)
       .eq('user_id', user.id)
       .maybeSingle();
-    
+
     if (data) {
       const exp = data.expertise || '';
       setExpertise(exp);
@@ -54,7 +55,7 @@ const ReviewerDashboard = ({ conf, onBack }) => {
   const fetchAssignedPapers = async () => {
     if (!user || !confId) return;
     setLoadingPapers(true);
-    
+
     const { data, error } = await supabase
       .from('paper_assignments')
       .select(`
@@ -98,12 +99,12 @@ const ReviewerDashboard = ({ conf, onBack }) => {
     try {
       const { error } = await supabase
         .from('conference_user')
-        .upsert({ 
-          conference_id: confId, 
-          user_id: user.id, 
+        .upsert({
+          conference_id: confId,
+          user_id: user.id,
           role: 'reviewer',
-          expertise: localExpertise, 
-          max_papers: maxPapers 
+          expertise: localExpertise,
+          max_papers: maxPapers
         }, { onConflict: 'conference_id,user_id' });
 
       if (error) {
@@ -122,7 +123,7 @@ const ReviewerDashboard = ({ conf, onBack }) => {
 
   const handleReview = async (assignmentId, decision, paperId, customScore, customFeedback) => {
     setSubmitting(assignmentId);
-    
+
     const { error: assignError } = await supabase
       .from('paper_assignments')
       .upsert({
@@ -149,7 +150,7 @@ const ReviewerDashboard = ({ conf, onBack }) => {
       const total = allAssignments.length;
       const acc = allAssignments.filter(a => a.status === 'accepted').length;
       const pen = allAssignments.filter(a => a.status === 'pending').length;
-      
+
       let finalStatus = 'pending';
       if (total > 0) {
         const threshold = 0.66;
@@ -160,10 +161,10 @@ const ReviewerDashboard = ({ conf, onBack }) => {
 
       await supabase
         .from('paper')
-        .upsert({ 
-          paper_id: paperId, 
-          status: finalStatus, 
-          conference_id: confId 
+        .upsert({
+          paper_id: paperId,
+          status: finalStatus,
+          conference_id: confId
         }, { onConflict: 'paper_id' });
     }
 
@@ -297,10 +298,10 @@ const ReviewerDashboard = ({ conf, onBack }) => {
               <div className="space-y-4">
                 <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Pending Review</h3>
                 {pendingPapers.map(paper => (
-                  <PaperCard 
-                    key={paper.id} 
-                    paper={paper} 
-                    isExpanded={expanded === paper.id} 
+                  <PaperCard
+                    key={paper.id}
+                    paper={paper}
+                    isExpanded={expanded === paper.id}
                     onToggle={() => setExpanded(expanded === paper.id ? null : paper.id)}
                     submitting={submitting === paper.id}
                     onReview={handleReview}
@@ -313,10 +314,10 @@ const ReviewerDashboard = ({ conf, onBack }) => {
               <div className="space-y-4">
                 <h3 className="text-xs font-bold uppercase tracking-widest text-slate-600">Completed Reviews</h3>
                 {reviewedPapers.map(paper => (
-                  <PaperCard 
-                    key={paper.id} 
-                    paper={paper} 
-                    isExpanded={expanded === paper.id} 
+                  <PaperCard
+                    key={paper.id}
+                    paper={paper}
+                    isExpanded={expanded === paper.id}
                     onToggle={() => setExpanded(expanded === paper.id ? null : paper.id)}
                     submitting={submitting === paper.id}
                     onReview={handleReview}
@@ -331,6 +332,9 @@ const ReviewerDashboard = ({ conf, onBack }) => {
             No papers pending review.
           </div>
         )}
+      </div>
+      <div className="border-t border-white/5 pt-8">
+        <FeedbackForm conf={conf} />
       </div>
       <div className="border-t border-white/5 pt-8">
         <MemberNotifications conf={conf} />
@@ -386,7 +390,7 @@ const PaperCard = ({ paper, isExpanded, onToggle, submitting, onReview, isReview
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase tracking-widest ${paper.status === 'accepted' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
                 {paper.status}
               </span>
-              <button 
+              <button
                 onClick={onToggle}
                 className="text-[10px] font-bold uppercase tracking-wider text-indigo-400 hover:text-indigo-300 px-2 py-1 bg-indigo-500/5 hover:bg-indigo-500/10 rounded-md border border-indigo-500/10 transition-all font-bold"
               >

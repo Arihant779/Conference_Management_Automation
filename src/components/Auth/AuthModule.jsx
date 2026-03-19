@@ -7,14 +7,15 @@ const AuthModule = () => {
   const { setUser } = useApp();
 
   const [isLogin, setIsLogin] = useState(true);
-  const [formData, setFormData] = useState({ 
-    name: '', 
-    email: '', 
-    password: '' 
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: ''
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // --- Existing Supabase Email/Password Logic ---
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -61,6 +62,22 @@ const AuthModule = () => {
     setLoading(false);
   };
 
+  // --- NEW: Supabase Google Auth Logic ---
+  const handleGoogleLogin = async () => {
+    setError('');
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        // Ensures the user comes back to your app after Google login
+        redirectTo: 'http://localhost:3000'
+      }
+    });
+
+    if (error) {
+      setError(error.message);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#020617] flex items-center justify-center p-6">
       <div className="bg-slate-900 p-8 rounded-3xl w-full max-w-md">
@@ -71,29 +88,29 @@ const AuthModule = () => {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {!isLogin && (
-            <input 
+            <input
               type="text"
               placeholder="Full Name"
               className="w-full p-3 rounded bg-black text-white"
               value={formData.name}
-              onChange={e => setFormData({...formData, name: e.target.value})}
+              onChange={e => setFormData({ ...formData, name: e.target.value })}
             />
           )}
 
-          <input 
+          <input
             type="email"
             placeholder="Email"
             className="w-full p-3 rounded bg-black text-white"
             value={formData.email}
-            onChange={e => setFormData({...formData, email: e.target.value})}
+            onChange={e => setFormData({ ...formData, email: e.target.value })}
           />
 
-          <input 
+          <input
             type="password"
             placeholder="Password"
             className="w-full p-3 rounded bg-black text-white"
             value={formData.password}
-            onChange={e => setFormData({...formData, password: e.target.value})}
+            onChange={e => setFormData({ ...formData, password: e.target.value })}
           />
 
           {error && <p className="text-red-400">{error}</p>}
@@ -102,6 +119,30 @@ const AuthModule = () => {
             {loading ? "Please wait..." : (isLogin ? "Sign In" : "Create Account")}
           </button>
         </form>
+
+        {/* --- Google Login UI Section --- */}
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-slate-700"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-4 bg-slate-900 text-slate-400">Or continue with</span>
+          </div>
+        </div>
+
+        <button
+          onClick={handleGoogleLogin}
+          type="button"
+          className="w-full bg-white text-black p-3 rounded flex items-center justify-center font-semibold hover:bg-gray-200 transition-colors mb-5"
+        >
+          <img
+            src="https://www.svgrepo.com/show/475656/google-color.svg"
+            alt="Google"
+            className="w-5 h-5 mr-2"
+          />
+          Sign in with Google
+        </button>
+        {/* --------------------------------- */}
 
         <div className="text-center mt-5">
           <button

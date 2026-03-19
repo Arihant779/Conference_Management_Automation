@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FileText, Calendar, CheckCircle, Award, Upload, Clock, ChevronRight, AlertCircle, X, Plus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import FeedbackForm from './FeedbackForm';
 
 const PresenterDashboard = ({ conf, onBack }) => {
   const { user, papers, addPaper } = useApp();
@@ -33,9 +34,9 @@ const PresenterDashboard = ({ conf, onBack }) => {
   };
 
   const statusConfig = {
-    pending:  { label: 'Under Review',   color: 'bg-amber-500/10 text-amber-400 border-amber-500/20',   dot: 'bg-amber-500'   },
-    accepted: { label: 'Accepted',        color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', dot: 'bg-emerald-500' },
-    rejected: { label: 'Not Accepted',    color: 'bg-red-500/10 text-red-400 border-red-500/20',         dot: 'bg-red-500'     },
+    pending: { label: 'Under Review', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20', dot: 'bg-amber-500' },
+    accepted: { label: 'Accepted', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', dot: 'bg-emerald-500' },
+    rejected: { label: 'Not Accepted', color: 'bg-red-500/10 text-red-400 border-red-500/20', dot: 'bg-red-500' },
   };
 
   return (
@@ -75,7 +76,7 @@ const PresenterDashboard = ({ conf, onBack }) => {
               <div className="text-[10px] text-slate-600 uppercase tracking-wider font-bold mb-0.5">Date</div>
               <div className="text-sm text-slate-300 flex items-center gap-1.5">
                 <Calendar size={13} className="text-slate-600" />
-                {new Date(conf.start_date).toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' })}
+                {new Date(conf.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
             </div>
           )}
@@ -102,7 +103,7 @@ const PresenterDashboard = ({ conf, onBack }) => {
                     <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
                       <Clock size={11} />
                       {myPaper.submittedAt
-                        ? `Submitted ${new Date(myPaper.submittedAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })}`
+                        ? `Submitted ${new Date(myPaper.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
                         : 'Submitted'}
                     </p>
                   </div>
@@ -185,6 +186,11 @@ const PresenterDashboard = ({ conf, onBack }) => {
             </span>
           </div>
         )}
+
+        {/* Feedback */}
+        <div className="border-t border-white/5 pt-8">
+          <FeedbackForm conf={conf} />
+        </div>
       </div>
 
       {/* Upload Modal */}

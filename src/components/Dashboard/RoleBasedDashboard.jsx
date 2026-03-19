@@ -52,7 +52,7 @@ const RoleBasedDashboard = ({ conf, role: propRole, onBack }) => {
 
   if (role === 'organizer') return <OrganizerDashboard conf={conf} onBack={onBack} />;
   if (role === 'presenter') return <PresenterDashboard conf={conf} onBack={onBack} />;
-  if (role === 'reviewer')  return <ReviewerDashboard  conf={conf} onBack={onBack} />;
+  if (role === 'reviewer') return <ReviewerDashboard conf={conf} onBack={onBack} />;
 
   return <ConferencePage conf={conf} onBack={onBack} />;
 };

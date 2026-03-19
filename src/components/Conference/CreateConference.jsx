@@ -92,14 +92,13 @@ const CreateConference = ({ onCancel, onSuccess }) => {
             <div className="mt-12 space-y-6">
               {[
                 { num: 1, label: 'Basic Details', sub: 'Name, date, and theme' },
-                { num: 2, label: 'Look & Feel',   sub: 'Branding and cover'   },
+                { num: 2, label: 'Look & Feel', sub: 'Branding and cover' },
               ].map(({ num, label, sub }, i) => (
                 <React.Fragment key={num}>
                   {i > 0 && <div className="w-0.5 h-12 bg-slate-800 ml-5" />}
                   <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${
-                      step >= num ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'bg-slate-800 text-slate-500'
-                    }`}>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${step >= num ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'bg-slate-800 text-slate-500'
+                      }`}>
                       {num}
                     </div>
                     <div>
@@ -190,21 +189,18 @@ const CreateConference = ({ onCancel, onSuccess }) => {
                         <div
                           key={t}
                           onClick={() => setData((prev) => ({ ...prev, template: t }))}
-                          className={`cursor-pointer border-2 rounded-2xl p-4 transition-all relative overflow-hidden ${
-                            data.template === t
+                          className={`cursor-pointer border-2 rounded-2xl p-4 transition-all relative overflow-hidden ${data.template === t
                               ? 'border-indigo-500 bg-indigo-500/10'
                               : 'border-slate-800 hover:border-slate-600 bg-slate-900/40'
-                          }`}
+                            }`}
                         >
-                          <div className={`h-24 rounded-lg mb-3 ${
-                            t === 'modern'  ? 'bg-gradient-to-br from-indigo-500 to-purple-600'
-                            : t === 'classic' ? 'bg-[#e2e2e2]'
-                            : 'bg-slate-800 border border-slate-700'
-                          }`} />
+                          <div className={`h-24 rounded-lg mb-3 ${t === 'modern' ? 'bg-gradient-to-br from-indigo-500 to-purple-600'
+                              : t === 'classic' ? 'bg-[#e2e2e2]'
+                                : 'bg-slate-800 border border-slate-700'
+                            }`} />
                           <h4 className="font-bold text-white capitalize text-sm">{t}</h4>
-                          <div className={`absolute top-3 right-3 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                            data.template === t ? 'bg-indigo-500 border-indigo-500 scale-100' : 'border-slate-600 scale-90 opacity-50'
-                          }`}>
+                          <div className={`absolute top-3 right-3 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${data.template === t ? 'bg-indigo-500 border-indigo-500 scale-100' : 'border-slate-600 scale-90 opacity-50'
+                            }`}>
                             {data.template === t && <div className="w-2 h-2 bg-white rounded-full" />}
                           </div>
                         </div>
