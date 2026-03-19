@@ -1,192 +1,98 @@
-# ConfManager - Conference Management Platform
+# Conference Management Automation
 
-A modern, dark-themed React application for managing academic conferences with role-based dashboards.
-
-## 🌟 Features
-
-### Authentication
-- User login and registration
-- Secure authentication system
-- Demo accounts for testing
-
-### Conference Management
-- Create and manage conferences
-- Multiple template options (Modern, Classic, Minimal)
-- Beautiful conference homepages
-- Customizable branding
-
-### Role-Based Dashboards
-
-#### Organizer Dashboard
-- Event overview with statistics
-- Paper submission management
-- Accept/reject papers
-- Task management system
-- Team collaboration tools
-
-#### Presenter Dashboard
-- Submit research papers
-- Track submission status
-- View acceptance/rejection status
-- Session scheduling information
-
-#### Reviewer Dashboard
-- Review pending papers
-- Provide feedback
-- Accept/reject submissions
-- Track review progress
-
-## 🎨 Design Features
-
-- **Modern Dark Theme**: Sleek, professional dark UI with indigo/purple accents
-- **Responsive Design**: Works seamlessly on desktop, tablet, and mobile
-- **Smooth Animations**: Polished transitions and micro-interactions
-- **Glassmorphism Effects**: Modern backdrop blur and transparency
-- **Component-Based Architecture**: Clean, modular code structure
+A comprehensive platform for managing academic conferences, featuring AI-powered paper allocation, expert finder, and automated communication.
 
 ## 📁 Project Structure
 
+*   **`backend/`**: Contains the server-side logic and services.
+    *   **`server.js`**: Node.js Express server handling emails, expert finding, and health checks.
+    *   **`paper_allocation/`**: Python Flask service for AI-powered paper-reviewer matching.
+*   **`public/`**: Static assets for the frontend (index.html, manifest, etc.).
+*   **`src/`**: React application source code.
+    *   **`components/`**: Reusable UI modules, including Auth module and Dashboards for each role.
+    *   **`context/`**: Global state management via React Context (AppContext).
+    *   **`Supabase/`**: Database client configuration and interaction layer.
+*   **`build/`**: (Ignored) Contains the production-ready frontend bundle.
+
 ```
 conference-platform/
-├── public/
-│   └── index.html
-├── src/
-│   ├── components/
-│   │   ├── Auth/
-│   │   │   └── AuthModule.jsx
-│   │   ├── Conference/
-│   │   │   ├── ConferenceView.jsx
-│   │   │   ├── CreateConference.jsx
-│   │   │   └── Templates/
-│   │   │       ├── ModernTemplate.jsx
-│   │   │       └── ClassicTemplate.jsx
-│   │   └── Dashboard/
-│   │       ├── UserDashboard.jsx
-│   │       ├── OrganizerDashboard.jsx
-│   │       ├── PresenterDashboard.jsx
-│   │       ├── ReviewerDashboard.jsx
-│   │       └── RoleBasedDashboard.jsx
-│   ├── context/
-│   │   └── AppContext.jsx
-│   ├── App.jsx
-│   ├── index.js
-│   └── index.css
-├── package.json
-└── tailwind.config.js
+├── backend/
+│   ├── paper_allocation/      # AI Service (Python/Flask)
+│   │   ├── app.py             # Main Flask application
+│   │   ├── requirements.txt   # Full dependencies (GPU)
+│   │   └── requirements-cpu.txt # Fast dependencies (CPU)
+│   ├── server.js              # Express.js server (Node.js)
+│   ├── speakerFinder.js       # Expert search logic
+│   └── package.json           # Node.js dependencies
+├── public/                    # Static assets & index.html
+├── src/                       # React frontend source
+│   ├── components/            # UI Components
+│   │   ├── Auth/              # Login/Register modules
+│   │   ├── Conference/        # Conference view & creation
+│   │   └── Dashboard/         # Role-specific dashboards
+│   ├── context/               # Global state (AppContext.jsx)
+│   ├── Supabase/              # Database client (supabaseclient.js)
+│   ├── App.jsx                # Root React component
+│   └── index.js               # React entry point
+├── .env                       # Root environment file
+├── package.json               # Frontend dependencies
+└── tailwind.config.js         # Styling configuration
 ```
 
-## 🚀 Getting Started
+## 🚀 How to Run
 
 ### Prerequisites
-- Node.js (v14 or higher)
-- npm or yarn
+- **Node.js** (v14+)
+- **npm** or yarn
+- **Python** (3.8+)
 
-### Installation
+---
 
-1. Navigate to the project directory:
-```bash
-cd conference-platform
-```
-
-2. Install dependencies:
+### 1. Frontend Setup
+From the root directory:
 ```bash
 npm install
-```
-
-3. Start the development server:
-```bash
 npm start
 ```
+Runs at [http://localhost:3000](http://localhost:3000).
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+### 2. Express Backend (Node.js)
+From the `backend` directory:
+```bash
+cd backend
+npm install
+npm start
+```
+Runs at [http://localhost:4000](http://localhost:4000).
 
-## 🔐 Demo Accounts
+### 3. Paper Allocation Service (Python)
+From the `backend/paper_allocation` directory:
+```bash
+cd backend/paper_allocation
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-Use these credentials to test different roles:
+# OPTION A: Fast Run (CPU only - Recommended for most users)
+pip install -r requirements-cpu.txt
 
-- **Organizer**: alice@test.com / 123
-- **Reviewer**: bob@test.com / 123
-- **Presenter**: charlie@test.com / 123
+# OPTION B: Full Run (GPU support - Requires NVIDIA GPU)
+pip install -r requirements.txt
 
-## 🛠️ Built With
+python app.py
+```
+Runs at [http://localhost:5000](http://localhost:5000).
 
-- **React** - UI library
-- **Tailwind CSS** - Styling framework
-- **Lucide React** - Icon library
-- **Context API** - State management
+---
 
-## 📦 Key Components
+### Environment Configuration
 
-### AppContext
-Global state management for:
-- User authentication
-- Conference data
-- Paper submissions
-- Task management
+Two separate `.env` files are required and will be provided in the documentation:
 
-### AuthModule
-- Login/Register forms
-- Form validation
-- Session management
+1.  **Frontend/Root `.env`**
+    *   **Content**: Contains Supabase URL and Anon Key.
+    *   **Path**: `/Conference_Management_Automation/.env`
+2.  **Backend `.env`**
+    *   **Content**: Contains Groq API key and Gmail credentials.
+    *   **Path**: `/Conference_Management_Automation/backend/.env`
 
-### CreateConference
-- Multi-step form
-- Template selection
-- Conference configuration
-
-### UserDashboard
-- Conference listing
-- Tabbed navigation
-- Search functionality
-
-### RoleBasedDashboard
-- Dynamic dashboard routing
-- Role-specific features
-- Real-time updates
-
-## 🎨 Color Palette
-
-- **Primary Background**: `#020617` (Deep Navy)
-- **Secondary Background**: `#0f1117` (Charcoal)
-- **Accent**: Indigo `#6366f1` / Purple `#a855f7`
-- **Text**: Slate variations
-- **Success**: Emerald `#10b981`
-- **Warning**: Amber `#f59e0b`
-- **Error**: Red `#ef4444`
-
-## 📱 Responsive Breakpoints
-
-- Mobile: < 768px
-- Tablet: 768px - 1024px
-- Desktop: > 1024px
-
-## 🔄 State Management
-
-The app uses React Context API for global state:
-- User session
-- Conference list
-- Papers and submissions
-- Tasks and assignments
-
-## 🎯 Future Enhancements
-
-- [ ] Real-time notifications
-- [ ] File upload functionality
-- [ ] Advanced search and filters
-- [ ] Email integration
-- [ ] Calendar integration
-- [ ] Multi-language support
-- [ ] Dark/Light theme toggle
-- [ ] Export functionality
-
-## 📄 License
-
-This project is open source and available under the MIT License.
-
-## 👥 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📧 Contact
-
-For questions or support, please open an issue in the repository.
+Ensure both files are placed exactly at these paths to ensure all platform features work correctly.
