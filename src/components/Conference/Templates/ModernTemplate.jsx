@@ -254,11 +254,10 @@ const ModernTemplate = ({ conf: initialConf, isOrganizer = false, onSave }) => {
             <button
               key={item.id}
               onClick={() => scrollTo(item.id)}
-              className={`px-5 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-all ${
-                activeNav === item.id
+              className={`px-5 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-all ${activeNav === item.id
                   ? 'border-indigo-500 text-white'
                   : 'border-transparent text-slate-500 hover:text-slate-300'
-              }`}
+                }`}
             >
               {item.label}
             </button>
@@ -338,40 +337,40 @@ const ModernTemplate = ({ conf: initialConf, isOrganizer = false, onSave }) => {
                       <div className="min-w-[90px] text-slate-500 text-sm font-mono pt-0.5">
                         {isEditing
                           ? <EditableText
-                              value={session.time}
-                              onChange={v => update('schedule', pageData.schedule.map((d, dIdx) => dIdx !== di ? d : {
-                                ...d, sessions: d.sessions.map((ss, sIdx) => sIdx !== si ? ss : { ...ss, time: v })
-                              }))}
-                              className="text-slate-400 w-24 text-xs"
-                              isEditing={isEditing}
-                            />
+                            value={session.time}
+                            onChange={v => update('schedule', pageData.schedule.map((d, dIdx) => dIdx !== di ? d : {
+                              ...d, sessions: d.sessions.map((ss, sIdx) => sIdx !== si ? ss : { ...ss, time: v })
+                            }))}
+                            className="text-slate-400 w-24 text-xs"
+                            isEditing={isEditing}
+                          />
                           : session.time}
                       </div>
                       <div className="flex-1">
                         <h4 className="font-bold text-white text-base">
                           {isEditing
                             ? <EditableText
-                                value={session.title}
-                                onChange={v => update('schedule', pageData.schedule.map((d, dIdx) => dIdx !== di ? d : {
-                                  ...d, sessions: d.sessions.map((ss, sIdx) => sIdx !== si ? ss : { ...ss, title: v })
-                                }))}
-                                className="text-white font-bold w-full"
-                                isEditing={isEditing}
-                              />
+                              value={session.title}
+                              onChange={v => update('schedule', pageData.schedule.map((d, dIdx) => dIdx !== di ? d : {
+                                ...d, sessions: d.sessions.map((ss, sIdx) => sIdx !== si ? ss : { ...ss, title: v })
+                              }))}
+                              className="text-white font-bold w-full"
+                              isEditing={isEditing}
+                            />
                             : session.title}
                         </h4>
                         {(session.speaker || isEditing) && (
                           <p className="text-slate-500 text-sm mt-1">
                             {isEditing
                               ? <EditableText
-                                  value={session.speaker}
-                                  onChange={v => update('schedule', pageData.schedule.map((d, dIdx) => dIdx !== di ? d : {
-                                    ...d, sessions: d.sessions.map((ss, sIdx) => sIdx !== si ? ss : { ...ss, speaker: v })
-                                  }))}
-                                  className="text-slate-400 text-sm"
-                                  isEditing={isEditing}
-                                  placeholder="Speaker name…"
-                                />
+                                value={session.speaker}
+                                onChange={v => update('schedule', pageData.schedule.map((d, dIdx) => dIdx !== di ? d : {
+                                  ...d, sessions: d.sessions.map((ss, sIdx) => sIdx !== si ? ss : { ...ss, speaker: v })
+                                }))}
+                                className="text-slate-400 text-sm"
+                                isEditing={isEditing}
+                                placeholder="Speaker name…"
+                              />
                               : session.speaker}
                           </p>
                         )}
@@ -606,17 +605,15 @@ const ModernTemplate = ({ conf: initialConf, isOrganizer = false, onSave }) => {
             return (
               <div key={tier} className="mb-10">
                 <div className="flex items-center gap-3 mb-5">
-                  <span className={`text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full border ${
-                    tier === 'platinum' ? 'bg-slate-300/10 text-slate-300 border-slate-300/20'
+                  <span className={`text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full border ${tier === 'platinum' ? 'bg-slate-300/10 text-slate-300 border-slate-300/20'
                       : tier === 'gold' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                         : 'bg-slate-500/10 text-slate-400 border-slate-500/20'
-                  }`}>{tier}</span>
+                    }`}>{tier}</span>
                 </div>
-                <div className={`grid gap-4 ${
-                  tier === 'platinum' ? 'grid-cols-1 sm:grid-cols-2'
+                <div className={`grid gap-4 ${tier === 'platinum' ? 'grid-cols-1 sm:grid-cols-2'
                     : tier === 'gold' ? 'grid-cols-2 sm:grid-cols-3'
                       : 'grid-cols-3 sm:grid-cols-5'
-                }`}>
+                  }`}>
                   {tierSponsors.map((sp) => {
                     const globalIndex = pageData.sponsors.indexOf(sp);
                     return (
@@ -629,9 +626,8 @@ const ModernTemplate = ({ conf: initialConf, isOrganizer = false, onSave }) => {
                             <X size={12} />
                           </button>
                         )}
-                        <span className={`font-black text-lg ${
-                          tier === 'platinum' ? 'text-slate-200' : tier === 'gold' ? 'text-amber-300' : 'text-slate-400'
-                        }`}>
+                        <span className={`font-black text-lg ${tier === 'platinum' ? 'text-slate-200' : tier === 'gold' ? 'text-amber-300' : 'text-slate-400'
+                          }`}>
                           {isEditing
                             ? <EditableText value={sp.name} onChange={v => updateNested('sponsors', globalIndex, 'name', v)} className="text-center font-black w-24" isEditing={isEditing} />
                             : sp.name}
