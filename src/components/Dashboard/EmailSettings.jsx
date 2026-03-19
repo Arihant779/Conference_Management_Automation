@@ -36,26 +36,26 @@ const EmailSettings = ({ conf }) => {
 
   const [creds, setCreds] = useState({
     email_sender_address: '',
-    email_sender_name:    '',
-    gmail_client_id:      '',
-    gmail_client_secret:  '',
-    gmail_refresh_token:  '',
+    email_sender_name: '',
+    gmail_client_id: '',
+    gmail_client_secret: '',
+    gmail_refresh_token: '',
   });
 
   // Platform default sender info (stored in a separate app_config table or env)
   const [defaultSender, setDefaultSender] = useState({
     address: process.env.REACT_APP_DEFAULT_SENDER_EMAIL || 'noreply@conferencehub.app',
-    name:    process.env.REACT_APP_DEFAULT_SENDER_NAME  || 'Conference Hub',
+    name: process.env.REACT_APP_DEFAULT_SENDER_NAME || 'Conference Hub',
   });
 
-  const [show, setShow]           = useState({});
-  const [loading, setLoading]     = useState(true);
-  const [saving, setSaving]       = useState(false);
-  const [testing, setTesting]     = useState(false);
-  const [saved, setSaved]         = useState(false);
+  const [show, setShow] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [testResult, setTestResult] = useState(null);
-  const [testMsg, setTestMsg]     = useState('');
-  const [error, setError]         = useState('');
+  const [testMsg, setTestMsg] = useState('');
+  const [error, setError] = useState('');
 
   /* ── load ── */
   const load = useCallback(async () => {
@@ -69,10 +69,10 @@ const EmailSettings = ({ conf }) => {
     if (data) {
       setCreds({
         email_sender_address: data.email_sender_address || '',
-        email_sender_name:    data.email_sender_name    || '',
-        gmail_client_id:      data.gmail_client_id      || '',
-        gmail_client_secret:  data.gmail_client_secret  || '',
-        gmail_refresh_token:  data.gmail_refresh_token  || '',
+        email_sender_name: data.email_sender_name || '',
+        gmail_client_id: data.gmail_client_id || '',
+        gmail_client_secret: data.gmail_client_secret || '',
+        gmail_refresh_token: data.gmail_refresh_token || '',
       });
       // If they've explicitly set custom creds before, show custom mode
       // email_use_default defaults to true (null treated as true)
@@ -85,7 +85,7 @@ const EmailSettings = ({ conf }) => {
   useEffect(() => { load(); }, [load]);
 
   const hasCustomCreds = !!(creds.email_sender_address && creds.gmail_client_id && creds.gmail_refresh_token);
-  const isConfigured   = mode === 'default' || hasCustomCreds;
+  const isConfigured = mode === 'default' || hasCustomCreds;
 
   /* ── save mode switch ── */
   const switchMode = async (newMode) => {
@@ -101,8 +101,8 @@ const EmailSettings = ({ conf }) => {
   /* ── save custom creds ── */
   const save = async () => {
     if (!creds.email_sender_address.trim()) { setError('Sender email address is required.'); return; }
-    if (!creds.gmail_client_id.trim())      { setError('Client ID is required.');            return; }
-    if (!creds.gmail_refresh_token.trim())  { setError('Refresh token is required.');         return; }
+    if (!creds.gmail_client_id.trim()) { setError('Client ID is required.'); return; }
+    if (!creds.gmail_refresh_token.trim()) { setError('Refresh token is required.'); return; }
     setError('');
     setSaving(true);
 
@@ -110,11 +110,11 @@ const EmailSettings = ({ conf }) => {
       .from('conference')
       .update({
         email_sender_address: creds.email_sender_address.trim(),
-        email_sender_name:    creds.email_sender_name.trim() || conf.title || 'Conference',
-        gmail_client_id:      creds.gmail_client_id.trim(),
-        gmail_client_secret:  creds.gmail_client_secret.trim(),
-        gmail_refresh_token:  creds.gmail_refresh_token.trim(),
-        email_use_default:    false,
+        email_sender_name: creds.email_sender_name.trim() || conf.title || 'Conference',
+        gmail_client_id: creds.gmail_client_id.trim(),
+        gmail_client_secret: creds.gmail_client_secret.trim(),
+        gmail_refresh_token: creds.gmail_refresh_token.trim(),
+        email_use_default: false,
       })
       .eq('conference_id', confId);
 
@@ -392,8 +392,8 @@ const EmailSettings = ({ conf }) => {
             </Field>
 
             {[
-              { key: 'gmail_client_secret', label: 'Client Secret',  placeholder: 'GOCSPX-…'  },
-              { key: 'gmail_refresh_token', label: 'Refresh Token',  placeholder: '1//0g…'     },
+              { key: 'gmail_client_secret', label: 'Client Secret', placeholder: 'GOCSPX-…' },
+              { key: 'gmail_refresh_token', label: 'Refresh Token', placeholder: '1//0g…' },
             ].map(({ key, label, placeholder }) => (
               <Field key={key} label={label}>
                 <div className="relative">

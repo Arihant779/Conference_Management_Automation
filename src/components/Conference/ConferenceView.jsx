@@ -133,9 +133,8 @@ const ConferenceView = ({ conf, role: propRole, onBack }) => {
 const NavTab = ({ active, onClick, activeClass, children }) => (
   <button
     onClick={onClick}
-    className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${
-      active ? activeClass : 'text-slate-500 hover:text-slate-300'
-    }`}
+    className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${active ? activeClass : 'text-slate-500 hover:text-slate-300'
+      }`}
   >
     {children}
   </button>

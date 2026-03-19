@@ -11,19 +11,19 @@ import { useApp } from '../../context/AppContext';
 const cls = (...c) => c.filter(Boolean).join(' ');
 
 const RECIPIENT_GROUPS = [
-  { key: 'all',       label: 'All Members', color: 'text-indigo-400',  bg: 'bg-indigo-500/10  border-indigo-500/25'  },
-  { key: 'organizer', label: 'Organizers',  color: 'text-violet-400',  bg: 'bg-violet-500/10  border-violet-500/25'  },
-  { key: 'reviewer',  label: 'Reviewers',   color: 'text-amber-400',   bg: 'bg-amber-500/10   border-amber-500/25'   },
-  { key: 'presenter', label: 'Presenters',  color: 'text-blue-400',    bg: 'bg-blue-500/10    border-blue-500/25'    },
-  { key: 'member',    label: 'Guests',      color: 'text-slate-400',   bg: 'bg-slate-500/10   border-slate-500/25'   },
-  { key: 'custom',    label: 'Custom',      color: 'text-pink-400',    bg: 'bg-pink-500/10    border-pink-500/25'    },
+  { key: 'all', label: 'All Members', color: 'text-indigo-400', bg: 'bg-indigo-500/10  border-indigo-500/25' },
+  { key: 'organizer', label: 'Organizers', color: 'text-violet-400', bg: 'bg-violet-500/10  border-violet-500/25' },
+  { key: 'reviewer', label: 'Reviewers', color: 'text-amber-400', bg: 'bg-amber-500/10   border-amber-500/25' },
+  { key: 'presenter', label: 'Presenters', color: 'text-blue-400', bg: 'bg-blue-500/10    border-blue-500/25' },
+  { key: 'member', label: 'Guests', color: 'text-slate-400', bg: 'bg-slate-500/10   border-slate-500/25' },
+  { key: 'custom', label: 'Custom', color: 'text-pink-400', bg: 'bg-pink-500/10    border-pink-500/25' },
 ];
 
 const TONE_OPTIONS = [
-  { key: 'formal',        label: 'Formal'        },
-  { key: 'friendly',      label: 'Friendly'      },
-  { key: 'urgent',        label: 'Urgent'        },
-  { key: 'celebratory',   label: 'Celebratory'   },
+  { key: 'formal', label: 'Formal' },
+  { key: 'friendly', label: 'Friendly' },
+  { key: 'urgent', label: 'Urgent' },
+  { key: 'celebratory', label: 'Celebratory' },
   { key: 'informational', label: 'Informational' },
 ];
 
@@ -121,11 +121,11 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
 
   /* ── conference sender info ── */
   const [senderAddress, setSenderAddress] = useState('');
-  const [senderName, setSenderName]       = useState('');
+  const [senderName, setSenderName] = useState('');
   const [gmailConfigured, setGmailConfigured] = useState(false);
 
   /* ── members ── */
-  const [members, setMembers]             = useState([]);
+  const [members, setMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
 
   /* ── step ── */
@@ -134,24 +134,24 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
   /* ── recipients ── */
   const [selectedGroups, setSelectedGroups] = useState([]);
   const [customEmailList, setCustomEmailList] = useState([]);
-  const [customInput, setCustomInput]     = useState('');
+  const [customInput, setCustomInput] = useState('');
 
   /* ── content ── */
-  const [subject, setSubject]   = useState('');
-  const [intent, setIntent]     = useState('');
-  const [tone, setTone]         = useState('formal');
-  const [body, setBody]         = useState('');
+  const [subject, setSubject] = useState('');
+  const [intent, setIntent] = useState('');
+  const [tone, setTone] = useState('formal');
+  const [body, setBody] = useState('');
   const [bodyEditing, setBodyEditing] = useState(false);
   const [subjectEditing, setSubjectEditing] = useState(false);
 
   /* ── ui ── */
   const [generating, setGenerating] = useState(false);
-  const [sending, setSending]       = useState(false);
-  const [genError, setGenError]     = useState('');
-  const [sendError, setSendError]   = useState('');
+  const [sending, setSending] = useState(false);
+  const [genError, setGenError] = useState('');
+  const [sendError, setSendError] = useState('');
   const [showRecipients, setShowRecipients] = useState(false);
-  const [copied, setCopied]         = useState(false);
-  const [sentCount, setSentCount]   = useState(0);
+  const [copied, setCopied] = useState(false);
+  const [sentCount, setSentCount] = useState(0);
 
   /* ── load conference sender info ── */
   const loadSenderInfo = useCallback(async () => {
@@ -185,8 +185,8 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
 
     setMembers((data || []).map(m => ({
       ...m,
-      email:     m.email     || m.users?.user_email || '',
-      full_name: m.full_name || m.users?.user_name  || '',
+      email: m.email || m.users?.user_email || '',
+      full_name: m.full_name || m.users?.user_name || '',
     })));
     setLoadingMembers(false);
   }, [confId]);
@@ -200,9 +200,9 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
   const resolvedRecipients = (() => {
     const emails = new Set();
     selectedGroups.forEach(group => {
-      if (group === 'all')         members.forEach(m => m.email && emails.add(m.email));
+      if (group === 'all') members.forEach(m => m.email && emails.add(m.email));
       else if (group === 'custom') customEmailList.forEach(e => emails.add(e));
-      else                         members.filter(m => m.role === group && m.email).forEach(m => emails.add(m.email));
+      else members.filter(m => m.role === group && m.email).forEach(m => emails.add(m.email));
     });
     return [...emails];
   })();
@@ -695,10 +695,10 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
               <div className="bg-[#0d1117] border border-white/6 rounded-2xl p-5 space-y-2.5">
                 <div className="text-[11px] text-slate-600 uppercase tracking-wider font-bold mb-1">Summary</div>
                 {[
-                  { label: 'Tone',        value: tone,                                  cls: 'text-white capitalize' },
-                  { label: 'Recipients',  value: `${resolvedRecipients.length} emails`, cls: 'text-indigo-400' },
-                  { label: 'Body',        value: bodyEditing ? 'Editing…' : 'Ready',    cls: bodyEditing ? 'text-amber-400' : 'text-emerald-400' },
-                  { label: 'Sender',      value: senderAddress || 'Not set',            cls: gmailConfigured ? 'text-emerald-400 font-mono text-[10px]' : 'text-amber-400' },
+                  { label: 'Tone', value: tone, cls: 'text-white capitalize' },
+                  { label: 'Recipients', value: `${resolvedRecipients.length} emails`, cls: 'text-indigo-400' },
+                  { label: 'Body', value: bodyEditing ? 'Editing…' : 'Ready', cls: bodyEditing ? 'text-amber-400' : 'text-emerald-400' },
+                  { label: 'Sender', value: senderAddress || 'Not set', cls: gmailConfigured ? 'text-emerald-400 font-mono text-[10px]' : 'text-amber-400' },
                 ].map(({ label, value, cls: vc }) => (
                   <div key={label} className="flex justify-between items-center text-xs">
                     <span className="text-slate-500">{label}</span>

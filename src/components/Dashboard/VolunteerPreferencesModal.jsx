@@ -41,30 +41,30 @@ const DOMAINS = {
 };
 
 const ROLES = [
-  { id: 'logistics_head',    name: 'Logistics Head',         emoji: '🚚', color: '#f59e0b', desc: 'Venue, transport, accommodation & on-site ops' },
-  { id: 'outreach_head',     name: 'Outreach Head',          emoji: '📢', color: '#6366f1', desc: 'Marketing, social media & external communications' },
-  { id: 'technical_head',    name: 'Technical Head',         emoji: '⚙️', color: '#06b6d4', desc: 'AV equipment, live streams & technical support' },
-  { id: 'registration_head', name: 'Registration Head',      emoji: '📋', color: '#10b981', desc: 'Attendee registration, badges & check-ins' },
-  { id: 'sponsorship_head',  name: 'Sponsorship Head',       emoji: '🤝', color: '#8b5cf6', desc: 'Identify and coordinate with conference sponsors' },
-  { id: 'hospitality_head',  name: 'Hospitality Head',       emoji: '🏨', color: '#f43f5e', desc: 'Catering, guest relations & VIP arrangements' },
-  { id: 'publication_head',  name: 'Publications Head',      emoji: '📝', color: '#3b82f6', desc: 'Proceedings, journals & editorial coordination' },
-  { id: 'finance_head',      name: 'Finance Head',           emoji: '💰', color: '#eab308', desc: 'Budget tracking, reimbursements & expenses' },
-  { id: 'program_coord',     name: 'Program Coordinator',    emoji: '🗓️', color: '#ec4899', desc: 'Schedule sessions, speakers & workshops' },
-  { id: 'social_coord',      name: 'Social Media Coord.',    emoji: '📱', color: '#14b8a6', desc: 'Real-time updates on Twitter, LinkedIn & Instagram' },
-  { id: 'volunteer_coord',   name: 'Volunteer Coordinator',  emoji: '👥', color: '#f97316', desc: 'Onboard, train & manage fellow volunteers' },
-  { id: 'design_lead',       name: 'Design Lead',            emoji: '🎨', color: '#a855f7', desc: 'Branding, banners, posters & visual assets' },
-  { id: 'web_lead',          name: 'Website Lead',           emoji: '🌐', color: '#0ea5e9', desc: 'Build & maintain the conference website & portal' },
-  { id: 'security_coord',    name: 'Security Coordinator',   emoji: '🔒', color: '#64748b', desc: 'Access control & on-site safety protocols' },
+  { id: 'logistics_head', name: 'Logistics Head', emoji: '🚚', color: '#f59e0b', desc: 'Venue, transport, accommodation & on-site ops' },
+  { id: 'outreach_head', name: 'Outreach Head', emoji: '📢', color: '#6366f1', desc: 'Marketing, social media & external communications' },
+  { id: 'technical_head', name: 'Technical Head', emoji: '⚙️', color: '#06b6d4', desc: 'AV equipment, live streams & technical support' },
+  { id: 'registration_head', name: 'Registration Head', emoji: '📋', color: '#10b981', desc: 'Attendee registration, badges & check-ins' },
+  { id: 'sponsorship_head', name: 'Sponsorship Head', emoji: '🤝', color: '#8b5cf6', desc: 'Identify and coordinate with conference sponsors' },
+  { id: 'hospitality_head', name: 'Hospitality Head', emoji: '🏨', color: '#f43f5e', desc: 'Catering, guest relations & VIP arrangements' },
+  { id: 'publication_head', name: 'Publications Head', emoji: '📝', color: '#3b82f6', desc: 'Proceedings, journals & editorial coordination' },
+  { id: 'finance_head', name: 'Finance Head', emoji: '💰', color: '#eab308', desc: 'Budget tracking, reimbursements & expenses' },
+  { id: 'program_coord', name: 'Program Coordinator', emoji: '🗓️', color: '#ec4899', desc: 'Schedule sessions, speakers & workshops' },
+  { id: 'social_coord', name: 'Social Media Coord.', emoji: '📱', color: '#14b8a6', desc: 'Real-time updates on Twitter, LinkedIn & Instagram' },
+  { id: 'volunteer_coord', name: 'Volunteer Coordinator', emoji: '👥', color: '#f97316', desc: 'Onboard, train & manage fellow volunteers' },
+  { id: 'design_lead', name: 'Design Lead', emoji: '🎨', color: '#a855f7', desc: 'Branding, banners, posters & visual assets' },
+  { id: 'web_lead', name: 'Website Lead', emoji: '🌐', color: '#0ea5e9', desc: 'Build & maintain the conference website & portal' },
+  { id: 'security_coord', name: 'Security Coordinator', emoji: '🔒', color: '#64748b', desc: 'Access control & on-site safety protocols' },
 ];
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
 const VolunteerPreferencesModal = ({ userId, onClose, onSaved }) => {
-  const [step, setStep]                   = useState(0);
+  const [step, setStep] = useState(0);
   const [selectedDomains, setSelectedDomains] = useState(new Set());
-  const [selectedRoles, setSelectedRoles]     = useState(new Set());
-  const [search, setSearch]               = useState('');
-  const [saving, setSaving]               = useState(false);
+  const [selectedRoles, setSelectedRoles] = useState(new Set());
+  const [search, setSearch] = useState('');
+  const [saving, setSaving] = useState(false);
 
   // Filter domains by search query
   const filteredDomains = useMemo(() => {
@@ -151,11 +151,10 @@ const VolunteerPreferencesModal = ({ userId, onClose, onSaved }) => {
                   <button
                     key={item}
                     onClick={() => toggleDomain(item)}
-                    className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all duration-150 ${
-                      selectedDomains.has(item)
+                    className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all duration-150 ${selectedDomains.has(item)
                         ? 'bg-indigo-500/15 border-indigo-500/50 text-indigo-300'
                         : 'bg-white/3 border-white/8 text-slate-500 hover:border-indigo-500/30 hover:text-indigo-400 hover:bg-indigo-500/7'
-                    }`}
+                      }`}
                   >
                     {selectedDomains.has(item) && <Check size={10} className="inline mr-1 -mt-0.5" />}
                     {item}
@@ -178,11 +177,10 @@ const VolunteerPreferencesModal = ({ userId, onClose, onSaved }) => {
             <button
               key={role.id}
               onClick={() => toggleRole(role.id)}
-              className={`text-left p-4 rounded-xl border transition-all duration-150 ${
-                sel
+              className={`text-left p-4 rounded-xl border transition-all duration-150 ${sel
                   ? 'bg-indigo-500/10 border-indigo-500/45'
                   : 'bg-white/2 border-white/6 hover:bg-indigo-500/5 hover:border-indigo-500/25'
-              }`}
+                }`}
             >
               <div
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-sm mb-2.5"
@@ -323,11 +321,10 @@ const VolunteerPreferencesModal = ({ userId, onClose, onSaved }) => {
             <button
               disabled={!current.canContinue || saving}
               onClick={step < 2 ? () => setStep((s) => s + 1) : handleSave}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                current.canContinue && !saving
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${current.canContinue && !saving
                   ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20'
                   : 'bg-indigo-600/25 text-indigo-300/40 cursor-not-allowed'
-              }`}
+                }`}
             >
               {saving ? 'Saving…' : step < 2 ? 'Continue' : 'Save Preferences'}
               {!saving && <ChevronRight size={15} />}

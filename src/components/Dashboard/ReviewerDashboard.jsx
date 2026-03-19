@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { FileText, CheckCircle, XCircle, Clock, Star, ChevronDown, Eye, Send } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import MemberNotifications from './MemberNotifications';
+import FeedbackForm from './FeedbackForm';
 
 const ReviewerDashboard = ({ conf, onBack }) => {
   const { papers = [], updatePaperStatus } = useApp();
   const confId = conf.conference_id || conf.id;
   const confPapers = papers.filter(p => p.confId === confId);
-  const pendingPapers  = confPapers.filter(p => p.status === 'pending');
+  const pendingPapers = confPapers.filter(p => p.status === 'pending');
   const reviewedPapers = confPapers.filter(p => p.status !== 'pending');
 
   const [feedback, setFeedback] = useState({});
@@ -25,11 +26,10 @@ const ReviewerDashboard = ({ conf, onBack }) => {
   const ScoreButton = ({ paperId, score }) => (
     <button
       onClick={() => setScores(s => ({ ...s, [paperId]: score }))}
-      className={`w-9 h-9 rounded-lg text-xs font-bold transition-all border ${
-        scores[paperId] === score
-          ? 'bg-indigo-600 border-indigo-500 text-white'
-          : 'border-white/8 text-slate-500 hover:border-white/20 hover:text-white'
-      }`}
+      className={`w-9 h-9 rounded-lg text-xs font-bold transition-all border ${scores[paperId] === score
+        ? 'bg-indigo-600 border-indigo-500 text-white'
+        : 'border-white/8 text-slate-500 hover:border-white/20 hover:text-white'
+        }`}
     >
       {score}
     </button>
@@ -118,7 +118,7 @@ const ReviewerDashboard = ({ conf, onBack }) => {
                     <div>
                       <div className="text-[10px] text-slate-600 uppercase tracking-wider font-bold mb-2">Score (1–10)</div>
                       <div className="flex gap-1.5 flex-wrap">
-                        {[1,2,3,4,5,6,7,8,9,10].map(s => (
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(s => (
                           <ScoreButton key={s} paperId={paper.id} score={s * 10} />
                         ))}
                       </div>
@@ -177,17 +177,19 @@ const ReviewerDashboard = ({ conf, onBack }) => {
             {reviewedPapers.map(paper => (
               <div key={paper.id} className="bg-[#0d1117]/50 border border-white/4 rounded-xl px-5 py-3.5 flex items-center justify-between opacity-70">
                 <span className="text-sm text-slate-400 font-medium">{paper.title}</span>
-                <span className={`text-xs font-bold px-2.5 py-1 rounded-md border uppercase tracking-wider ${
-                  paper.status === 'accepted'
-                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                    : 'bg-red-500/10 text-red-400 border-red-500/20'
-                }`}>
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-md border uppercase tracking-wider ${paper.status === 'accepted'
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                  : 'bg-red-500/10 text-red-400 border-red-500/20'
+                  }`}>
                   {paper.status}
                 </span>
               </div>
             ))}
           </div>
         )}
+      </div>
+      <div className="border-t border-white/5 pt-8">
+        <FeedbackForm conf={conf} />
       </div>
       <div className="border-t border-white/5 pt-8">
         <MemberNotifications conf={conf} />
