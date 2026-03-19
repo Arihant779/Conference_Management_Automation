@@ -84,10 +84,10 @@ const PaperSubmission = ({ conf }) => {
     research_area: '',
     message_to_editor: '',
   });
-  const [file, setFile]       = useState(null);
+  const [file, setFile] = useState(null);
   const [authors, setAuthors] = useState([{ ...EMPTY_AUTHOR }]);
   const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState(null);
+  const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [existingPapers, setExistingPapers] = useState([]);
 
@@ -113,10 +113,10 @@ const PaperSubmission = ({ conf }) => {
     })();
   }, [confId, user?.id]);
 
-  const updateForm   = (field) => (e) => setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  const updateForm = (field) => (e) => setForm((prev) => ({ ...prev, [field]: e.target.value }));
   const updateAuthor = (idx, field) => (e) =>
     setAuthors((prev) => prev.map((a, i) => (i === idx ? { ...a, [field]: e.target.value } : a)));
-  const addAuthor    = () => setAuthors((prev) => [...prev, { ...EMPTY_AUTHOR }]);
+  const addAuthor = () => setAuthors((prev) => [...prev, { ...EMPTY_AUTHOR }]);
   const removeAuthor = (idx) => setAuthors((prev) => prev.filter((_, i) => i !== idx));
 
   /* ── Submit ─────────────────────────────────────────────────────────── */
@@ -147,7 +147,7 @@ const PaperSubmission = ({ conf }) => {
 
     try {
       // 1. Upload file to Supabase Storage bucket "papers"
-      const ext      = file.name.split('.').pop();
+      const ext = file.name.split('.').pop();
       const filePath = `${confId}/${userId}_${Date.now()}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
@@ -167,15 +167,15 @@ const PaperSubmission = ({ conf }) => {
       const { data: paper, error: paperError } = await supabase
         .from('paper')
         .insert({
-          paper_title:        form.paper_title.trim(),
-          abstract:           form.abstract.trim(),
-          keywords:           form.keywords.trim() || null,
-          research_area:      form.research_area,
-          message_to_editor:  form.message_to_editor.trim() || null,
+          paper_title: form.paper_title.trim(),
+          abstract: form.abstract.trim(),
+          keywords: form.keywords.trim() || null,
+          research_area: form.research_area,
+          message_to_editor: form.message_to_editor.trim() || null,
           file_url,
-          author_id:          userId,          // auth.uid() == users.user_id
-          conference_id:      confId,          // never null — guarded above
-          status:             'pending',       // ← was 'submitted', now matches organiser filter
+          author_id: userId,          // auth.uid() == users.user_id
+          conference_id: confId,          // never null — guarded above
+          status: 'pending',       // ← was 'submitted', now matches organiser filter
         })
         .select()
         .single();
@@ -190,18 +190,18 @@ const PaperSubmission = ({ conf }) => {
           .from('paper_author')
           .insert(
             authors.map((a, idx) => ({
-              paper_id:     paper.paper_id,
+              paper_id: paper.paper_id,
               author_order: idx + 1,
-              salutation:   a.salutation,
-              first_name:   a.first_name.trim(),
-              middle_name:  a.middle_name.trim()   || null,
-              last_name:    a.last_name.trim(),
-              designation:  a.designation.trim()   || null,
-              department:   a.department.trim()    || null,
-              organization: a.organization.trim()  || null,
-              email:        a.email.trim()         || null,
-              mobile:       a.mobile.trim()        || null,
-              orcid_id:     a.orcid_id.trim()      || null,
+              salutation: a.salutation,
+              first_name: a.first_name.trim(),
+              middle_name: a.middle_name.trim() || null,
+              last_name: a.last_name.trim(),
+              designation: a.designation.trim() || null,
+              department: a.department.trim() || null,
+              organization: a.organization.trim() || null,
+              email: a.email.trim() || null,
+              mobile: a.mobile.trim() || null,
+              orcid_id: a.orcid_id.trim() || null,
             }))
           );
 
@@ -258,11 +258,10 @@ const PaperSubmission = ({ conf }) => {
           <div className="space-y-1">
             {existingPapers.map(p => (
               <div key={p.paper_id} className="flex items-center gap-2 text-xs text-slate-400">
-                <span className={`px-1.5 py-0.5 rounded font-bold uppercase border text-[9px] ${
-                  p.status === 'accepted' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                  p.status === 'rejected' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                  'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                }`}>{p.status}</span>
+                <span className={`px-1.5 py-0.5 rounded font-bold uppercase border text-[9px] ${p.status === 'accepted' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                    p.status === 'rejected' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                      'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                  }`}>{p.status}</span>
                 <span className="truncate">{p.paper_title}</span>
               </div>
             ))}
@@ -330,12 +329,12 @@ const PaperSubmission = ({ conf }) => {
 
           <FormField
             label="Upload Research Paper"
-            hint="Accepted formats: .docx, .doc, .odt — Use single column layout, NOT two columns"
+            hint="Accepted formats: .docx, .doc, .odt,.pdf — Use single column layout, NOT two columns"
           >
             <input
               required
               type="file"
-              accept=".docx,.doc,.odt"
+              accept=".docx,.doc,.odt , .pdf"
               onChange={(e) => setFile(e.target.files[0] ?? null)}
               className={inputCls}
             />

@@ -7,6 +7,8 @@ import {
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
 import EmailComposer from './EmailComposer';
+import PaperAllocation from './PaperAllocation';
+/* ─── helpers ─────────────────────────────────────────────── */
 import EmailSettings from './EmailSettings';
 
 import FeedbackManager from './FeedbackManager';
@@ -466,21 +468,77 @@ const OrganizerDashboard = ({ conf, onBack }) => {
         status,
         file_url,
         author_id,
-        users ( user_name, user_email )
+        users ( user_name, user_email ),
+        paper_assignments ( status )
       `)
       .eq('conference_id', confId)
       .order('paper_id', { ascending: false });
 
     if (error) console.error('fetchPapers error:', error);
-    setConfPapers(data || []);
+
+    // Client-side deduplication (prioritize the one with assignments)
+    const paperMap = {};
+    (data || []).forEach(p => {
+      const title = p.paper_title || 'Untitled';
+      const hasAssign = p.paper_assignments?.length > 0;
+      if (!paperMap[title] || (hasAssign && !paperMap[title].paper_assignments?.length)) {
+        paperMap[title] = p;
+      }
+    });
+
+    const deduped = Object.values(paperMap);
+    setConfPapers(deduped);
     setLP(false);
+
+    // Auto-sync consensus status to DB and local state
+    const syncConsensus = async () => {
+      let stateChanged = false;
+      const updatedList = deduped.map(p => {
+        if (p.paper_assignments?.length > 0) {
+          const total = p.paper_assignments.length;
+          const acc = p.paper_assignments.filter(a => a.status === 'accepted').length;
+          const pen = p.paper_assignments.filter(a => a.status === 'pending').length;
+
+          let consensus = 'pending';
+          if (total > 0) {
+            const threshold = 0.66;
+            if ((acc / total) >= threshold) {
+              consensus = 'accepted';
+            } else if (((acc + pen) / total) < threshold) {
+              consensus = 'rejected';
+            } else {
+              consensus = 'pending';
+            }
+          }
+
+          if (p.status !== consensus) {
+            console.log(`Syncing consensus for "${p.paper_title}": ${p.status} -> ${consensus}`);
+            supabase.from('paper').upsert({
+              paper_id: p.paper_id,
+              status: consensus,
+              conference_id: confId
+            }, { onConflict: 'paper_id' }).then();
+            stateChanged = true;
+            return { ...p, status: consensus };
+          }
+        }
+        return p;
+      });
+
+      if (stateChanged) setConfPapers(updatedList);
+    };
+
+    syncConsensus();
   }, [confId]);
 
   const updatePaperStatus = async (paperId, newStatus) => {
     const { error } = await supabase
       .from('paper')
-      .update({ status: newStatus })
-      .eq('paper_id', paperId);
+      .upsert({
+        paper_id: paperId,
+        status: newStatus,
+        conference_id: confId
+      }, { onConflict: 'paper_id' });
     if (error) { console.error('updatePaperStatus error:', error); return; }
     setConfPapers(prev =>
       prev.map(p => p.paper_id === paperId ? { ...p, status: newStatus } : p)
@@ -831,13 +889,16 @@ const OrganizerDashboard = ({ conf, onBack }) => {
     { id: 'tasks', label: 'Tasks', icon: CheckSquare, badge: tasks.filter(t => t.status !== 'done').length || null },
     { id: 'notifications', label: 'Notifications', icon: Bell, badge: null },
     { id: 'emails', label: 'Emails', icon: Send, badge: null },
-    { id: 'feedback', label: 'Feedback', icon: Star, badge: null },
     { id: 'speakers', label: 'Find Speakers', icon: Users, badge: null },
+    { id: 'allocation', label: 'Paper Allocation', icon: FileText, badge: null },
+    { id: 'feedback', label: 'Feedback', icon: Star, badge: null },
+
   ];
 
   /* ══════════════════════════════════════════════════════════════════════
      RENDER
   ══════════════════════════════════════════════════════════════════════ */
+
   return (
     <div className="min-h-screen bg-[#080b11] text-slate-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -1075,6 +1136,30 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                                   {paper.abstract}
                                 </p>
                               )}
+                              {paper.paper_assignments?.length > 0 && (
+                                <div className="flex gap-2 mt-2">
+                                  {(() => {
+                                    const acc = paper.paper_assignments.filter(a => a.status === 'accepted').length;
+                                    const rej = paper.paper_assignments.filter(a => a.status === 'rejected').length;
+                                    const pen = paper.paper_assignments.filter(a => a.status === 'pending').length;
+                                    return (
+                                      <>
+                                        <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                          <CheckCircle size={10} /> {acc} Accept
+                                        </span>
+                                        <span className="text-[10px] font-bold text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                          <XCircle size={10} /> {rej} Reject
+                                        </span>
+                                        {pen > 0 && (
+                                          <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                            <Clock size={10} /> {pen} Pending
+                                          </span>
+                                        )}
+                                      </>
+                                    );
+                                  })()}
+                                </div>
+                              )}
                             </div>
                           </div>
 
@@ -1086,7 +1171,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                                 paper.status === 'rejected' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
                                   'bg-amber-500/10 text-amber-400 border-amber-500/20'
                             )}>
-                              {paper.status === 'pending' ? 'Under Review' : paper.status}
+                              {paper.status === 'accepted' || paper.status === 'rejected' ? paper.status : 'Pending'}
                             </span>
 
                             <div className="flex items-center gap-1.5">
@@ -1457,6 +1542,9 @@ const OrganizerDashboard = ({ conf, onBack }) => {
           {section === 'emailSettings' && (
             <EmailSettings conf={conf} />
           )}
+
+          {/* ═══ PAPER ALLOCATION ═══ */}
+          {section === 'allocation' && <PaperAllocation conf={conf} />}
 
           {/* ═══ SPEAKERS ═══ */}
           {section === 'speakers' && (
