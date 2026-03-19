@@ -831,6 +831,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
     { id: 'tasks', label: 'Tasks', icon: CheckSquare, badge: tasks.filter(t => t.status !== 'done').length || null },
     { id: 'notifications', label: 'Notifications', icon: Bell, badge: null },
     { id: 'emails', label: 'Emails', icon: Send, badge: null },
+    { id: 'feedback', label: 'Feedback', icon: Star, badge: null },
     { id: 'speakers', label: 'Find Speakers', icon: Users, badge: null },
   ];
 
