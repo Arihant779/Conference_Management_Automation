@@ -7,10 +7,10 @@ const AuthModule = () => {
   const { setUser } = useApp();
 
   const [isLogin, setIsLogin] = useState(true);
-  const [formData, setFormData] = useState({ 
-    name: '', 
-    email: '', 
-    password: '' 
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: ''
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -69,7 +69,7 @@ const AuthModule = () => {
       provider: 'google',
       options: {
         // Ensures the user comes back to your app after Google login
-        redirectTo: 'http://localhost:3000' 
+        redirectTo: 'http://localhost:3000'
       }
     });
 
@@ -88,29 +88,29 @@ const AuthModule = () => {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {!isLogin && (
-            <input 
+            <input
               type="text"
               placeholder="Full Name"
               className="w-full p-3 rounded bg-black text-white"
               value={formData.name}
-              onChange={e => setFormData({...formData, name: e.target.value})}
+              onChange={e => setFormData({ ...formData, name: e.target.value })}
             />
           )}
 
-          <input 
+          <input
             type="email"
             placeholder="Email"
             className="w-full p-3 rounded bg-black text-white"
             value={formData.email}
-            onChange={e => setFormData({...formData, email: e.target.value})}
+            onChange={e => setFormData({ ...formData, email: e.target.value })}
           />
 
-          <input 
+          <input
             type="password"
             placeholder="Password"
             className="w-full p-3 rounded bg-black text-white"
             value={formData.password}
-            onChange={e => setFormData({...formData, password: e.target.value})}
+            onChange={e => setFormData({ ...formData, password: e.target.value })}
           />
 
           {error && <p className="text-red-400">{error}</p>}
@@ -130,15 +130,15 @@ const AuthModule = () => {
           </div>
         </div>
 
-        <button 
+        <button
           onClick={handleGoogleLogin}
           type="button"
           className="w-full bg-white text-black p-3 rounded flex items-center justify-center font-semibold hover:bg-gray-200 transition-colors mb-5"
         >
-          <img 
-            src="https://www.svgrepo.com/show/475656/google-color.svg" 
-            alt="Google" 
-            className="w-5 h-5 mr-2" 
+          <img
+            src="https://www.svgrepo.com/show/475656/google-color.svg"
+            alt="Google"
+            className="w-5 h-5 mr-2"
           />
           Sign in with Google
         </button>
