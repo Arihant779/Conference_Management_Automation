@@ -504,7 +504,7 @@ const PaperAllocation = ({ conf }) => {
                   <div key={i} className="flex items-center gap-3 bg-white/3 rounded-lg px-3 py-2 border border-white/5">
                     <FileText size={14} className="text-indigo-400 shrink-0" />
                     <span className="text-xs text-slate-300 truncate flex-1">{p.name}</span>
-                    <span className="text-[10px] text-slate-600">{(p.file.size / 1024).toFixed(0)} KB</span>
+                    <span className="text-[10px] text-slate-600 font-bold">{p.file ? `${(p.file.size / 1024).toFixed(0)} KB` : 'Database'}</span>
                     <button onClick={() => removeFile(i)} className="text-slate-600 hover:text-red-400 transition-colors"><X size={13} /></button>
                   </div>
                 ))}
