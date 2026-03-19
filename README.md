@@ -96,3 +96,12 @@ Two separate `.env` files are required and will be provided in the documentation
     *   **Path**: `/Conference_Management_Automation/backend/.env`
 
 Ensure both files are placed exactly at these paths to ensure all platform features work correctly.
+
+---
+
+## 🔐 Demo Accounts
+
+Use these credentials to test different roles:
+
+- **Organizer**: rohan@test.com / 123456
+- **Reviewer**: rohan2@test.com / 123123
