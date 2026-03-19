@@ -2,6 +2,20 @@
 
 A comprehensive platform for managing academic conferences, featuring AI-powered paper allocation, expert finder, and automated communication.
 
+## 🚀 Quick Start (End-to-End Setup)
+
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/Arihant779/Conference_Management_Automation
+   cd Conference_Management_Automation
+   ```
+
+2. **Configure Environment Variables**:
+   Follow the [Environment Configuration](#environment-configuration) section to place your `.env` files.
+
+3. **Install & Run Services**:
+   Proceed with the detailed steps below for each component.
+
 ## 📁 Project Structure
 
 *   **`backend/`**: Contains the server-side logic and services.
