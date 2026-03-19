@@ -494,7 +494,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
     const syncConsensus = async () => {
       let stateChanged = false;
       const updatedList = deduped.map(p => {
-        if (p.paper_assignments?.length > 0) {
+        if (p.paper_assignments?.length > 0 && p.status === 'pending') {
           const total = p.paper_assignments.length;
           const acc = p.paper_assignments.filter(a => a.status === 'accepted').length;
           const pen = p.paper_assignments.filter(a => a.status === 'pending').length;
@@ -532,14 +532,24 @@ const OrganizerDashboard = ({ conf, onBack }) => {
   }, [confId]);
 
   const updatePaperStatus = async (paperId, newStatus) => {
+    console.log(`[Organizer] Updating paper ${paperId} to ${newStatus}`);
+    setSaving(true);
     const { error } = await supabase
       .from('paper')
       .upsert({
         paper_id: paperId,
         status: newStatus,
         conference_id: confId
+        // Note: we rely on paper_id to trigger an update; paper_title is omitted intentionally
       }, { onConflict: 'paper_id' });
-    if (error) { console.error('updatePaperStatus error:', error); return; }
+
+    setSaving(false);
+    if (error) {
+      console.error('updatePaperStatus error:', error);
+      alert(`Failed to update status: ${error.message}`);
+      return;
+    }
+
     setConfPapers(prev =>
       prev.map(p => p.paper_id === paperId ? { ...p, status: newStatus } : p)
     );
@@ -1174,28 +1184,29 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                               {paper.status === 'accepted' || paper.status === 'rejected' ? paper.status : 'Pending'}
                             </span>
 
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 relative z-10">
                               {paper.file_url && (
                                 <a
                                   href={paper.file_url}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold px-2 py-1 rounded-lg hover:bg-indigo-500/10 transition-all"
+                                  onClick={e => e.stopPropagation()}
                                 >
                                   View File →
                                 </a>
                               )}
-                              {paper.status === 'pending' && (
+                              {(paper.status === 'pending' || !paper.status) && (
                                 <>
                                   <button
-                                    onClick={() => updatePaperStatus(paper.paper_id, 'accepted')}
-                                    className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition-all"
+                                    onClick={(e) => { e.stopPropagation(); updatePaperStatus(paper.paper_id, 'accepted'); }}
+                                    className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition-all cursor-pointer active:scale-95"
                                   >
                                     <CheckCircle size={12} /> Accept
                                   </button>
                                   <button
-                                    onClick={() => updatePaperStatus(paper.paper_id, 'rejected')}
-                                    className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-all"
+                                    onClick={(e) => { e.stopPropagation(); updatePaperStatus(paper.paper_id, 'rejected'); }}
+                                    className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-all cursor-pointer active:scale-95"
                                   >
                                     <XCircle size={12} /> Reject
                                   </button>
