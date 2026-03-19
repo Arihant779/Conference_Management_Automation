@@ -491,18 +491,31 @@ const OrganizerDashboard = ({ conf, onBack }) => {
       let stateChanged = false;
       const updatedList = deduped.map(p => {
         if (p.paper_assignments?.length > 0) {
-          const reviewed = p.paper_assignments.filter(a => a.status === 'accepted' || a.status === 'rejected');
-          if (reviewed.length > 0) {
-            const acc = reviewed.filter(a => a.status === 'accepted').length;
-            const percentage = (acc / reviewed.length) * 100;
-            const consensus = percentage > 66 ? 'accepted' : 'rejected';
-            
-            if (p.status !== consensus) {
-              console.log(`Syncing consensus for "${p.paper_title}": ${p.status} -> ${consensus}`);
-              supabase.from('paper').update({ status: consensus }).eq('paper_id', p.paper_id).then();
-              stateChanged = true;
-              return { ...p, status: consensus };
+          const total = p.paper_assignments.length;
+          const acc = p.paper_assignments.filter(a => a.status === 'accepted').length;
+          const pen = p.paper_assignments.filter(a => a.status === 'pending').length;
+          
+          let consensus = 'pending';
+          if (total > 0) {
+            const threshold = 0.66;
+            if ((acc / total) >= threshold) {
+              consensus = 'accepted';
+            } else if (((acc + pen) / total) < threshold) {
+              consensus = 'rejected';
+            } else {
+              consensus = 'pending';
             }
+          }
+          
+          if (p.status !== consensus) {
+            console.log(`Syncing consensus for "${p.paper_title}": ${p.status} -> ${consensus}`);
+            supabase.from('paper').upsert({ 
+              paper_id: p.paper_id, 
+              status: consensus, 
+              conference_id: confId 
+            }, { onConflict: 'paper_id' }).then();
+            stateChanged = true;
+            return { ...p, status: consensus };
           }
         }
         return p;
@@ -517,8 +530,11 @@ const OrganizerDashboard = ({ conf, onBack }) => {
   const updatePaperStatus = async (paperId, newStatus) => {
     const { error } = await supabase
       .from('paper')
-      .update({ status: newStatus })
-      .eq('paper_id', paperId);
+      .upsert({ 
+        paper_id: paperId, 
+        status: newStatus, 
+        conference_id: confId 
+      }, { onConflict: 'paper_id' });
     if (error) { console.error('updatePaperStatus error:', error); return; }
     setConfPapers(prev =>
       prev.map(p => p.paper_id === paperId ? { ...p, status: newStatus } : p)
