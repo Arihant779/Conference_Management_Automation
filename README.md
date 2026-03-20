@@ -58,7 +58,7 @@ conference-platform/
 ### Prerequisites
 - **Node.js** (v14+)
 - **npm** or yarn
-- **Python** (3.8+)
+- **Python** (3.8+) - Use `python3` on macOS/Linux
 
 ---
 
@@ -83,14 +83,21 @@ Runs at [http://localhost:4000](http://localhost:4000).
 From the `backend/paper_allocation` directory:
 ```bash
 cd backend/paper_allocation
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# OPTION A: Fast Run (CPU only - Recommended for most users)
+# Create virtual environment
+# macOS/Linux:
+python3 -m venv venv
+source venv/bin/activate
+
+# Windows:
+# python -m venv venv
+# venv\Scripts\activate
+
+# OPTION A: Fast Run (CPU only - Recommended for most users/macOS)
 pip install -r requirements-cpu.txt
 
 # OPTION B: Full Run (GPU support - Requires NVIDIA GPU)
-pip install -r requirements.txt
+# pip install -r requirements.txt
 
 python app.py
 ```
