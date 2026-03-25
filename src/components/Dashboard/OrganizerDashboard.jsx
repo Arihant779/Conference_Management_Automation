@@ -913,7 +913,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
     <div className="min-h-screen bg-[#080b11] text-slate-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 
-      {/* HEADER */}
+      {/* HEADER - hidden/commented out
       <header className="sticky top-0 z-40 bg-[#080b11]/95 backdrop-blur-xl border-b border-white/6 px-6 py-3">
         <div className="max-w-[1400px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -925,7 +925,6 @@ const OrganizerDashboard = ({ conf, onBack }) => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {/* Volunteer count badge */}
             {volunteersCount > 0 && (
               <div className="hidden md:flex items-center gap-1.5 text-xs font-semibold text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-md">
                 <Sparkles size={11} />
@@ -937,6 +936,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
           </div>
         </div>
       </header>
+      */}
 
       <div className="max-w-[1400px] mx-auto flex">
         {/* SIDEBAR */}

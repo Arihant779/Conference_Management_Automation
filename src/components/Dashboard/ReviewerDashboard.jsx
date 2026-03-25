@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, CheckCircle, XCircle, Clock, Star, ChevronDown, Eye, Send, Loader2, ExternalLink } from 'lucide-react';
+import { FileText, CheckCircle, XCircle, Clock, Star, ChevronDown, Eye, Send, Loader2, ExternalLink, Bell } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
 import MemberNotifications from './MemberNotifications';
@@ -23,6 +23,15 @@ const ReviewerDashboard = ({ conf, onBack }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [expanded, setExpanded] = useState(null);
   const [submitting, setSubmitting] = useState(null);
+  const [section, setSection] = useState('papers');
+
+  const cls = (...c) => c.filter(Boolean).join(' ');
+
+  const nav = [
+    { id: 'papers', label: 'Review Papers', icon: FileText, badge: pendingPapers.length || null },
+    { id: 'feedback', label: 'Feedback', icon: Star, badge: null },
+    { id: 'notifications', label: 'Notifications', icon: Bell, badge: null },
+  ];
 
   useEffect(() => {
     if (!user || !confId) return;
@@ -177,6 +186,7 @@ const ReviewerDashboard = ({ conf, onBack }) => {
     <div className="min-h-screen bg-[#080b11] text-slate-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 
+      {/* HEADER - hidden/commented out
       <header className="sticky top-0 z-40 bg-[#080b11]/90 backdrop-blur-xl border-b border-white/6 px-6 py-3">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -189,155 +199,202 @@ const ReviewerDashboard = ({ conf, onBack }) => {
           </span>
         </div>
       </header>
+      */}
 
-      <div className="max-w-5xl mx-auto p-8 space-y-8">
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-2xl font-bold text-white">Review Portal</h2>
-            <p className="text-slate-500 text-sm mt-1">
-              {pendingPapers.length > 0
-                ? `${pendingPapers.length} paper${pendingPapers.length !== 1 ? 's' : ''} awaiting your review`
-                : 'All reviews complete'}
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <div className="bg-[#0d1117] border border-white/6 rounded-xl px-4 py-2 text-center">
-              <div className="text-xl font-bold text-amber-400">{pendingPapers.length}</div>
-              <div className="text-[10px] text-slate-600 uppercase font-bold">Pending</div>
-            </div>
-            <div className="bg-[#0d1117] border border-white/6 rounded-xl px-4 py-2 text-center">
-              <div className="text-xl font-bold text-emerald-400">{reviewedPapers.length}</div>
-              <div className="text-[10px] text-slate-600 uppercase font-bold">Reviewed</div>
-            </div>
-          </div>
-        </div>
+      <div className="max-w-[1400px] mx-auto flex">
+        {/* SIDEBAR */}
+        <aside className="w-52 shrink-0 sticky top-0 h-screen border-r border-white/6 py-5 px-2.5 flex flex-col gap-0.5">
+          {nav.map(({ id, label, icon: Icon, badge }) => (
+            <button
+              key={id}
+              onClick={() => setSection(id)}
+              className={cls(
+                'flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium w-full text-left transition-all',
+                section === id ? 'bg-white/8 text-white' : 'text-slate-500 hover:text-slate-200 hover:bg-white/4',
+              )}
+            >
+              <Icon size={15} className={section === id ? 'text-indigo-400' : ''} />
+              <span className="flex-1">{label}</span>
+              {badge ? (
+                <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/20 px-1.5 py-0.5 rounded-full font-bold">{badge}</span>
+              ) : null}
+            </button>
+          ))}
+        </aside>
 
-        <div className="bg-[#0d1117] border border-indigo-500/20 rounded-2xl p-6 shadow-xl shadow-indigo-500/5">
-          <div className="flex items-center gap-2 mb-4">
-            <Star size={18} className="text-indigo-400 fill-indigo-400/20" />
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider">Expertise & Availability</h3>
-            {!isEditing && (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="ml-auto text-xs text-indigo-400 hover:text-indigo-300 font-semibold px-2 py-1 rounded-md hover:bg-white/5 transition-all"
-              >
-                Edit Preferences
-              </button>
-            )}
-          </div>
+        {/* MAIN CONTENT */}
+        <main className="flex-1 p-8 min-h-screen">
 
-          {!isEditing ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-500">
-              <div className="space-y-1">
-                <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Your Expertise</div>
-                <div className="text-sm text-slate-300 leading-relaxed italic italic">
-                  "{expertise || 'Not provided'}"
-                </div>
-              </div>
-              <div className="space-y-1">
-                <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Review Capacity</div>
-                <div className="text-sm text-white font-bold flex items-center gap-2">
-                  <FileText size={14} className="text-indigo-400" />
-                  {maxPapers} papers maximum
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
-              <div>
-                <label className="text-xs text-slate-500 font-semibold mb-1.5 block">Reviewer Expertise Description</label>
-                <textarea
-                  placeholder="Describe your areas of expertise..."
-                  className="w-full bg-white border border-white/20 rounded-xl p-3.5 text-sm h-24 focus:border-indigo-500 outline-none resize-none text-black font-medium"
-                  value={localExpertise}
-                  onChange={e => setLocalExpertise(e.target.value)}
-                />
-              </div>
-
-              <div className="flex items-center justify-between pb-2">
+          {/* ═══ REVIEW PAPERS ═══ */}
+          {section === 'papers' && (
+            <div className="space-y-8">
+              <div className="flex justify-between items-center">
                 <div>
-                  <label className="text-xs text-slate-500 font-semibold block">Maximum Papers</label>
-                  <p className="text-[10px] text-slate-600 mt-0.5">How many papers at most?</p>
+                  <h2 className="text-2xl font-bold text-white">Review Portal</h2>
+                  <p className="text-slate-500 text-sm mt-1">
+                    {pendingPapers.length > 0
+                      ? `${pendingPapers.length} paper${pendingPapers.length !== 1 ? 's' : ''} awaiting your review`
+                      : 'All reviews complete'}
+                  </p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <button onClick={() => setMaxPapers(m => Math.max(1, m - 1))} className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white">-</button>
-                  <span className="text-white font-bold text-lg w-6 text-center">{maxPapers}</span>
-                  <button onClick={() => setMaxPapers(m => Math.min(20, m + 1))} className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white">+</button>
+                <div className="flex gap-3">
+                  <div className="bg-[#0d1117] border border-white/6 rounded-xl px-4 py-2 text-center">
+                    <div className="text-xl font-bold text-amber-400">{pendingPapers.length}</div>
+                    <div className="text-[10px] text-slate-600 uppercase font-bold">Pending</div>
+                  </div>
+                  <div className="bg-[#0d1117] border border-white/6 rounded-xl px-4 py-2 text-center">
+                    <div className="text-xl font-bold text-emerald-400">{reviewedPapers.length}</div>
+                    <div className="text-[10px] text-slate-600 uppercase font-bold">Reviewed</div>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                {expertise && (
-                  <button
-                    className="flex-1 py-2.5 bg-white/5 border border-white/10 rounded-xl text-slate-300 hover:text-white"
-                    onClick={() => { setLocalExpertise(expertise); setIsEditing(false); }}
-                  >
-                    Cancel
-                  </button>
+              <div className="bg-[#0d1117] border border-indigo-500/20 rounded-2xl p-6 shadow-xl shadow-indigo-500/5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Star size={18} className="text-indigo-400 fill-indigo-400/20" />
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">Expertise & Availability</h3>
+                  {!isEditing && (
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="ml-auto text-xs text-indigo-400 hover:text-indigo-300 font-semibold px-2 py-1 rounded-md hover:bg-white/5 transition-all"
+                    >
+                      Edit Preferences
+                    </button>
+                  )}
+                </div>
+
+                {!isEditing ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-500">
+                    <div className="space-y-1">
+                      <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Your Expertise</div>
+                      <div className="text-sm text-slate-300 leading-relaxed italic italic">
+                        "{expertise || 'Not provided'}"
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Review Capacity</div>
+                      <div className="text-sm text-white font-bold flex items-center gap-2">
+                        <FileText size={14} className="text-indigo-400" />
+                        {maxPapers} papers maximum
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
+                    <div>
+                      <label className="text-xs text-slate-500 font-semibold mb-1.5 block">Reviewer Expertise Description</label>
+                      <textarea
+                        placeholder="Describe your areas of expertise..."
+                        className="w-full bg-white border border-white/20 rounded-xl p-3.5 text-sm h-24 focus:border-indigo-500 outline-none resize-none text-black font-medium"
+                        value={localExpertise}
+                        onChange={e => setLocalExpertise(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between pb-2">
+                      <div>
+                        <label className="text-xs text-slate-500 font-semibold block">Maximum Papers</label>
+                        <p className="text-[10px] text-slate-600 mt-0.5">How many papers at most?</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => setMaxPapers(m => Math.max(1, m - 1))} className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white">-</button>
+                        <span className="text-white font-bold text-lg w-6 text-center">{maxPapers}</span>
+                        <button onClick={() => setMaxPapers(m => Math.min(20, m + 1))} className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white">+</button>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                      {expertise && (
+                        <button
+                          className="flex-1 py-2.5 bg-white/5 border border-white/10 rounded-xl text-slate-300 hover:text-white"
+                          onClick={() => { setLocalExpertise(expertise); setIsEditing(false); }}
+                        >
+                          Cancel
+                        </button>
+                      )}
+                      <button
+                        onClick={savePrefs}
+                        disabled={savingPrefs}
+                        className="flex-[2] py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {savingPrefs ? "Saving..." : "Apply Preferences"}
+                      </button>
+                    </div>
+                  </div>
                 )}
-                <button
-                  onClick={savePrefs}
-                  disabled={savingPrefs}
-                  className="flex-[2] py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {savingPrefs ? "Saving..." : "Apply Preferences"}
-                </button>
               </div>
+
+              {loadingPapers ? (
+                <div className="py-24 text-center">
+                  <Loader2 className="animate-spin text-indigo-500 mx-auto mb-4" size={32} />
+                  <p className="text-slate-500 text-sm">Loading your assignments...</p>
+                </div>
+              ) : assignedPapers.length > 0 ? (
+                <div className="space-y-6">
+                  {pendingPapers.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Pending Review</h3>
+                      {pendingPapers.map(paper => (
+                        <PaperCard
+                          key={paper.id}
+                          paper={paper}
+                          isExpanded={expanded === paper.id}
+                          onToggle={() => setExpanded(expanded === paper.id ? null : paper.id)}
+                          submitting={submitting === paper.id}
+                          onReview={handleReview}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {reviewedPapers.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="text-xs font-bold uppercase tracking-widest text-slate-600">Completed Reviews</h3>
+                      {reviewedPapers.map(paper => (
+                        <PaperCard
+                          key={paper.id}
+                          paper={paper}
+                          isExpanded={expanded === paper.id}
+                          onToggle={() => setExpanded(expanded === paper.id ? null : paper.id)}
+                          submitting={submitting === paper.id}
+                          onReview={handleReview}
+                          isReviewed={true}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="py-24 text-center border-2 border-dashed border-white/6 rounded-2xl text-slate-500">
+                  No papers pending review.
+                </div>
+              )}
             </div>
           )}
-        </div>
 
-        {loadingPapers ? (
-          <div className="py-24 text-center">
-            <Loader2 className="animate-spin text-indigo-500 mx-auto mb-4" size={32} />
-            <p className="text-slate-500 text-sm">Loading your assignments...</p>
-          </div>
-        ) : assignedPapers.length > 0 ? (
-          <div className="space-y-6">
-            {pendingPapers.length > 0 && (
-              <div className="space-y-4">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Pending Review</h3>
-                {pendingPapers.map(paper => (
-                  <PaperCard
-                    key={paper.id}
-                    paper={paper}
-                    isExpanded={expanded === paper.id}
-                    onToggle={() => setExpanded(expanded === paper.id ? null : paper.id)}
-                    submitting={submitting === paper.id}
-                    onReview={handleReview}
-                  />
-                ))}
+          {/* ═══ FEEDBACK ═══ */}
+          {section === 'feedback' && (
+            <div className="space-y-8">
+              <div>
+                <h2 className="text-2xl font-bold text-white">Feedback</h2>
+                <p className="text-slate-500 text-sm mt-0.5">Submit your conference feedback</p>
               </div>
-            )}
+              <FeedbackForm conf={conf} />
+            </div>
+          )}
 
-            {reviewedPapers.length > 0 && (
-              <div className="space-y-4">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-600">Completed Reviews</h3>
-                {reviewedPapers.map(paper => (
-                  <PaperCard
-                    key={paper.id}
-                    paper={paper}
-                    isExpanded={expanded === paper.id}
-                    onToggle={() => setExpanded(expanded === paper.id ? null : paper.id)}
-                    submitting={submitting === paper.id}
-                    onReview={handleReview}
-                    isReviewed={true}
-                  />
-                ))}
+          {/* ═══ NOTIFICATIONS ═══ */}
+          {section === 'notifications' && (
+            <div className="space-y-8">
+              <div>
+                <h2 className="text-2xl font-bold text-white">Notifications</h2>
+                <p className="text-slate-500 text-sm mt-0.5">Conference announcements</p>
               </div>
-            )}
-          </div>
-        ) : (
-          <div className="py-24 text-center border-2 border-dashed border-white/6 rounded-2xl text-slate-500">
-            No papers pending review.
-          </div>
-        )}
-      </div>
-      <div className="border-t border-white/5 pt-8">
-        <FeedbackForm conf={conf} />
-      </div>
-      <div className="border-t border-white/5 pt-8">
-        <MemberNotifications conf={conf} />
+              <MemberNotifications conf={conf} />
+            </div>
+          )}
+
+        </main>
       </div>
     </div>
   );
