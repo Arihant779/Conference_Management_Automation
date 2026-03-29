@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   MapPin, Calendar, Users, Mail, Phone, Globe,
-  Twitter, Linkedin, Edit3, Check, X, Plus, Trash2, Save, AlertCircle
+  Twitter, Linkedin, Edit3, Check, X, Plus, Trash2, Save, AlertCircle, Clock
 } from 'lucide-react';
+import ScheduleEditor from '../ScheduleEditor';
 
 /* ─────────────────────────────────────────────
    PALETTE & TOKENS
@@ -91,7 +92,7 @@ const sessionTypeStyle = {
 /* ─────────────────────────────────────────────
    MAIN COMPONENT
    ───────────────────────────────────────────── */
-const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave }) => {
+const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEditSchedule = false, currentUserId = null, members = [], onScheduleSave }) => {
   const [conf, setConf] = useState(initialConf);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -99,6 +100,7 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave }) => 
   const [saveError, setSaveError] = useState(null);
   const [activeNav, setActiveNav] = useState('about');
   const [scheduleTab, setScheduleTab] = useState(0);
+  const [showScheduleEditor, setShowScheduleEditor] = useState(false);
 
   const [pageData, setPageData] = useState({
     tagline: initialConf.tagline || 'Advancing Knowledge, Forging Connections',
@@ -107,27 +109,7 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave }) => 
     website: initialConf.website || 'https://yourconference.org',
     twitter: initialConf.twitter || '',
     linkedin: initialConf.linkedin || '',
-    schedule: initialConf.schedule || [
-      {
-        day: 'Day 1', date: initialConf.start_date || 'TBD', sessions: [
-          { time: '08:00', title: 'Registration & Morning Coffee', type: 'break', speaker: '', room: 'Foyer' },
-          { time: '09:00', title: 'Opening Address & Welcome', type: 'keynote', speaker: 'Conference Chair', room: 'Main Hall' },
-          { time: '10:30', title: 'Plenary Keynote', type: 'keynote', speaker: 'TBD', room: 'Main Hall' },
-          { time: '12:30', title: 'Luncheon', type: 'break', speaker: '', room: 'Dining Hall' },
-          { time: '14:00', title: 'Parallel Workshop Sessions', type: 'workshop', speaker: 'Multiple Presenters', room: 'Rooms A–C' },
-          { time: '17:00', title: 'Welcome Reception', type: 'social', speaker: '', room: 'Garden Terrace' },
-        ],
-      },
-      {
-        day: 'Day 2', date: initialConf.end_date || '', sessions: [
-          { time: '09:00', title: 'Invited Lecture', type: 'keynote', speaker: 'TBD', room: 'Main Hall' },
-          { time: '11:00', title: 'Paper Presentations — Track A', type: 'talk', speaker: 'Various Authors', room: 'Room A' },
-          { time: '13:00', title: 'Lunch & Poster Session', type: 'break', speaker: '', room: 'Exhibition Hall' },
-          { time: '15:00', title: 'Panel: Future Directions', type: 'panel', speaker: 'Distinguished Panel', room: 'Main Hall' },
-          { time: '17:30', title: 'Closing Ceremony & Awards', type: 'social', speaker: '', room: 'Main Hall' },
-        ],
-      },
-    ],
+    schedule: initialConf.schedule || [],
     speakers: initialConf.speakers || [
       { name: 'Prof. Eleanor Hartley', role: 'Keynote Speaker', org: 'University of Oxford', img: 'https://i.pravatar.cc/150?img=47', bio: 'Distinguished scholar whose work bridges computational theory and humanistic inquiry.' },
       { name: 'Dr. Marcus Chen', role: 'Invited Lecturer', org: 'Harvard University', img: 'https://i.pravatar.cc/150?img=68', bio: 'Award-winning researcher with over 200 published works in leading journals.' },
@@ -437,146 +419,127 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave }) => 
         <section id="schedule" style={{ scrollMarginTop: 120, marginBottom: 72 }}>
           {isEditing && <EditBadge label="Programme" />}
           <Rule thick />
-          <h2 style={{ fontSize: '2rem', fontWeight: 400, margin: '16px 0 32px', letterSpacing: '-0.01em' }}>
-            Conference Programme
-          </h2>
-
-          {/* Day tabs */}
-          <div style={{ display: 'flex', gap: 0, borderBottom: `2px solid ${C.ink}`, marginBottom: 32 }}>
-            {pageData.schedule.map((day, di) => (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '16px 0 32px' }}>
+            <h2 style={{ fontSize: '2rem', fontWeight: 400, letterSpacing: '-0.01em', margin: 0 }}>
+              Conference Programme
+            </h2>
+            {canEditSchedule && (
               <button
-                key={di}
-                onClick={() => setScheduleTab(di)}
+                onClick={() => setShowScheduleEditor(true)}
                 style={{
-                  background: 'transparent', border: 'none', cursor: 'pointer',
-                  padding: '10px 24px', fontSize: 13, fontWeight: 700, ...sansS,
-                  color: scheduleTab === di ? C.ink : C.inkMuted,
-                  borderBottom: scheduleTab === di ? `3px solid ${C.ink}` : '3px solid transparent',
-                  marginBottom: -2, transition: 'all 0.15s',
-                  textTransform: 'uppercase', letterSpacing: '0.08em',
+                  background: C.accentWarm, border: 'none', color: '#fdfaf4',
+                  padding: '8px 18px', fontSize: 12, fontWeight: 700,
+                  cursor: 'pointer', ...sansS, display: 'flex', alignItems: 'center', gap: 6,
                 }}
               >
-                {isEditing
-                  ? <EditableText value={day.day} onChange={v => updateNested('schedule', di, 'day', v)} className="" isEditing={isEditing} />
-                  : day.day}
-                <span style={{ display: 'block', fontSize: 10, fontWeight: 400, color: C.inkMuted, marginTop: 2 }}>
-                  {isEditing
-                    ? <EditableText value={day.date} onChange={v => updateNested('schedule', di, 'date', v)} className="" isEditing={isEditing} placeholder="Date…" />
-                    : day.date}
-                </span>
-              </button>
-            ))}
-            {isEditing && (
-              <button
-                onClick={() => { update('schedule', [...pageData.schedule, { day: `Day ${pageData.schedule.length + 1}`, date: '', sessions: [] }]); setScheduleTab(pageData.schedule.length); }}
-                style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '10px 16px', color: C.accentWarm, fontSize: 12, ...sansS, display: 'flex', alignItems: 'center', gap: 4 }}
-              >
-                <Plus size={12} /> Add Day
+                <Edit3 size={12} /> Edit Schedule
               </button>
             )}
           </div>
 
-          {/* Sessions table */}
-          {pageData.schedule[scheduleTab] && (
-            <div>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ borderBottom: `1px solid ${C.rule}` }}>
-                    {['Time', 'Session', 'Speaker / Notes', 'Room', 'Type', isEditing ? '' : null].filter(Boolean).map(h => (
-                      <th key={h} style={{ textAlign: 'left', padding: '8px 12px', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', color: C.inkMuted, fontWeight: 700, ...sansS }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {pageData.schedule[scheduleTab].sessions.map((session, si) => {
-                    const di = scheduleTab;
-                    const typeStyle = sessionTypeStyle[session.type] || sessionTypeStyle.talk;
-                    const updateSession = (field, value) => update('schedule', pageData.schedule.map((d, dIdx) => dIdx !== di ? d : {
-                      ...d, sessions: d.sessions.map((ss, sIdx) => sIdx !== si ? ss : { ...ss, [field]: value })
-                    }));
-                    return (
-                      <tr key={si} style={{ borderBottom: `1px solid ${C.rule}`, background: si % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.02)' }}>
-                        <td style={{ padding: '14px 12px', fontSize: 13, fontFamily: 'monospace', color: C.inkLight, whiteSpace: 'nowrap', verticalAlign: 'top' }}>
-                          {isEditing
-                            ? <EditableText value={session.time} onChange={v => updateSession('time', v)} className="" isEditing={isEditing} />
-                            : session.time}
-                        </td>
-                        <td style={{ padding: '14px 12px', verticalAlign: 'top' }}>
-                          <div style={{ fontWeight: 600, fontSize: 15, color: C.ink, marginBottom: 2 }}>
-                            {isEditing
-                              ? <EditableText value={session.title} onChange={v => updateSession('title', v)} className="" isEditing={isEditing} />
-                              : session.title}
-                          </div>
-                        </td>
-                        <td style={{ padding: '14px 12px', fontSize: 13, color: C.inkMuted, verticalAlign: 'top' }}>
-                          {isEditing
-                            ? <EditableText value={session.speaker} onChange={v => updateSession('speaker', v)} className="" isEditing={isEditing} placeholder="Speaker…" />
-                            : session.speaker}
-                        </td>
-                        <td style={{ padding: '14px 12px', fontSize: 12, color: C.inkMuted, verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                          {isEditing
-                            ? <EditableText value={session.room || ''} onChange={v => updateSession('room', v)} className="" isEditing={isEditing} placeholder="Room…" />
-                            : session.room || '—'}
-                        </td>
-                        <td style={{ padding: '14px 12px', verticalAlign: 'top' }}>
-                          {isEditing ? (
-                            <select
-                              value={session.type}
-                              onChange={e => updateSession('type', e.target.value)}
-                              style={{ background: C.bg, border: `1px solid ${C.rule}`, fontSize: 11, padding: '2px 6px', ...sansS, cursor: 'pointer' }}
-                            >
-                              {Object.keys(sessionTypeStyle).map(t => <option key={t} value={t}>{t}</option>)}
-                            </select>
-                          ) : (
-                            <span style={{
-                              fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em',
-                              padding: '3px 8px', ...sansS,
-                              background: typeStyle.bg, color: typeStyle.color,
-                            }}>
-                              {session.type}
-                            </span>
-                          )}
-                        </td>
-                        {isEditing && (
-                          <td style={{ padding: '14px 12px', verticalAlign: 'top' }}>
-                            <button
-                              onClick={() => update('schedule', pageData.schedule.map((d, dIdx) => dIdx !== di ? d : {
-                                ...d, sessions: d.sessions.filter((_, sIdx) => sIdx !== si)
-                              }))}
-                              style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#dc2626', padding: 4 }}
-                            >
-                              <X size={14} />
-                            </button>
-                          </td>
-                        )}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {isEditing && (
+          {pageData.schedule.length === 0 ? (
+            <div style={{ padding: '60px 0', textAlign: 'center', border: `1px dashed ${C.rule}`, borderRadius: 4 }}>
+              <Clock size={28} color={C.inkMuted} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.4 }} />
+              <p style={{ color: C.inkMuted, fontSize: 14, ...sansS }}>No schedule has been created yet.</p>
+              {canEditSchedule && (
                 <button
-                  onClick={() => update('schedule', pageData.schedule.map((d, dIdx) => dIdx !== scheduleTab ? d : {
-                    ...d, sessions: [...d.sessions, { time: '00:00', title: 'New Session', type: 'talk', speaker: '', room: '' }]
-                  }))}
-                  style={{
-                    width: '100%', marginTop: 12, border: `1px dashed ${C.rule}`, background: 'transparent',
-                    padding: '10px', fontSize: 12, color: C.accentWarm, cursor: 'pointer', ...sansS,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  }}
+                  onClick={() => setShowScheduleEditor(true)}
+                  style={{ marginTop: 12, background: 'transparent', border: 'none', color: C.accentWarm, fontSize: 13, cursor: 'pointer', fontWeight: 600, ...sansS }}
                 >
-                  <Plus size={12} /> Add Session
-                </button>
-              )}
-              {isEditing && (
-                <button
-                  onClick={() => { update('schedule', pageData.schedule.filter((_, dIdx) => dIdx !== scheduleTab)); setScheduleTab(0); }}
-                  style={{ marginTop: 8, background: 'transparent', border: 'none', color: '#dc2626', fontSize: 12, cursor: 'pointer', ...sansS, display: 'flex', alignItems: 'center', gap: 4 }}
-                >
-                  <Trash2 size={12} /> Remove this day
+                  + Create Schedule
                 </button>
               )}
             </div>
+          ) : (
+            <>
+              {/* Day tabs */}
+              <div style={{ display: 'flex', gap: 0, borderBottom: `2px solid ${C.ink}`, marginBottom: 32 }}>
+                {pageData.schedule.map((day, di) => (
+                  <button
+                    key={di}
+                    onClick={() => setScheduleTab(di)}
+                    style={{
+                      background: 'transparent', border: 'none', cursor: 'pointer',
+                      padding: '10px 24px', fontSize: 13, fontWeight: 700, ...sansS,
+                      color: scheduleTab === di ? C.ink : C.inkMuted,
+                      borderBottom: scheduleTab === di ? `3px solid ${C.ink}` : '3px solid transparent',
+                      marginBottom: -2, transition: 'all 0.15s',
+                      textTransform: 'uppercase', letterSpacing: '0.08em',
+                    }}
+                  >
+                    {day.day}
+                    <span style={{ display: 'block', fontSize: 10, fontWeight: 400, color: C.inkMuted, marginTop: 2 }}>
+                      {day.date}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Sessions table */}
+              {pageData.schedule[scheduleTab] && (
+                <div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom: `1px solid ${C.rule}` }}>
+                        {['Time', 'Session', 'Speaker / Notes', 'Room', 'Type', 'Head'].map(h => (
+                          <th key={h} style={{ textAlign: 'left', padding: '8px 12px', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', color: C.inkMuted, fontWeight: 700, ...sansS }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pageData.schedule[scheduleTab].sessions.map((session, si) => {
+                        const typeStyle = sessionTypeStyle[session.type] || sessionTypeStyle.talk;
+                        const isSessionHead = currentUserId && session.head_id === currentUserId;
+                        const headMember = session.head_id ? members.find(m => m.user_id === session.head_id) : null;
+                        return (
+                          <tr key={si} style={{
+                            borderBottom: `1px solid ${C.rule}`,
+                            background: isSessionHead ? 'rgba(139,58,26,0.08)' : (si % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.02)'),
+                            borderLeft: isSessionHead ? `3px solid ${C.accentWarm}` : '3px solid transparent',
+                          }}>
+                            <td style={{ padding: '14px 12px', fontSize: 13, fontFamily: 'monospace', color: C.inkLight, whiteSpace: 'nowrap', verticalAlign: 'top' }}>
+                              {session.time}
+                            </td>
+                            <td style={{ padding: '14px 12px', verticalAlign: 'top' }}>
+                              <div style={{ fontWeight: 600, fontSize: 15, color: C.ink, marginBottom: 2 }}>
+                                {session.title}
+                              </div>
+                            </td>
+                            <td style={{ padding: '14px 12px', fontSize: 13, color: C.inkMuted, verticalAlign: 'top' }}>
+                              {session.speaker}
+                            </td>
+                            <td style={{ padding: '14px 12px', fontSize: 12, color: C.inkMuted, verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                              {session.room || '—'}
+                            </td>
+                            <td style={{ padding: '14px 12px', verticalAlign: 'top' }}>
+                              <span style={{
+                                fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em',
+                                padding: '3px 8px', ...sansS,
+                                background: typeStyle.bg, color: typeStyle.color,
+                              }}>
+                                {session.type}
+                              </span>
+                            </td>
+                            <td style={{ padding: '14px 12px', fontSize: 12, color: C.inkMuted, verticalAlign: 'top' }}>
+                              {headMember ? (
+                                <span style={{
+                                  fontSize: 11, fontWeight: isSessionHead ? 700 : 400,
+                                  color: isSessionHead ? C.accentWarm : C.inkMuted,
+                                  ...sansS,
+                                }}>
+                                  {headMember.full_name || headMember.email}
+                                  {isSessionHead && ' (You)'}
+                                </span>
+                              ) : '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
           )}
         </section>
 
@@ -947,6 +910,19 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave }) => 
         </section>
 
       </main>
+
+      {/* ── Schedule Editor Modal ── */}
+      {showScheduleEditor && (
+        <ScheduleEditor
+          schedule={pageData.schedule}
+          members={members}
+          onSave={async (newSchedule) => {
+            if (onScheduleSave) await onScheduleSave(newSchedule);
+            setPageData(p => ({ ...p, schedule: newSchedule }));
+          }}
+          onClose={() => setShowScheduleEditor(false)}
+        />
+      )}
 
       {/* ── FOOTER ── */}
       <footer style={{ background: C.ink, color: 'rgba(253,250,244,0.6)', padding: '40px 32px' }}>

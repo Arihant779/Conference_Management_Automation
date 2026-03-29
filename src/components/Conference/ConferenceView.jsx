@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowRight } from 'lucide-react';
 import ModernTemplate from './Templates/ModernTemplate';
 import ClassicTemplate from './Templates/ClassicTemplate';
@@ -7,14 +7,41 @@ import PaperSubmission from './Templates/PaperSubmission';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
 
+/* ─── Role labels for notification messages ─── */
+const ROLE_LABELS = {
+  organizer: 'Organizer',
+  logistics_head: 'Logistics Team Lead',
+  outreach_head: 'Outreach Team Lead',
+  technical_head: 'Technical Team Lead',
+  registration_head: 'Registration Team Lead',
+  sponsorship_head: 'Sponsorship Team Lead',
+  hospitality_head: 'Hospitality Team Lead',
+  publication_head: 'Publications Team Lead',
+  finance_head: 'Finance Team Lead',
+  program_coord: 'Program Coordinator',
+  social_coord: 'Social Media Coordinator',
+  volunteer_coord: 'Volunteer Coordinator',
+  design_lead: 'Design Lead',
+  web_lead: 'Website Lead',
+  security_coord: 'Security Coordinator',
+  member: 'Member',
+  reviewer: 'Reviewer',
+  presenter: 'Presenter',
+};
+
 const ConferenceView = ({ conf, role: propRole, onBack }) => {
   const { user } = useApp();
   const [viewMode, setViewMode] = useState('home');
   const [resolvedRole, setResolvedRole] = useState(propRole || null);
+  const [members, setMembers] = useState([]);
+  const [isTeamLeader, setIsTeamLeader] = useState(false);
+  const [teamLeaderPosition, setTeamLeaderPosition] = useState('');
+  const [liveSchedule, setLiveSchedule] = useState(conf?.schedule || []);
 
   const confId = conf?.conference_id ?? conf?.id;
   const displayTitle = conf.title ?? conf.name ?? 'Untitled Conference';
 
+  /* ── Resolve role ── */
   useEffect(() => {
     if (!user || !confId) return;
 
@@ -34,10 +61,67 @@ const ConferenceView = ({ conf, role: propRole, onBack }) => {
       });
   }, [user, confId]);
 
+  /* ── Fetch members (for session head dropdown) ── */
+  const fetchMembers = useCallback(async () => {
+    if (!confId) return;
+    const { data } = await supabase
+      .from('conference_user')
+      .select('id, user_id, role, email, full_name, users(user_name, user_email)')
+      .eq('conference_id', confId);
+
+    const enriched = (data || []).map(m => ({
+      ...m,
+      email: m.email || m.users?.user_email || '',
+      full_name: m.full_name || m.users?.user_name || '',
+    }));
+    setMembers(enriched);
+  }, [confId]);
+
+  /* ── Check if user is a team leader ── */
+  const checkTeamLeader = useCallback(async () => {
+    if (!user || !confId) return;
+
+    // Find the user's conference_user id
+    const { data: cuData } = await supabase
+      .from('conference_user')
+      .select('id')
+      .eq('conference_id', confId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (!cuData) return;
+
+    // Check if they are head of any team
+    const { data: teamData } = await supabase
+      .from('conference_teams')
+      .select('id, name')
+      .eq('conference_id', confId)
+      .eq('head_id', cuData.id);
+
+    if (teamData && teamData.length > 0) {
+      setIsTeamLeader(true);
+      setTeamLeaderPosition(`${teamData[0].name} Lead`);
+    }
+  }, [user, confId]);
+
+  useEffect(() => {
+    fetchMembers();
+    checkTeamLeader();
+  }, [fetchMembers, checkTeamLeader]);
+
   const hasRole = !!resolvedRole;
   const isOrganizer = resolvedRole === 'organizer';
+  const canEditSchedule = isOrganizer || isTeamLeader;
 
-  // Save handler lives here — keeps templates free of direct Supabase imports
+  /* ── Get editor's display name and position ── */
+  const editorName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Unknown';
+  const editorPosition = isOrganizer
+    ? 'Organizer'
+    : isTeamLeader
+      ? teamLeaderPosition
+      : (ROLE_LABELS[resolvedRole] || resolvedRole || 'Member');
+
+  // Save handler for page editing (everything except schedule)
   const handleSave = async (pageData) => {
     const { error } = await supabase
       .from('conference')
@@ -49,7 +133,6 @@ const ConferenceView = ({ conf, role: propRole, onBack }) => {
         website: pageData.website,
         twitter: pageData.twitter,
         linkedin: pageData.linkedin,
-        schedule: pageData.schedule,
         speakers: pageData.speakers,
         sponsors: pageData.sponsors,
         important_dates: pageData.important_dates,
@@ -65,6 +148,28 @@ const ConferenceView = ({ conf, role: propRole, onBack }) => {
       .eq('conference_id', confId);
 
     if (error) throw new Error(error.message);
+  };
+
+  /* ── Schedule-specific save handler with notification ── */
+  const handleScheduleSave = async (newSchedule) => {
+    const { error } = await supabase
+      .from('conference')
+      .update({ schedule: newSchedule })
+      .eq('conference_id', confId);
+
+    if (error) throw new Error(error.message);
+
+    // Update local state so the template re-renders
+    setLiveSchedule(newSchedule);
+
+    // Send notification to all members and organizers
+    await supabase.from('notifications').insert([{
+      conference_id: confId,
+      title: 'Schedule Updated',
+      message: `Schedule is updated by ${editorPosition} - ${editorName}`,
+      target_role: null,
+      created_at: new Date().toISOString(),
+    }]);
   };
 
   return (
@@ -118,8 +223,24 @@ const ConferenceView = ({ conf, role: propRole, onBack }) => {
       <div className="flex-1 bg-black overflow-y-auto relative">
         {viewMode === 'home' ? (
           conf.template === 'classic'
-            ? <ClassicTemplate conf={conf} isOrganizer={isOrganizer} onSave={handleSave} />
-            : <ModernTemplate conf={conf} isOrganizer={isOrganizer} onSave={handleSave} />
+            ? <ClassicTemplate
+              conf={{ ...conf, schedule: liveSchedule }}
+              isOrganizer={isOrganizer}
+              onSave={handleSave}
+              canEditSchedule={canEditSchedule}
+              currentUserId={user?.id}
+              members={members}
+              onScheduleSave={handleScheduleSave}
+            />
+            : <ModernTemplate
+              conf={{ ...conf, schedule: liveSchedule }}
+              isOrganizer={isOrganizer}
+              onSave={handleSave}
+              canEditSchedule={canEditSchedule}
+              currentUserId={user?.id}
+              members={members}
+              onScheduleSave={handleScheduleSave}
+            />
         ) : viewMode === 'dashboard' ? (
           <RoleBasedDashboard conf={conf} role={resolvedRole} onBack={onBack} />
         ) : (

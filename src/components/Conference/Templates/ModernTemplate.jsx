@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   MapPin, Calendar, Users, Mail, Phone, Globe,
-  Twitter, Linkedin, Edit3, Check, X, Plus, Trash2, Save, AlertCircle
+  Twitter, Linkedin, Edit3, Check, X, Plus, Trash2, Save, AlertCircle, Clock
 } from 'lucide-react';
+import ScheduleEditor from '../ScheduleEditor';
 
 /* ─────────────────────────────────────────────
    INLINE EDITABLE FIELD
@@ -48,12 +49,13 @@ const Section = ({ id, label, children, isEditing }) => (
      isOrganizer – boolean, shows edit bar when true
      onSave      – async fn(pageData) → called when organizer saves
    ───────────────────────────────────────────── */
-const ModernTemplate = ({ conf: initialConf, isOrganizer = false, onSave }) => {
+const ModernTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEditSchedule = false, currentUserId = null, members = [], onScheduleSave }) => {
   const [conf, setConf] = useState(initialConf);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState(null);
+  const [showScheduleEditor, setShowScheduleEditor] = useState(false);
   const [activeNav, setActiveNav] = useState('about');
 
   const [pageData, setPageData] = useState({
@@ -63,27 +65,7 @@ const ModernTemplate = ({ conf: initialConf, isOrganizer = false, onSave }) => {
     website: initialConf.website || 'https://yourconference.org',
     twitter: initialConf.twitter || '',
     linkedin: initialConf.linkedin || '',
-    schedule: initialConf.schedule || [
-      {
-        day: 'Day 1', date: initialConf.start_date || 'TBD', sessions: [
-          { time: '08:00 AM', title: 'Registration & Welcome Coffee', type: 'break', speaker: '' },
-          { time: '09:00 AM', title: 'Opening Keynote', type: 'keynote', speaker: 'TBD' },
-          { time: '11:00 AM', title: 'Panel Discussion', type: 'panel', speaker: 'TBD' },
-          { time: '01:00 PM', title: 'Lunch Break', type: 'break', speaker: '' },
-          { time: '02:30 PM', title: 'Workshop Sessions', type: 'workshop', speaker: 'Multiple Tracks' },
-          { time: '05:00 PM', title: 'Networking Reception', type: 'social', speaker: '' },
-        ],
-      },
-      {
-        day: 'Day 2', date: initialConf.end_date || '', sessions: [
-          { time: '09:00 AM', title: 'Morning Keynote', type: 'keynote', speaker: 'TBD' },
-          { time: '11:00 AM', title: 'Research Presentations', type: 'talk', speaker: 'Multiple Speakers' },
-          { time: '01:00 PM', title: 'Lunch Break', type: 'break', speaker: '' },
-          { time: '03:00 PM', title: 'Closing Panel & Awards', type: 'panel', speaker: 'TBD' },
-          { time: '05:00 PM', title: 'Farewell Dinner', type: 'social', speaker: '' },
-        ],
-      },
-    ],
+    schedule: initialConf.schedule || [],
     speakers: initialConf.speakers || [
       { name: 'Dr. Alex Rivera', role: 'Lead Researcher', org: 'MIT', img: 'https://i.pravatar.cc/150?img=21', bio: 'Pioneering researcher in AI ethics and policy.' },
       { name: 'Prof. Sarah Chen', role: 'Director', org: 'Stanford AI Lab', img: 'https://i.pravatar.cc/150?img=47', bio: 'Expert in machine learning and computer vision.' },
@@ -255,8 +237,8 @@ const ModernTemplate = ({ conf: initialConf, isOrganizer = false, onSave }) => {
               key={item.id}
               onClick={() => scrollTo(item.id)}
               className={`px-5 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-all ${activeNav === item.id
-                  ? 'border-indigo-500 text-white'
-                  : 'border-transparent text-slate-500 hover:text-slate-300'
+                ? 'border-indigo-500 text-white'
+                : 'border-transparent text-slate-500 hover:text-slate-300'
                 }`}
             >
               {item.label}
@@ -307,124 +289,89 @@ const ModernTemplate = ({ conf: initialConf, isOrganizer = false, onSave }) => {
 
         {/* ── SCHEDULE ── */}
         <Section id="schedule" label="Schedule" isEditing={isEditing}>
-          <h2 className="text-4xl font-black text-white mb-12">Program <span className="text-indigo-400">Schedule</span></h2>
-          <div className="space-y-10">
-            {pageData.schedule.map((day, di) => (
-              <div key={di}>
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="bg-indigo-600 text-white text-sm font-bold px-4 py-2 rounded-full">
-                    {isEditing
-                      ? <EditableText value={day.day} onChange={v => updateNested('schedule', di, 'day', v)} className="text-white bg-transparent w-16" isEditing={isEditing} />
-                      : day.day}
-                  </div>
-                  <span className="text-slate-500 text-sm">
-                    {isEditing
-                      ? <EditableText value={day.date} onChange={v => updateNested('schedule', di, 'date', v)} className="text-slate-400 w-32" isEditing={isEditing} placeholder="Date…" />
-                      : day.date}
-                  </span>
-                  {isEditing && (
-                    <button
-                      onClick={() => update('schedule', pageData.schedule.filter((_, idx) => idx !== di))}
-                      className="ml-auto text-red-400/60 hover:text-red-400 transition-colors flex items-center gap-1 text-xs"
-                    >
-                      <Trash2 size={12} /> Remove Day
-                    </button>
-                  )}
-                </div>
-                <div className="space-y-3">
-                  {day.sessions.map((session, si) => (
-                    <div key={si} className="flex items-start gap-5 bg-white/[0.03] border border-white/5 rounded-2xl p-5 hover:border-white/10 transition-all group">
-                      <div className="min-w-[90px] text-slate-500 text-sm font-mono pt-0.5">
-                        {isEditing
-                          ? <EditableText
-                            value={session.time}
-                            onChange={v => update('schedule', pageData.schedule.map((d, dIdx) => dIdx !== di ? d : {
-                              ...d, sessions: d.sessions.map((ss, sIdx) => sIdx !== si ? ss : { ...ss, time: v })
-                            }))}
-                            className="text-slate-400 w-24 text-xs"
-                            isEditing={isEditing}
-                          />
-                          : session.time}
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-bold text-white text-base">
-                          {isEditing
-                            ? <EditableText
-                              value={session.title}
-                              onChange={v => update('schedule', pageData.schedule.map((d, dIdx) => dIdx !== di ? d : {
-                                ...d, sessions: d.sessions.map((ss, sIdx) => sIdx !== si ? ss : { ...ss, title: v })
-                              }))}
-                              className="text-white font-bold w-full"
-                              isEditing={isEditing}
-                            />
-                            : session.title}
-                        </h4>
-                        {(session.speaker || isEditing) && (
-                          <p className="text-slate-500 text-sm mt-1">
-                            {isEditing
-                              ? <EditableText
-                                value={session.speaker}
-                                onChange={v => update('schedule', pageData.schedule.map((d, dIdx) => dIdx !== di ? d : {
-                                  ...d, sessions: d.sessions.map((ss, sIdx) => sIdx !== si ? ss : { ...ss, speaker: v })
-                                }))}
-                                className="text-slate-400 text-sm"
-                                isEditing={isEditing}
-                                placeholder="Speaker name…"
-                              />
-                              : session.speaker}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {isEditing && (
-                          <select
-                            value={session.type}
-                            onChange={e => update('schedule', pageData.schedule.map((d, dIdx) => dIdx !== di ? d : {
-                              ...d, sessions: d.sessions.map((ss, sIdx) => sIdx !== si ? ss : { ...ss, type: e.target.value })
-                            }))}
-                            className="bg-slate-800 text-slate-300 text-xs rounded-lg px-2 py-1 border border-white/10 outline-none"
-                          >
-                            {Object.keys(sessionTypeStyle).map(t => <option key={t} value={t}>{t}</option>)}
-                          </select>
-                        )}
-                        <span className={`text-xs px-3 py-1 rounded-full border font-medium capitalize ${sessionTypeStyle[session.type] || sessionTypeStyle.talk}`}>
-                          {session.type}
-                        </span>
-                        {isEditing && (
-                          <button
-                            onClick={() => update('schedule', pageData.schedule.map((d, dIdx) => dIdx !== di ? d : {
-                              ...d, sessions: d.sessions.filter((_, sIdx) => sIdx !== si)
-                            }))}
-                            className="text-red-400/50 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-                          >
-                            <X size={14} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  {isEditing && (
-                    <button
-                      onClick={() => update('schedule', pageData.schedule.map((d, dIdx) => dIdx !== di ? d : {
-                        ...d, sessions: [...d.sessions, { time: '12:00 PM', title: 'New Session', type: 'talk', speaker: '' }]
-                      }))}
-                      className="w-full border border-dashed border-white/10 hover:border-indigo-500/40 text-slate-500 hover:text-indigo-400 rounded-2xl py-3 text-sm font-medium flex items-center justify-center gap-2 transition-all"
-                    >
-                      <Plus size={14} /> Add Session
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-            {isEditing && (
+          <div className="flex items-center justify-between mb-12">
+            <h2 className="text-4xl font-black text-white">Program <span className="text-indigo-400">Schedule</span></h2>
+            {canEditSchedule && (
               <button
-                onClick={() => update('schedule', [...pageData.schedule, { day: `Day ${pageData.schedule.length + 1}`, date: '', sessions: [] }])}
-                className="border border-dashed border-indigo-500/30 hover:border-indigo-500/60 text-indigo-400/60 hover:text-indigo-400 rounded-2xl py-4 w-full text-sm font-medium flex items-center justify-center gap-2 transition-all"
+                onClick={() => setShowScheduleEditor(true)}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/30 transition-all"
               >
-                <Plus size={14} /> Add Day
+                <Edit3 size={14} /> Edit Schedule
               </button>
             )}
           </div>
+          {pageData.schedule.length === 0 ? (
+            <div className="py-20 text-center border border-dashed border-white/8 rounded-2xl">
+              <Clock size={32} className="text-slate-700 mx-auto mb-3" />
+              <p className="text-slate-500 text-sm">No schedule has been created yet.</p>
+              {canEditSchedule && (
+                <button
+                  onClick={() => setShowScheduleEditor(true)}
+                  className="mt-3 text-indigo-400 text-sm hover:text-indigo-300 font-semibold"
+                >
+                  + Create Schedule
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-10">
+              {pageData.schedule.map((day, di) => (
+                <div key={di}>
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="bg-indigo-600 text-white text-sm font-bold px-4 py-2 rounded-full">
+                      {day.day}
+                    </div>
+                    <span className="text-slate-500 text-sm">{day.date}</span>
+                  </div>
+                  <div className="space-y-3">
+                    {day.sessions.map((session, si) => {
+                      const isSessionHead = currentUserId && session.head_id === currentUserId;
+                      const headMember = session.head_id ? members.find(m => m.user_id === session.head_id) : null;
+                      return (
+                        <div
+                          key={si}
+                          className={`flex items-start gap-5 rounded-2xl p-5 transition-all group ${isSessionHead
+                              ? 'bg-indigo-500/10 border-2 border-indigo-500/40 ring-1 ring-indigo-500/20'
+                              : 'bg-white/[0.03] border border-white/5 hover:border-white/10'
+                            }`}
+                        >
+                          <div className="min-w-[90px] text-slate-500 text-sm font-mono pt-0.5">
+                            {session.time}
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-bold text-white text-base">{session.title}</h4>
+                            {session.speaker && (
+                              <p className="text-slate-500 text-sm mt-1">{session.speaker}</p>
+                            )}
+                            {headMember && (
+                              <div className="flex items-center gap-1.5 mt-2">
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase tracking-wider ${isSessionHead
+                                    ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
+                                    : 'bg-white/5 text-slate-400 border-white/10'
+                                  }`}>
+                                  Head: {headMember.full_name || headMember.email}
+                                </span>
+                                {isSessionHead && (
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-600 text-white">
+                                    You
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs px-3 py-1 rounded-full border font-medium capitalize ${sessionTypeStyle[session.type] || sessionTypeStyle.talk}`}>
+                              {session.type}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </Section>
 
         {/* ── SPEAKERS ── */}
@@ -606,13 +553,13 @@ const ModernTemplate = ({ conf: initialConf, isOrganizer = false, onSave }) => {
               <div key={tier} className="mb-10">
                 <div className="flex items-center gap-3 mb-5">
                   <span className={`text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full border ${tier === 'platinum' ? 'bg-slate-300/10 text-slate-300 border-slate-300/20'
-                      : tier === 'gold' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                        : 'bg-slate-500/10 text-slate-400 border-slate-500/20'
+                    : tier === 'gold' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                      : 'bg-slate-500/10 text-slate-400 border-slate-500/20'
                     }`}>{tier}</span>
                 </div>
                 <div className={`grid gap-4 ${tier === 'platinum' ? 'grid-cols-1 sm:grid-cols-2'
-                    : tier === 'gold' ? 'grid-cols-2 sm:grid-cols-3'
-                      : 'grid-cols-3 sm:grid-cols-5'
+                  : tier === 'gold' ? 'grid-cols-2 sm:grid-cols-3'
+                    : 'grid-cols-3 sm:grid-cols-5'
                   }`}>
                   {tierSponsors.map((sp) => {
                     const globalIndex = pageData.sponsors.indexOf(sp);
@@ -692,6 +639,19 @@ const ModernTemplate = ({ conf: initialConf, isOrganizer = false, onSave }) => {
         </Section>
 
       </div>
+
+      {/* ── Schedule Editor Modal ── */}
+      {showScheduleEditor && (
+        <ScheduleEditor
+          schedule={pageData.schedule}
+          members={members}
+          onSave={async (newSchedule) => {
+            if (onScheduleSave) await onScheduleSave(newSchedule);
+            setPageData(p => ({ ...p, schedule: newSchedule }));
+          }}
+          onClose={() => setShowScheduleEditor(false)}
+        />
+      )}
 
       {/* ── FOOTER ── */}
       <footer className="border-t border-white/5 mt-20 py-12 px-6">
