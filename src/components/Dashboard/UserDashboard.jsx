@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Users, Calendar, Layout, LogOut, Plus, Search,
   MapPin, Bell, ChevronRight, ChevronLeft, Check,
-  X, Sparkles, Settings,
+  X, Sparkles, Settings, User, Mail, Shield,
+  Award, FileText, Lock, Eye, EyeOff
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
@@ -231,8 +232,8 @@ const VolunteerPreferencesModal = ({ userId, onClose, onSaved }) => {
                     key={item}
                     onClick={() => toggleDomain(item)}
                     className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all duration-150 ${selectedDomains.has(item)
-                        ? 'bg-indigo-500/15 border-indigo-500/50 text-indigo-300'
-                        : 'bg-white/3 border-white/8 text-slate-500 hover:border-indigo-500/30 hover:text-indigo-400 hover:bg-indigo-500/7'
+                      ? 'bg-indigo-500/15 border-indigo-500/50 text-indigo-300'
+                      : 'bg-white/3 border-white/8 text-slate-500 hover:border-indigo-500/30 hover:text-indigo-400 hover:bg-indigo-500/7'
                       }`}
                   >
                     {selectedDomains.has(item) && <Check size={10} className="inline mr-1 -mt-0.5" />}
@@ -257,8 +258,8 @@ const VolunteerPreferencesModal = ({ userId, onClose, onSaved }) => {
               key={role.id}
               onClick={() => toggleRole(role.id)}
               className={`text-left p-4 rounded-xl border transition-all duration-150 ${sel
-                  ? 'bg-indigo-500/10 border-indigo-500/45'
-                  : 'bg-white/2 border-white/6 hover:bg-indigo-500/5 hover:border-indigo-500/25'
+                ? 'bg-indigo-500/10 border-indigo-500/45'
+                : 'bg-white/2 border-white/6 hover:bg-indigo-500/5 hover:border-indigo-500/25'
                 }`}
             >
               <div
@@ -414,8 +415,8 @@ const VolunteerPreferencesModal = ({ userId, onClose, onSaved }) => {
                 disabled={!current.canContinue || saving}
                 onClick={step < 2 ? () => { setStep((s) => s + 1); setSaveError(''); } : handleSave}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${current.canContinue && !saving
-                    ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20'
-                    : 'bg-indigo-600/25 text-indigo-300/40 cursor-not-allowed'
+                  ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20'
+                  : 'bg-indigo-600/25 text-indigo-300/40 cursor-not-allowed'
                   }`}
               >
                 {saving ? 'Saving…' : step < 2 ? 'Continue' : 'Save Preferences'}
@@ -455,6 +456,345 @@ const NotificationsPanel = ({ onClose }) => (
     </div>
   </div>
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Password Update Section
+// ─────────────────────────────────────────────────────────────────────────────
+
+const PasswordUpdateSection = ({ user }) => {
+  const [step, setStep] = useState('initial'); // 'initial', 'verify', 'update'
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState({ text: '', type: '' });
+
+  const isOAuth = user?.app_metadata?.provider && user.app_metadata.provider !== 'email';
+  const providerName = user?.app_metadata?.provider 
+    ? user.app_metadata.provider.charAt(0).toUpperCase() + user.app_metadata.provider.slice(1) 
+    : 'Social Provider';
+
+  const reset = () => {
+    setStep('initial');
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setMessage({ text: '', type: '' });
+  };
+
+  const handleVerify = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage({ text: '', type: '' });
+
+    // Verify current password by attempting a silent sign-in
+    const { error } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    });
+
+    setLoading(false);
+    if (error) {
+      setMessage({ text: 'Current password is incorrect.', type: 'error' });
+    } else {
+      setStep('update');
+    }
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      setMessage({ text: 'Passwords do not match.', type: 'error' });
+      return;
+    }
+    if (newPassword.length < 6) {
+      setMessage({ text: 'Password must be at least 6 characters.', type: 'error' });
+      return;
+    }
+
+    setLoading(true);
+    setMessage({ text: '', type: '' });
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+    setLoading(false);
+    if (error) {
+      setMessage({ text: error.message, type: 'error' });
+    } else {
+      setMessage({ text: 'Password updated successfully!', type: 'success' });
+      setTimeout(() => reset(), 2000);
+    }
+  };
+
+  return (
+    <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <Lock size={18} className="text-indigo-400" />
+          <h3 className="text-lg font-bold text-white">Security</h3>
+        </div>
+        {step !== 'initial' && (
+          <button onClick={reset} className="text-xs font-semibold text-slate-500 hover:text-slate-300 transition-colors">
+            Cancel
+          </button>
+        )}
+      </div>
+
+      {isOAuth ? (
+        <div className="bg-indigo-500/5 border border-indigo-500/10 rounded-xl p-4">
+          <p className="text-sm text-slate-400 leading-relaxed">
+            Your account is managed via <span className="text-indigo-400 font-semibold">{providerName}</span>. 
+            Password updates are handled through your {providerName} account settings.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {step === 'initial' && (
+            <button
+              onClick={() => setStep('verify')}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-semibold text-slate-200 transition-all"
+            >
+              <Lock size={14} className="text-indigo-400" />
+              Change Password
+            </button>
+          )}
+
+          {step === 'verify' && (
+            <form onSubmit={handleVerify} className="space-y-4">
+              <p className="text-xs text-slate-500 mb-2">Please enter your current password to continue.</p>
+              <div>
+                <label className="text-[10px] font-bold tracking-widest uppercase text-slate-500 block mb-2">Current Password</label>
+                <div className="relative">
+                  <input
+                    autoFocus
+                    type={showPassword ? 'text' : 'password'}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full bg-slate-50 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 font-medium outline-none focus:border-indigo-500/50 transition-colors placeholder-slate-400"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+              
+              {message.text && (
+                <p className="text-xs font-semibold text-red-400">{message.text}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading || !currentPassword}
+                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-all"
+              >
+                {loading ? 'Verifying...' : 'Next Step'}
+              </button>
+            </form>
+          )}
+
+          {step === 'update' && (
+            <form onSubmit={handleUpdate} className="space-y-4">
+              <p className="text-xs text-slate-500 mb-2">Verification successful. Set your new password.</p>
+              <div>
+                <label className="text-[10px] font-bold tracking-widest uppercase text-slate-500 block mb-2">New Password</label>
+                <div className="relative">
+                  <input
+                    autoFocus
+                    type={showPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full bg-slate-50 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 font-medium outline-none focus:border-indigo-500/50 transition-colors placeholder-slate-400"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold tracking-widest uppercase text-slate-500 block mb-2">Confirm New Password</label>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full bg-slate-50 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 font-medium outline-none focus:border-indigo-500/50 transition-colors placeholder-slate-400"
+                  required
+                />
+              </div>
+
+              {message.text && (
+                <p className={`text-xs font-semibold ${message.type === 'error' ? 'text-red-400' : 'text-emerald-400'}`}>
+                  {message.text}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading || !newPassword || !confirmPassword}
+                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-all"
+              >
+                {loading ? 'Updating...' : 'Confirm Update'}
+              </button>
+            </form>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Profile View
+// ─────────────────────────────────────────────────────────────────────────────
+
+const ProfileView = ({ user, volunteerPrefs, ROLES, onEditVolunteer }) => {
+  const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+  const avatarLetter = displayName[0]?.toUpperCase();
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Profile Header */}
+      <div className="relative bg-[#0d1117] border border-white/8 rounded-3xl overflow-hidden p-8">
+        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-indigo-600/20 to-purple-600/20" />
+        <div className="relative flex flex-col md:flex-row items-center md:items-end gap-6">
+          <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-4xl font-bold text-white shadow-2xl border-4 border-[#080b11]">
+            {avatarLetter}
+          </div>
+          <div className="flex-1 text-center md:text-left mb-2">
+            <h2 className="text-3xl font-bold text-white mb-1">{displayName}</h2>
+            <div className="flex flex-wrap justify-center md:justify-start gap-4 text-slate-400 text-sm">
+              <div className="flex items-center gap-1.5">
+                <Mail size={14} className="text-indigo-400" />
+                {user?.email}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Shield size={14} className="text-emerald-400" />
+                Verified Account
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={onEditVolunteer}
+            className="px-6 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-semibold text-slate-200 transition-all mb-2"
+          >
+            Edit Profile
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Left Column: Bio/Info */}
+        <div className="md:col-span-2 space-y-8">
+          {/* Volunteer Preferences Section */}
+          <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <Sparkles size={18} className="text-indigo-400" />
+                <h3 className="text-lg font-bold text-white">Volunteer Roles & Domains</h3>
+              </div>
+              <button
+                onClick={onEditVolunteer}
+                className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors"
+              >
+                Update
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <p className="text-[10px] font-bold tracking-widest uppercase text-slate-500 mb-3">Preferred Roles</p>
+                <div className="flex flex-wrap gap-2">
+                  {volunteerPrefs?.volunteer_roles?.map((rId) => {
+                    const r = ROLES.find((x) => x.id === rId);
+                    return r ? (
+                      <span key={rId} className="px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium">
+                        {r.emoji} {r.name}
+                      </span>
+                    ) : null;
+                  })}
+                  {(!volunteerPrefs?.volunteer_roles || volunteerPrefs.volunteer_roles.length === 0) && (
+                    <p className="text-slate-600 text-sm italic">No roles selected yet</p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[10px] font-bold tracking-widest uppercase text-slate-500 mb-3">Interest Domains</p>
+                <div className="flex flex-wrap gap-2">
+                  {volunteerPrefs?.volunteer_domains?.map((domain) => (
+                    <span key={domain} className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-slate-300 text-xs font-medium">
+                      {domain}
+                    </span>
+                  ))}
+                  {(!volunteerPrefs?.volunteer_domains || volunteerPrefs.volunteer_domains.length === 0) && (
+                    <p className="text-slate-600 text-sm italic">No domains selected yet</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* About Section (Placeholder for future) */}
+          <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <FileText size={18} className="text-indigo-400" />
+              <h3 className="text-lg font-bold text-white">Professional Bio</h3>
+            </div>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              No bio provided yet. Add a short description of your research interests and professional background to help organizers match you with relevant opportunities.
+            </p>
+          </div>
+        </div>
+
+        {/* Right Column: Mini Stats/Achievements & Security */}
+        <div className="space-y-8">
+          <PasswordUpdateSection user={user} />
+
+          <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-6">
+            <div className="flex items-center gap-2 mb-6">
+              <Award size={18} className="text-amber-400" />
+              <h3 className="text-lg font-bold text-white">Achievements</h3>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-3 bg-white/3 rounded-xl border border-white/5">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-500">
+                  <Award size={16} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-white">Early Bird</p>
+                  <p className="text-[10px] text-slate-500">Joined the platform in 2026</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-white/3 rounded-xl border border-white/5 opacity-50">
+                <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-500">
+                  <Users size={16} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-white">Frequent Attendee</p>
+                  <p className="text-[10px] text-slate-500">Join 5 conferences</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Conference Card
@@ -513,8 +853,8 @@ const ConfCard = ({ conf, role, onSelectConf }) => {
         <button
           onClick={() => onSelectConf(conf, role)}
           className={`w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 ${role
-              ? 'bg-white text-black hover:bg-slate-100'
-              : 'bg-white/6 text-slate-300 hover:bg-white/12 border border-white/10'
+            ? 'bg-white text-black hover:bg-slate-100'
+            : 'bg-white/6 text-slate-300 hover:bg-white/12 border border-white/10'
             }`}
         >
           {role ? 'Open Dashboard' : 'View Conference'}
@@ -566,6 +906,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
   const { user, conferences, logout, fetchConferences } = useApp();
 
   const [activeTab, setActiveTab] = useState('my');
+  const [currentSection, setCurrentSection] = useState('conferences'); // 'conferences' or 'profile'
   const [search, setSearch] = useState('');
   const [roleMap, setRoleMap] = useState({});
   const [loadingRoles, setLoadingRoles] = useState(true);
@@ -694,8 +1035,8 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
             <button
               onClick={() => setShowVolunteerModal(true)}
               className={`hidden md:flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all border ${hasVolunteerPrefs
-                  ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/15'
-                  : 'bg-white/4 border-white/8 text-slate-400 hover:bg-white/8 hover:text-slate-200'
+                ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/15'
+                : 'bg-white/4 border-white/8 text-slate-400 hover:bg-white/8 hover:text-slate-200'
                 }`}
               title="Set volunteer preferences"
             >
@@ -714,13 +1055,18 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
 
             {/* User info */}
             <div className="flex items-center gap-2.5 pl-3 border-l border-white/8">
-              <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                {firstName[0]?.toUpperCase()}
-              </div>
-              <div className="hidden md:block">
-                <div className="text-sm font-semibold text-white leading-none">{firstName}</div>
-                <div className="text-xs text-slate-600 mt-0.5">{user?.email}</div>
-              </div>
+              <button
+                onClick={() => setCurrentSection('profile')}
+                className={`flex items-center gap-2.5 p-1 rounded-lg transition-all ${currentSection === 'profile' ? 'bg-indigo-500/10 ring-1 ring-indigo-500/30' : 'hover:bg-white/5'}`}
+              >
+                <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                  {firstName[0]?.toUpperCase()}
+                </div>
+                <div className="hidden md:block text-left">
+                  <div className="text-sm font-semibold text-white leading-none">{firstName}</div>
+                  <div className="text-xs text-slate-600 mt-0.5">My Profile</div>
+                </div>
+              </button>
               <button
                 onClick={logout}
                 className="ml-1 p-1.5 text-slate-600 hover:text-red-400 transition-colors rounded-lg hover:bg-white/5"
@@ -738,148 +1084,170 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
         <NotificationsPanel onClose={() => setShowNotifications(false)} />
       )}
 
-      {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-6 pt-12 pb-10">
-        <div className="flex justify-between items-start flex-wrap gap-4">
-          <div>
-            <h1 className="text-4xl font-bold text-white mb-1.5 tracking-tight">
-              Welcome back, {firstName} 👋
-            </h1>
-            <p className="text-slate-500">Manage your conferences and submissions</p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {/* Mobile volunteer prefs */}
-            <button
-              onClick={() => setShowVolunteerModal(true)}
-              className={`md:hidden flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-semibold border transition-all ${hasVolunteerPrefs
-                  ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300'
-                  : 'bg-white/5 border-white/10 text-slate-400'
-                }`}
-            >
-              <Sparkles size={13} />
-              Preferences
-            </button>
-
-            <button
-              onClick={onCreateConf}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 transition-colors shadow-lg shadow-indigo-600/20"
-            >
-              <Plus size={17} /> New Conference
-            </button>
-          </div>
-        </div>
-
-        {/* Volunteer preferences summary banner (shown when set) */}
-        {hasVolunteerPrefs && (
-          <div className="mt-6 bg-indigo-500/6 border border-indigo-500/20 rounded-xl px-5 py-4 flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles size={13} className="text-indigo-400 shrink-0" />
-                <span className="text-xs font-bold tracking-widest uppercase text-indigo-400">Volunteer Preferences</span>
+      {currentSection === 'conferences' ? (
+        <>
+          {/* ── Hero ────────────────────────────────────────────────────────── */}
+          <div className="max-w-7xl mx-auto px-6 pt-12 pb-10">
+            <div className="flex justify-between items-start flex-wrap gap-4">
+              <div>
+                <h1 className="text-4xl font-bold text-white mb-1.5 tracking-tight">
+                  Welcome back, {firstName} 👋
+                </h1>
+                <p className="text-slate-500">Manage your conferences and submissions</p>
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                {volunteerPrefs?.volunteer_roles?.slice(0, 4).map((rId) => {
-                  const r = ROLES.find((x) => x.id === rId);
-                  return r ? (
-                    <span key={rId} className="px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium">
-                      {r.emoji} {r.name}
-                    </span>
-                  ) : null;
-                })}
-                {(volunteerPrefs?.volunteer_roles?.length ?? 0) > 4 && (
-                  <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/8 text-slate-400 text-xs font-medium">
-                    +{volunteerPrefs.volunteer_roles.length - 4} more
-                  </span>
-                )}
-                {volunteerPrefs?.volunteer_domains?.slice(0, 3).map((d) => (
-                  <span key={d} className="px-2 py-0.5 rounded-md bg-white/5 border border-white/8 text-slate-400 text-xs font-medium">
-                    {d}
-                  </span>
-                ))}
-                {(volunteerPrefs?.volunteer_domains?.length ?? 0) > 3 && (
-                  <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/8 text-slate-400 text-xs font-medium">
-                    +{volunteerPrefs.volunteer_domains.length - 3} domains
-                  </span>
-                )}
+
+              <div className="flex items-center gap-3">
+                {/* Mobile volunteer prefs */}
+                <button
+                  onClick={() => setShowVolunteerModal(true)}
+                  className={`md:hidden flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-semibold border transition-all ${hasVolunteerPrefs
+                    ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300'
+                    : 'bg-white/5 border-white/10 text-slate-400'
+                    }`}
+                >
+                  <Sparkles size={13} />
+                  Preferences
+                </button>
+
+                <button
+                  onClick={onCreateConf}
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 transition-colors shadow-lg shadow-indigo-600/20"
+                >
+                  <Plus size={17} /> New Conference
+                </button>
               </div>
             </div>
-            <button
-              onClick={() => setShowVolunteerModal(true)}
-              className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1.5 shrink-0 transition-colors"
-            >
-              <Settings size={12} /> Edit
-            </button>
-          </div>
-        )}
 
-        {/* Stats row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-          {stats.map(({ label, value, color }) => (
-            <div key={label} className="bg-[#0d1117] border border-white/6 rounded-xl p-4">
-              <div className={`text-2xl font-bold ${color}`}>{value}</div>
-              <div className="text-xs text-slate-500 mt-0.5 font-medium">{label}</div>
+            {/* Volunteer preferences summary banner (shown when set) */}
+            {hasVolunteerPrefs && (
+              <div className="mt-6 bg-indigo-500/6 border border-indigo-500/20 rounded-xl px-5 py-4 flex items-start justify-between gap-4 flex-wrap">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkles size={13} className="text-indigo-400 shrink-0" />
+                    <span className="text-xs font-bold tracking-widest uppercase text-indigo-400">Volunteer Preferences</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {volunteerPrefs?.volunteer_roles?.slice(0, 4).map((rId) => {
+                      const r = ROLES.find((x) => x.id === rId);
+                      return r ? (
+                        <span key={rId} className="px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium">
+                          {r.emoji} {r.name}
+                        </span>
+                      ) : null;
+                    })}
+                    {(volunteerPrefs?.volunteer_roles?.length ?? 0) > 4 && (
+                      <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/8 text-slate-400 text-xs font-medium">
+                        +{volunteerPrefs.volunteer_roles.length - 4} more
+                      </span>
+                    )}
+                    {volunteerPrefs?.volunteer_domains?.slice(0, 3).map((d) => (
+                      <span key={d} className="px-2 py-0.5 rounded-md bg-white/5 border border-white/8 text-slate-400 text-xs font-medium">
+                        {d}
+                      </span>
+                    ))}
+                    {(volunteerPrefs?.volunteer_domains?.length ?? 0) > 3 && (
+                      <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/8 text-slate-400 text-xs font-medium">
+                        +{volunteerPrefs.volunteer_domains.length - 3} domains
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowVolunteerModal(true)}
+                  className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1.5 shrink-0 transition-colors"
+                >
+                  <Settings size={12} /> Edit
+                </button>
+              </div>
+            )}
+
+            {/* Stats row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+              {stats.map(({ label, value, color }) => (
+                <div key={label} className="bg-[#0d1117] border border-white/6 rounded-xl p-4">
+                  <div className={`text-2xl font-bold ${color}`}>{value}</div>
+                  <div className="text-xs text-slate-500 mt-0.5 font-medium">{label}</div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      {/* ── Tabs + Grid ─────────────────────────────────────────────────── */}
-      <main className="max-w-7xl mx-auto px-6 pb-16">
-        {/* Tab switcher */}
-        <div className="flex gap-1 mb-8 bg-white/4 p-1 rounded-xl w-fit border border-white/6">
-          {[
-            { key: 'my', label: `My Conferences (${myConfs.length})` },
-            { key: 'all', label: `Explore (${otherConfs.length})` },
-          ].map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setActiveTab(key)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === key
-                  ? 'bg-white text-black shadow-sm'
-                  : 'text-slate-500 hover:text-slate-300'
-                }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+          {/* ── Tabs + Grid ─────────────────────────────────────────────────── */}
+          <main className="max-w-7xl mx-auto px-6 pb-16">
+            {/* Tab switcher */}
+            <div className="flex gap-1 mb-8 bg-white/4 p-1 rounded-xl w-fit border border-white/6">
+              {[
+                { key: 'my', label: `My Conferences (${myConfs.length})` },
+                { key: 'all', label: `Explore (${otherConfs.length})` },
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setActiveTab(key)}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === key
+                    ? 'bg-white text-black shadow-sm'
+                    : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
 
-        {/* Mobile search (shows under tabs on small screens) */}
-        <div className="md:hidden flex items-center bg-white/5 rounded-xl px-3 py-2.5 gap-2 border border-white/8 mb-6">
-          <Search size={14} className="text-slate-600" />
-          <input
-            className="bg-transparent border-none outline-none text-sm flex-1 text-white placeholder-slate-600"
-            style={{ fontFamily: "'DM Sans', sans-serif" }}
-            placeholder="Search events…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          {search && (
-            <button onClick={() => setSearch('')} className="text-slate-600 hover:text-slate-400 transition-colors">
-              <X size={13} />
-            </button>
-          )}
-        </div>
-
-        {/* Cards grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {loadingRoles ? (
-            [...Array(3)].map((_, i) => <CardSkeleton key={i} />)
-          ) : visibleConfs.length > 0 ? (
-            visibleConfs.map((c) => (
-              <ConfCard
-                key={c.conference_id}
-                conf={c}
-                role={roleMap[c.conference_id] ?? null}
-                onSelectConf={onSelectConf}
+            {/* Mobile search (shows under tabs on small screens) */}
+            <div className="md:hidden flex items-center bg-white/5 rounded-xl px-3 py-2.5 gap-2 border border-white/8 mb-6">
+              <Search size={14} className="text-slate-600" />
+              <input
+                className="bg-transparent border-none outline-none text-sm flex-1 text-white placeholder-slate-600"
+                style={{ fontFamily: "'DM Sans', sans-serif" }}
+                placeholder="Search events…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
               />
-            ))
-          ) : (
-            <EmptyState activeTab={activeTab} onCreateConf={onCreateConf} />
-          )}
+              {search && (
+                <button onClick={() => setSearch('')} className="text-slate-600 hover:text-slate-400 transition-colors">
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+
+            {/* Cards grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {loadingRoles ? (
+                [...Array(3)].map((_, i) => <CardSkeleton key={i} />)
+              ) : visibleConfs.length > 0 ? (
+                visibleConfs.map((c) => (
+                  <ConfCard
+                    key={c.conference_id}
+                    conf={c}
+                    role={roleMap[c.conference_id] ?? null}
+                    onSelectConf={onSelectConf}
+                  />
+                ))
+              ) : (
+                <EmptyState activeTab={activeTab} onCreateConf={onCreateConf} />
+              )}
+            </div>
+          </main>
+        </>
+      ) : (
+        <div className="max-w-7xl mx-auto px-6 pt-12 pb-16">
+          <div className="flex items-center gap-3 mb-8">
+            <button
+              onClick={() => setCurrentSection('conferences')}
+              className="p-2 text-slate-500 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <h1 className="text-3xl font-bold text-white tracking-tight">Your Profile</h1>
+          </div>
+          <ProfileView
+            user={user}
+            volunteerPrefs={volunteerPrefs}
+            ROLES={ROLES}
+            onEditVolunteer={() => setShowVolunteerModal(true)}
+          />
         </div>
-      </main>
+      )}
 
       {/* ── Volunteer Preferences Modal ──────────────────────────────────── */}
       {showVolunteerModal && (
