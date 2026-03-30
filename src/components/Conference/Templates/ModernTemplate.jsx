@@ -4,6 +4,7 @@ import {
   Twitter, Linkedin, Edit3, Check, X, Plus, Trash2, Save, AlertCircle, Clock
 } from 'lucide-react';
 import ScheduleEditor from '../ScheduleEditor';
+import ConferenceRegistration from './../ConferenceRegistration';
 
 /* ─────────────────────────────────────────────
    INLINE EDITABLE FIELD
@@ -48,8 +49,9 @@ const Section = ({ id, label, children, isEditing }) => (
      conf        – conference object from DB
      isOrganizer – boolean, shows edit bar when true
      onSave      – async fn(pageData) → called when organizer saves
+     currentUser – the logged-in user object (passed down for registration)
    ───────────────────────────────────────────── */
-const ModernTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEditSchedule = false, currentUserId = null, members = [], onScheduleSave }) => {
+const ModernTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEditSchedule = false, currentUserId = null, members = [], onScheduleSave, currentUser = null }) => {
   const [conf, setConf] = useState(initialConf);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -57,6 +59,9 @@ const ModernTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEdi
   const [saveError, setSaveError] = useState(null);
   const [showScheduleEditor, setShowScheduleEditor] = useState(false);
   const [activeNav, setActiveNav] = useState('about');
+
+  // ── Registration modal state ──
+  const [showReg, setShowReg] = useState(false);
 
   const [pageData, setPageData] = useState({
     tagline: initialConf.tagline || 'Shaping the Future Together',
@@ -152,6 +157,26 @@ const ModernTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEdi
   return (
     <div className="bg-[#020617] min-h-screen text-slate-200 font-sans">
 
+      {/* ── Registration Modal Overlay ── */}
+      {showReg && (
+        <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[#0f172a] border border-white/10 shadow-2xl">
+            <button
+              onClick={() => setShowReg(false)}
+              className="absolute top-4 right-4 z-10 text-slate-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 rounded-full p-2"
+            >
+              <X size={18} />
+            </button>
+            <ConferenceRegistration
+              conf={conf}
+              currentUser={currentUser}
+              onSuccess={() => setShowReg(false)}
+              onBack={() => setShowReg(false)}
+            />
+          </div>
+        </div>
+      )}
+
       {/* ── Organizer Edit Bar ── */}
       {isOrganizer && (
         <div className="sticky top-0 z-[100] bg-indigo-950/95 backdrop-blur-xl border-b border-indigo-500/30 px-6 py-3 flex items-center justify-between">
@@ -219,10 +244,16 @@ const ModernTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEdi
             <span className="flex items-center gap-2"><Users size={14} />{pageData.capacity} Attendees</span>
           </div>
           <div className="flex gap-4 mt-8">
-            <button className="bg-indigo-600 text-white px-8 py-3 rounded-full font-bold hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/30">
+            <button
+              onClick={() => setShowReg(true)}
+              className="bg-indigo-600 text-white px-8 py-3 rounded-full font-bold hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/30"
+            >
               Register Now
             </button>
-            <button onClick={() => scrollTo('schedule')} className="bg-white/10 border border-white/20 text-white px-8 py-3 rounded-full font-bold hover:bg-white/20 transition-all backdrop-blur-sm">
+            <button
+              onClick={() => scrollTo('schedule')}
+              className="bg-white/10 border border-white/20 text-white px-8 py-3 rounded-full font-bold hover:bg-white/20 transition-all backdrop-blur-sm"
+            >
               View Schedule
             </button>
           </div>
@@ -280,7 +311,10 @@ const ModernTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEdi
                   </span>
                 </div>
               ))}
-              <button className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-indigo-500/20">
+              <button
+                onClick={() => setShowReg(true)}
+                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-indigo-500/20"
+              >
                 Register Now →
               </button>
             </div>
@@ -667,6 +701,7 @@ const ModernTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEdi
           </div>
         </div>
       </footer>
+
     </div>
   );
 };
