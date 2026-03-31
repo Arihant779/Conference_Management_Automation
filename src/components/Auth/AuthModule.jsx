@@ -3,7 +3,7 @@ import { Layout } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
 
-const AuthModule = () => {
+const AuthModule = ({ onSuccess }) => {
   const { setUser } = useApp();
 
   const [isLogin, setIsLogin] = useState(true);
@@ -15,7 +15,11 @@ const AuthModule = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // --- Existing Supabase Email/Password Logic ---
+  const handleAuthSuccess = (user) => {
+    setUser(user);
+    if (onSuccess) onSuccess(user);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -30,7 +34,7 @@ const AuthModule = () => {
       if (error) {
         setError(error.message);
       } else {
-        setUser(data.user);   // 🔥 THIS FIXES REDIRECT
+        handleAuthSuccess(data.user);
       }
 
     } else {
@@ -55,21 +59,21 @@ const AuthModule = () => {
             user_name: formData.name
           });
 
-        setUser(data.user);   // 🔥 Auto login after signup
+        handleAuthSuccess(data.user);
       }
     }
 
     setLoading(false);
   };
 
-  // --- NEW: Supabase Google Auth Logic ---
   const handleGoogleLogin = async () => {
     setError('');
+    // For Google OAuth, we need to preserve the pending conf across the redirect.
+    // The pending data is already in sessionStorage from App.js, so it will survive.
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        // Ensures the user comes back to your app after Google login
-        redirectTo: 'http://localhost:3000'
+        redirectTo: window.location.origin,
       }
     });
 
@@ -84,6 +88,10 @@ const AuthModule = () => {
         <div className="text-center mb-10">
           <Layout size={32} className="mx-auto text-white mb-4" />
           <h1 className="text-3xl text-white font-bold">ConfManager</h1>
+          {/* Show a contextual hint if they were redirected to submit a paper */}
+          <p className="text-slate-500 text-sm mt-2">
+            Sign in to continue
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -120,7 +128,6 @@ const AuthModule = () => {
           </button>
         </form>
 
-        {/* --- Google Login UI Section --- */}
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-slate-700"></div>
@@ -142,7 +149,6 @@ const AuthModule = () => {
           />
           Sign in with Google
         </button>
-        {/* --------------------------------- */}
 
         <div className="text-center mt-5">
           <button

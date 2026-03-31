@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Share2, Check, LogIn } from 'lucide-react';
 import ModernTemplate from './Templates/ModernTemplate';
 import ClassicTemplate from './Templates/ClassicTemplate';
 import RoleBasedDashboard from '../Dashboard/RoleBasedDashboard';
@@ -29,21 +29,46 @@ const ROLE_LABELS = {
   presenter: 'Presenter',
 };
 
-const ConferenceView = ({ conf, role: propRole, onBack }) => {
+/* ─── Build the shareable public URL for a conference ─── */
+const buildShareURL = (confId) => {
+  const url = new URL(window.location.href);
+  url.search = '';           // wipe existing params
+  url.searchParams.set('conf', confId);
+  return url.toString();
+};
+
+const ConferenceView = ({
+  conf,
+  role: propRole,
+  onBack,
+  // New props for public/guest access
+  isGuest = false,
+  initialViewMode = 'home',
+  onRequireAuth = null,       // (intent: string) => void  — called when guest needs auth
+  onPendingConsumed = null,   // () => void — called once we've used the pending state
+}) => {
   const { user } = useApp();
-  const [viewMode, setViewMode] = useState('home');
+  const [viewMode, setViewMode] = useState(initialViewMode);
   const [resolvedRole, setResolvedRole] = useState(propRole || null);
   const [members, setMembers] = useState([]);
   const [isTeamLeader, setIsTeamLeader] = useState(false);
   const [teamLeaderPosition, setTeamLeaderPosition] = useState('');
   const [liveSchedule, setLiveSchedule] = useState(conf?.schedule || []);
 
+  // Share button state
+  const [copied, setCopied] = useState(false);
+
   const confId = conf?.conference_id ?? conf?.id;
   const displayTitle = conf.title ?? conf.name ?? 'Untitled Conference';
 
-  /* ── Resolve role ── */
+  // Notify parent that the pending intent has been consumed (so it can clearPending)
   useEffect(() => {
-    if (!user || !confId) return;
+    if (onPendingConsumed) onPendingConsumed();
+  }, []);
+
+  /* ── Resolve role (skip if guest) ── */
+  useEffect(() => {
+    if (!user || !confId || isGuest) return;
 
     if (conf?.conference_head_id === user.id) {
       setResolvedRole('organizer');
@@ -59,9 +84,9 @@ const ConferenceView = ({ conf, role: propRole, onBack }) => {
       .then(({ data }) => {
         setResolvedRole(data?.role || null);
       });
-  }, [user, confId]);
+  }, [user, confId, isGuest]);
 
-  /* ── Fetch members (for session head dropdown) ── */
+  /* ── Fetch members ── */
   const fetchMembers = useCallback(async () => {
     if (!confId) return;
     const { data } = await supabase
@@ -79,9 +104,8 @@ const ConferenceView = ({ conf, role: propRole, onBack }) => {
 
   /* ── Check if user is a team leader ── */
   const checkTeamLeader = useCallback(async () => {
-    if (!user || !confId) return;
+    if (!user || !confId || isGuest) return;
 
-    // Find the user's conference_user id
     const { data: cuData } = await supabase
       .from('conference_user')
       .select('id')
@@ -91,7 +115,6 @@ const ConferenceView = ({ conf, role: propRole, onBack }) => {
 
     if (!cuData) return;
 
-    // Check if they are head of any team
     const { data: teamData } = await supabase
       .from('conference_teams')
       .select('id, name')
@@ -102,7 +125,7 @@ const ConferenceView = ({ conf, role: propRole, onBack }) => {
       setIsTeamLeader(true);
       setTeamLeaderPosition(`${teamData[0].name} Lead`);
     }
-  }, [user, confId]);
+  }, [user, confId, isGuest]);
 
   useEffect(() => {
     fetchMembers();
@@ -113,7 +136,6 @@ const ConferenceView = ({ conf, role: propRole, onBack }) => {
   const isOrganizer = resolvedRole === 'organizer';
   const canEditSchedule = isOrganizer || isTeamLeader;
 
-  /* ── Get editor's display name and position ── */
   const editorName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Unknown';
   const editorPosition = isOrganizer
     ? 'Organizer'
@@ -121,7 +143,39 @@ const ConferenceView = ({ conf, role: propRole, onBack }) => {
       ? teamLeaderPosition
       : (ROLE_LABELS[resolvedRole] || resolvedRole || 'Member');
 
-  // Save handler for page editing (everything except schedule)
+  /* ── Share button handler ── */
+  const handleShare = async () => {
+    const url = buildShareURL(confId);
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      // fallback for older browsers
+      const el = document.createElement('textarea');
+      el.value = url;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
+  /* ── Tab click: gate "Submit Paper" for guests ── */
+  const handleTabClick = (mode) => {
+    if (mode === 'submitPaper' && isGuest) {
+      // Guest wants to submit — require auth, pass intent
+      if (onRequireAuth) onRequireAuth('submitPaper');
+      return;
+    }
+    if (mode === 'dashboard' && isGuest) {
+      if (onRequireAuth) onRequireAuth('dashboard');
+      return;
+    }
+    setViewMode(mode);
+  };
+
+  // Save handler for page editing
   const handleSave = async (pageData) => {
     const { error } = await supabase
       .from('conference')
@@ -150,7 +204,6 @@ const ConferenceView = ({ conf, role: propRole, onBack }) => {
     if (error) throw new Error(error.message);
   };
 
-  /* ── Schedule-specific save handler with notification ── */
   const handleScheduleSave = async (newSchedule) => {
     const { error } = await supabase
       .from('conference')
@@ -159,10 +212,8 @@ const ConferenceView = ({ conf, role: propRole, onBack }) => {
 
     if (error) throw new Error(error.message);
 
-    // Update local state so the template re-renders
     setLiveSchedule(newSchedule);
 
-    // Send notification to all members and organizers
     await supabase.from('notifications').insert([{
       conference_id: confId,
       title: 'Schedule Updated',
@@ -176,47 +227,88 @@ const ConferenceView = ({ conf, role: propRole, onBack }) => {
     <div className="flex flex-col min-h-screen font-sans bg-[#0f1117] text-slate-200">
       <nav className="bg-[#0f1117]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
         <div className="flex items-center gap-6">
-          <button
-            onClick={onBack}
-            className="group flex items-center gap-3 text-sm font-medium text-slate-400 hover:text-white transition-colors"
-          >
-            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white/10 border border-white/5">
-              <ArrowRight className="rotate-180" size={14} />
-            </div>
-            Back to Hub
-          </button>
-          <div className="h-6 w-px bg-white/10" />
+          {/* Back button: hide for guests (they came from outside, not the hub) */}
+          {!isGuest && (
+            <>
+              <button
+                onClick={onBack}
+                className="group flex items-center gap-3 text-sm font-medium text-slate-400 hover:text-white transition-colors"
+              >
+                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white/10 border border-white/5">
+                  <ArrowRight className="rotate-180" size={14} />
+                </div>
+                Back to Hub
+              </button>
+              <div className="h-6 w-px bg-white/10" />
+            </>
+          )}
           <span className="font-bold text-white truncate max-w-xs tracking-wide">
             {displayTitle}
           </span>
+
+          {/* Share button — visible to organizers and team members */}
+          {!isGuest && (
+            <button
+              onClick={handleShare}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                copied
+                  ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+                  : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:border-white/20'
+              }`}
+              title="Copy shareable link"
+            >
+              {copied ? <Check size={12} /> : <Share2 size={12} />}
+              {copied ? 'Link copied!' : 'Share'}
+            </button>
+          )}
         </div>
 
-        <div className="flex bg-black/40 p-1.5 rounded-full border border-white/5">
-          <NavTab
-            active={viewMode === 'home'}
-            onClick={() => setViewMode('home')}
-            activeClass="bg-white text-black shadow-lg"
-          >
-            Site Preview
-          </NavTab>
-
-          {hasRole && (
-            <NavTab
-              active={viewMode === 'dashboard'}
-              onClick={() => setViewMode('dashboard')}
-              activeClass="bg-indigo-600 text-white shadow-lg shadow-indigo-500/40"
+        <div className="flex items-center gap-3">
+          {/* Guest login nudge */}
+          {isGuest && (
+            <button
+              onClick={() => onRequireAuth && onRequireAuth('home')}
+              className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:border-white/20 transition-all"
             >
-              Dashboard
-            </NavTab>
+              <LogIn size={13} />
+              Sign in
+            </button>
           )}
 
-          <NavTab
-            active={viewMode === 'submitPaper'}
-            onClick={() => setViewMode('submitPaper')}
-            activeClass="bg-green-600 text-white shadow-lg shadow-green-500/40"
-          >
-            Submit Paper
-          </NavTab>
+          <div className="flex bg-black/40 p-1.5 rounded-full border border-white/5">
+            <NavTab
+              active={viewMode === 'home'}
+              onClick={() => handleTabClick('home')}
+              activeClass="bg-white text-black shadow-lg"
+            >
+              Site Preview
+            </NavTab>
+
+            {/* Dashboard tab: only for authenticated members */}
+            {hasRole && !isGuest && (
+              <NavTab
+                active={viewMode === 'dashboard'}
+                onClick={() => handleTabClick('dashboard')}
+                activeClass="bg-indigo-600 text-white shadow-lg shadow-indigo-500/40"
+              >
+                Dashboard
+              </NavTab>
+            )}
+
+            {/* Submit Paper: show for everyone, gate guests at click-time */}
+            <NavTab
+              active={viewMode === 'submitPaper'}
+              onClick={() => handleTabClick('submitPaper')}
+              activeClass="bg-green-600 text-white shadow-lg shadow-green-500/40"
+            >
+              Submit Paper
+              {isGuest && (
+                <span className="ml-1.5 text-[9px] opacity-60 font-normal normal-case tracking-normal">
+                  (login)
+                </span>
+              )}
+            </NavTab>
+          </div>
         </div>
       </nav>
 
@@ -244,6 +336,7 @@ const ConferenceView = ({ conf, role: propRole, onBack }) => {
         ) : viewMode === 'dashboard' ? (
           <RoleBasedDashboard conf={conf} role={resolvedRole} onBack={onBack} />
         ) : (
+          // PaperSubmission only rendered when authenticated (guests are redirected before reaching here)
           <PaperSubmission conf={conf} />
         )}
       </div>
@@ -254,8 +347,9 @@ const ConferenceView = ({ conf, role: propRole, onBack }) => {
 const NavTab = ({ active, onClick, activeClass, children }) => (
   <button
     onClick={onClick}
-    className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${active ? activeClass : 'text-slate-500 hover:text-slate-300'
-      }`}
+    className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${
+      active ? activeClass : 'text-slate-500 hover:text-slate-300'
+    }`}
   >
     {children}
   </button>
