@@ -175,6 +175,8 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
     /* step 2 – preferences */
     dietary: 'No restrictions',
     tshirt: 'M',
+    accommodation_required: false,
+    accommodation_notes: '',
     areas_of_interest: '',
     special_requests: '',
     /* hidden */
@@ -240,6 +242,8 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
         full_name: `${form.first_name.trim()} ${form.last_name.trim()}`,
         role: 'presenter',
         joined_at: new Date().toISOString(),
+        accommodation_required: form.accommodation_required,
+        accommodation_notes: form.accommodation_notes || null,
       }]);
 
       if (cuErr && cuErr.code !== '23505') throw cuErr; /* ignore duplicate */
@@ -538,6 +542,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
                   <h2 className="text-xl font-bold text-white mb-1">Preferences</h2>
                   <p className="text-slate-500 text-sm">Help us personalise your experience.</p>
                 </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Dietary Requirements</Label>
@@ -552,6 +557,57 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
                     </Select>
                   </div>
                 </div>
+
+                {/* ── Accommodation toggle ── */}
+                <div>
+                  <Label>Accommodation</Label>
+                  <div
+                    onClick={() => set('accommodation_required', !form.accommodation_required)}
+                    className={cls(
+                      'flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all select-none',
+                      form.accommodation_required
+                        ? 'border-indigo-500/60 bg-indigo-500/10'
+                        : 'border-white/10 bg-white/5 hover:border-white/20',
+                    )}
+                  >
+                    <div className={cls(
+                      'w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all',
+                      form.accommodation_required ? 'bg-indigo-600' : 'bg-white/5',
+                    )}>
+                      <MapPin size={17} className={form.accommodation_required ? 'text-white' : 'text-slate-500'} />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold text-white text-sm">Do you need accommodation?</div>
+                      <div className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                        We'll share hotel and hostel options near the venue with you after registration.
+                      </div>
+                    </div>
+                    {/* Toggle pill */}
+                    <div className={cls(
+                      'w-11 h-6 rounded-full relative transition-all shrink-0',
+                      form.accommodation_required ? 'bg-indigo-600' : 'bg-white/10',
+                    )}>
+                      <div className={cls(
+                        'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-200',
+                        form.accommodation_required ? 'left-[22px]' : 'left-0.5',
+                      )} />
+                    </div>
+                  </div>
+
+                  {/* Notes — shown only when toggled on */}
+                  {form.accommodation_required && (
+                    <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <Label>Accommodation Notes</Label>
+                      <Textarea
+                        rows={2}
+                        placeholder="Any preferences? e.g. single room, check-in / check-out dates, accessibility needs…"
+                        value={form.accommodation_notes}
+                        onChange={e => set('accommodation_notes', e.target.value)}
+                      />
+                    </div>
+                  )}
+                </div>
+
                 <div>
                   <Label>Areas of Interest</Label>
                   <Textarea
@@ -623,6 +679,8 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
                     rows: [
                       ['Dietary', form.dietary],
                       ['T-Shirt', form.tshirt],
+                      ['Accommodation', form.accommodation_required ? 'Yes – required' : 'Not required'],
+                      form.accommodation_required && form.accommodation_notes && ['Accommodation Notes', form.accommodation_notes],
                       form.areas_of_interest && ['Interests', form.areas_of_interest],
                       form.special_requests && ['Special Requests', form.special_requests],
                     ].filter(Boolean),
