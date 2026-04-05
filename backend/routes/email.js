@@ -1,6 +1,6 @@
 import express from "express";
 import { callLLM } from "../services/llmService.js";
-import { sendEmailsToRecipients, sendTestEmail } from "../services/emailService.js";
+import { sendEmailsToRecipients, sendTestEmail, sendEmailWithAttachment } from "../services/emailService.js";
 
 const router = express.Router();
 
@@ -32,7 +32,7 @@ BODY:
     const raw = await callLLM(prompt);
 
     const subjectMatch = raw.match(/^SUBJECT:\s*(.+)/im);
-    const bodyMatch    = raw.match(/^BODY:\s*([\s\S]+)/im);
+    const bodyMatch = raw.match(/^BODY:\s*([\s\S]+)/im);
 
     const finalSubject = hasSubject
       ? subject.trim()
@@ -51,7 +51,7 @@ BODY:
 router.post("/send-email", async (req, res) => {
   const { to, subject, body } = req.body;
 
-  if (!to?.length)       return res.status(400).json({ error: "to array is required" });
+  if (!to?.length) return res.status(400).json({ error: "to array is required" });
   if (!subject || !body) return res.status(400).json({ error: "subject and body are required" });
 
   console.log(`\nSend -> recipients: ${to.length}, subject: "${subject}"`);
@@ -69,6 +69,37 @@ router.post("/send-email", async (req, res) => {
   } catch (err) {
     console.error("Send error:", err.message);
     res.status(422).json({ error: err.message });
+  }
+});
+
+/* ── Send email with attachment (e.g. certificate PDF) ── */
+router.post("/send-email-with-attachment", async (req, res) => {
+  const { to, subject, body, attachment } = req.body;
+
+  if (!to) return res.status(400).json({ error: "to is required" });
+  if (!subject || !body) return res.status(400).json({ error: "subject and body are required" });
+  if (!attachment?.content || !attachment?.filename) {
+    return res.status(400).json({ error: "attachment with filename and content (base64) is required" });
+  }
+
+  console.log(`\nSend w/ attachment -> to: ${to}, subject: "${subject}", file: ${attachment.filename}`);
+
+  try {
+    await sendEmailWithAttachment(
+      to,
+      subject,
+      body,
+      {
+        filename: attachment.filename,
+        content: Buffer.from(attachment.content, "base64"),
+        contentType: attachment.contentType || "application/pdf",
+      }
+    );
+
+    res.json({ success: true, sent: 1 });
+  } catch (err) {
+    console.error("Send w/ attachment error:", err.message);
+    res.status(500).json({ error: err.message });
   }
 });
 

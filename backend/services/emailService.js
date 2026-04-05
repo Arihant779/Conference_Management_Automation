@@ -2,7 +2,7 @@ import { createDefaultTransporter, DEFAULT_SENDER } from "../config/email.js";
 
 export async function sendEmailsToRecipients(to, subject, body) {
   const transporter = createDefaultTransporter();
-  const fromField   = `"${DEFAULT_SENDER.name}" <${DEFAULT_SENDER.email}>`;
+  const fromField = `"${DEFAULT_SENDER.name}" <${DEFAULT_SENDER.email}>`;
 
   const results = await Promise.allSettled(
     to.map(email =>
@@ -10,7 +10,7 @@ export async function sendEmailsToRecipients(to, subject, body) {
     )
   );
 
-  const sent   = results.filter(r => r.status === "fulfilled").length;
+  const sent = results.filter(r => r.status === "fulfilled").length;
   const failed = results.filter(r => r.status === "rejected");
   failed.forEach(f => console.error("  Failed:", f.reason?.message));
   console.log(`Done: ${sent}/${to.length} sent`);
@@ -21,11 +21,39 @@ export async function sendEmailsToRecipients(to, subject, body) {
 export async function sendTestEmail() {
   const transporter = createDefaultTransporter();
   await transporter.sendMail({
-    from:    `"${DEFAULT_SENDER.name}" <${DEFAULT_SENDER.email}>`,
-    to:      DEFAULT_SENDER.email,
+    from: `"${DEFAULT_SENDER.name}" <${DEFAULT_SENDER.email}>`,
+    to: DEFAULT_SENDER.email,
     subject: "Conference Hub email connection test",
-    text:    `Gmail is correctly configured for Conference Hub.\nSender: ${DEFAULT_SENDER.email}`,
+    text: `Gmail is correctly configured for Conference Hub.\nSender: ${DEFAULT_SENDER.email}`,
   });
   console.log(`Test email sent to ${DEFAULT_SENDER.email}`);
   return DEFAULT_SENDER.email;
+}
+
+/**
+ * Send a single email with a file attachment (e.g. certificate PDF).
+ * @param {string} to          – recipient email
+ * @param {string} subject     – email subject
+ * @param {string} body        – plain-text email body
+ * @param {Object} attachment  – { filename, content (Buffer), contentType }
+ */
+export async function sendEmailWithAttachment(to, subject, body, attachment) {
+  const transporter = createDefaultTransporter();
+  const fromField = `"${DEFAULT_SENDER.name}" <${DEFAULT_SENDER.email}>`;
+
+  await transporter.sendMail({
+    from: fromField,
+    to,
+    subject,
+    text: body,
+    attachments: [
+      {
+        filename: attachment.filename,
+        content: attachment.content,
+        contentType: attachment.contentType || "application/pdf",
+      },
+    ],
+  });
+
+  console.log(`Email with attachment sent to ${to} (${attachment.filename})`);
 }

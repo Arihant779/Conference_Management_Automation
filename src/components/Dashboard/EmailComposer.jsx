@@ -3,10 +3,12 @@ import {
   Send, X, ChevronDown, ChevronUp,
   Sparkles, Eye, Edit3, Check, AlertCircle,
   Plus, Mail, RefreshCw, Copy, CheckCheck,
-  ArrowLeft, Loader2, Settings
+  ArrowLeft, Loader2, Settings, Paperclip, Award
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
+import CertificateEditor from './CertificateEditor';
+import { jsPDF } from 'jspdf';
 
 const cls = (...c) => c.filter(Boolean).join(' ');
 
@@ -153,6 +155,11 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
   const [copied, setCopied] = useState(false);
   const [sentCount, setSentCount] = useState(0);
 
+  /* ── certificate ── */
+  const [certConfig, setCertConfig] = useState(null);
+  const [showCertEditor, setShowCertEditor] = useState(false);
+  const [certSendProgress, setCertSendProgress] = useState(''); // progress text during send
+
   /* ── load conference sender info ── */
   const loadSenderInfo = useCallback(async () => {
     const { data } = await supabase
@@ -253,32 +260,148 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
     setGenerating(false);
   };
 
+  /* ── render a single certificate PDF for a given participant name ── */
+  const renderCertificatePdf = async (name) => {
+    if (!certConfig) return null;
+
+    const { templateDataURL, templateWidth, templateHeight, namePos, font: certFont, fontSize: certFontSize, signatureDataURL, signaturePos, signatureSize } = certConfig;
+
+    // Create an offscreen canvas at the template's native resolution
+    const offscreen = document.createElement('canvas');
+    offscreen.width = templateWidth;
+    offscreen.height = templateHeight;
+    const ctx = offscreen.getContext('2d');
+
+    // Load template image
+    const tplImg = await new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.src = templateDataURL;
+    });
+    ctx.drawImage(tplImg, 0, 0);
+
+    // Draw participant name (centered)
+    const FONT_MAP = {
+      'Inter': 'helvetica',
+      'Playfair Display': 'times',
+      'Dancing Script': 'times',
+      'Roboto Serif': 'times',
+      'Georgia': 'times',
+      'Great Vibes': 'times',
+    };
+    ctx.font = `${certFontSize}px ${certFont}, serif`;
+    ctx.fillStyle = '#1a1a2e';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(name, namePos.x, namePos.y);
+
+    // Draw signature if present
+    if (signatureDataURL && signaturePos && signatureSize) {
+      const sigImg = await new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.src = signatureDataURL;
+      });
+      ctx.drawImage(
+        sigImg,
+        signaturePos.x - signatureSize.w / 2,
+        signaturePos.y - signatureSize.h / 2,
+        signatureSize.w,
+        signatureSize.h,
+      );
+    }
+
+    // Convert canvas to PDF
+    const isLandscape = templateWidth > templateHeight;
+    const pdf = new jsPDF({
+      orientation: isLandscape ? 'landscape' : 'portrait',
+      unit: 'px',
+      format: [templateWidth, templateHeight],
+    });
+    const canvasDataURL = offscreen.toDataURL('image/jpeg', 0.92);
+    pdf.addImage(canvasDataURL, 'JPEG', 0, 0, templateWidth, templateHeight);
+
+    return pdf.output('datauristring').split(',')[1]; // base64 only
+  };
+
   /* ── send ── */
   const sendEmail = async () => {
     if (!resolvedRecipients.length || !body.trim()) return;
     setSending(true);
     setSendError('');
+    setCertSendProgress('');
 
     try {
-      const res = await fetch('http://localhost:4000/api/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          // conferenceId: confId,   // backend fetches creds from DB using this
-          to: resolvedRecipients,
-          subject,
-          body,
-          senderRole,
-        }),
-      });
+      if (certConfig) {
+        // Certificate flow: send individually with personalized PDF attachment
+        // Build name lookup from members
+        const emailToName = {};
+        members.forEach(m => {
+          if (m.email) emailToName[m.email.toLowerCase()] = m.full_name || m.email.split('@')[0];
+        });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || 'Send failed');
+        let sent = 0;
+        let failed = 0;
+
+        for (let i = 0; i < resolvedRecipients.length; i++) {
+          const email = resolvedRecipients[i];
+          const name = emailToName[email.toLowerCase()] || email.split('@')[0];
+          setCertSendProgress(`Generating certificate ${i + 1}/${resolvedRecipients.length} for ${name}…`);
+
+          try {
+            const pdfBase64 = await renderCertificatePdf(name);
+
+            const res = await fetch('http://localhost:4000/api/send-email-with-attachment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                to: email,
+                subject,
+                body,
+                attachment: {
+                  filename: `Certificate_${name.replace(/\s+/g, '_')}.pdf`,
+                  content: pdfBase64,
+                  contentType: 'application/pdf',
+                },
+              }),
+            });
+
+            if (!res.ok) throw new Error('Send failed');
+            sent++;
+          } catch {
+            failed++;
+          }
+
+          // Small delay to avoid rate limiting
+          if (i < resolvedRecipients.length - 1) {
+            await new Promise(r => setTimeout(r, 300));
+          }
+        }
+
+        setCertSendProgress('');
+        setSentCount(sent);
+        setStep('sent');
+      } else {
+        // Normal flow: bulk send without attachments
+        const res = await fetch('http://localhost:4000/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: resolvedRecipients,
+            subject,
+            body,
+            senderRole,
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || 'Send failed');
+        }
+        const result = await res.json();
+        setSentCount(result.sent || resolvedRecipients.length);
+        setStep('sent');
       }
-      const result = await res.json();
-      setSentCount(result.sent || resolvedRecipients.length);
-      setStep('sent');
     } catch (err) {
       setSendError(err.message || 'Failed to send. Check your backend and Gmail credentials.');
     }
@@ -307,6 +430,8 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
     setGenError('');
     setSendError('');
     setSentCount(0);
+    setCertConfig(null);
+    setCertSendProgress('');
   };
 
   /* ══════════════ RENDER ══════════════ */
@@ -530,6 +655,46 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
                   </div>
                 )}
 
+                {/* ── Certificate attachment ── */}
+                <div className="border-t border-white/6 pt-4">
+                  <Field label="Attachment">
+                    {certConfig ? (
+                      <div className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/25 rounded-xl px-4 py-3">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0">
+                          <Award size={15} className="text-emerald-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-emerald-300">Certificate attached ✓</p>
+                          <p className="text-[10px] text-slate-500">Personalized PDF will be generated for each recipient</p>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            onClick={() => setShowCertEditor(true)}
+                            className="text-[10px] font-bold text-slate-500 hover:text-white px-2 py-1 rounded border border-white/10 hover:border-white/20 transition-all"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => setCertConfig(null)}
+                            className="text-slate-600 hover:text-red-400 p-1 rounded hover:bg-white/5 transition-all"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setShowCertEditor(true)}
+                        className="w-full flex items-center gap-2.5 px-4 py-3 rounded-xl border border-dashed border-white/15 hover:border-indigo-500/40 hover:bg-indigo-500/5 text-slate-500 hover:text-indigo-300 text-xs font-bold transition-all"
+                      >
+                        <Paperclip size={14} />
+                        Attach Certificate
+                        <span className="text-[9px] text-slate-600 font-normal ml-auto">Upload template → place name → send</span>
+                      </button>
+                    )}
+                  </Field>
+                </div>
+
                 <button
                   onClick={generateEmail}
                   disabled={generating || !intent.trim() || selectedGroups.length === 0}
@@ -620,6 +785,22 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
                       <AlertCircle size={14} /> {sendError}
                     </div>
                   )}
+
+                  {/* Certificate progress */}
+                  {certSendProgress && (
+                    <div className="flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-4 py-3 text-sm text-indigo-300">
+                      <Loader2 size={14} className="animate-spin shrink-0" /> {certSendProgress}
+                    </div>
+                  )}
+
+                  {/* Certificate attached indicator */}
+                  {certConfig && (
+                    <div className="flex items-center gap-2 bg-emerald-500/5 border border-emerald-500/15 rounded-xl px-4 py-2">
+                      <Award size={13} className="text-emerald-400 shrink-0" />
+                      <span className="text-[11px] text-emerald-400 font-semibold">Certificate PDF will be attached to each email</span>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-3">
                     <div className="flex-1 bg-white/3 border border-white/6 rounded-xl px-4 py-2.5">
                       <div className="text-[10px] text-slate-600 uppercase tracking-wider font-bold mb-0.5">Sending via</div>
@@ -637,8 +818,8 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
                       title={!gmailConfigured ? 'Configure a sender Gmail in Email Settings first' : ''}
                     >
                       {sending
-                        ? <><Loader2 size={15} className="animate-spin" /> Sending…</>
-                        : <><Send size={15} /> Send via Gmail</>}
+                        ? <><Loader2 size={15} className="animate-spin" /> {certConfig ? 'Sending certificates…' : 'Sending…'}</>
+                        : <><Send size={15} /> {certConfig ? 'Send with Certificates' : 'Send via Gmail'}</>}
                     </button>
                   </div>
                 </div>
@@ -698,6 +879,7 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
                   { label: 'Tone', value: tone, cls: 'text-white capitalize' },
                   { label: 'Recipients', value: `${resolvedRecipients.length} emails`, cls: 'text-indigo-400' },
                   { label: 'Body', value: bodyEditing ? 'Editing…' : 'Ready', cls: bodyEditing ? 'text-amber-400' : 'text-emerald-400' },
+                  { label: 'Certificate', value: certConfig ? '✓ Attached' : 'None', cls: certConfig ? 'text-emerald-400' : 'text-slate-600' },
                   { label: 'Sender', value: senderAddress || 'Not set', cls: gmailConfigured ? 'text-emerald-400 font-mono text-[10px]' : 'text-amber-400' },
                 ].map(({ label, value, cls: vc }) => (
                   <div key={label} className="flex justify-between items-center text-xs">
@@ -719,6 +901,16 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
             </div>
           </div>
         </div>
+      )}
+      {/* ── Certificate Editor Modal ── */}
+      {showCertEditor && (
+        <CertificateEditor
+          onSave={(config) => {
+            setCertConfig(config);
+            setShowCertEditor(false);
+          }}
+          onClose={() => setShowCertEditor(false)}
+        />
       )}
     </div>
   );
