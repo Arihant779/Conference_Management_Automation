@@ -129,7 +129,7 @@ const ConferenceView = ({
   const editorName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Unknown';
   const editorPosition = isOrganizer ? 'Organizer'
     : isTeamLeader ? teamLeaderPosition
-    : (ROLE_LABELS[resolvedRole] || resolvedRole || 'Member');
+      : (ROLE_LABELS[resolvedRole] || resolvedRole || 'Member');
 
   const handleShare = async () => {
     const url = buildShareURL(confId);
@@ -187,6 +187,7 @@ const ConferenceView = ({
     onSave: handleSave,
     canEditSchedule,
     currentUserId: user?.id,
+    currentUser: user,
     members,
     onScheduleSave: handleScheduleSave,
     isGuest,
@@ -217,11 +218,10 @@ const ConferenceView = ({
           {!isGuest && (
             <button
               onClick={handleShare}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                copied
-                  ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
-                  : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:border-white/20'
-              }`}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${copied
+                ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+                : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:border-white/20'
+                }`}
             >
               {copied ? <Check size={12} /> : <Share2 size={12} />}
               {copied ? 'Link copied!' : 'Share'}

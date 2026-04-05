@@ -471,8 +471,8 @@ const PasswordUpdateSection = ({ user }) => {
   const [message, setMessage] = useState({ text: '', type: '' });
 
   const isOAuth = user?.app_metadata?.provider && user.app_metadata.provider !== 'email';
-  const providerName = user?.app_metadata?.provider 
-    ? user.app_metadata.provider.charAt(0).toUpperCase() + user.app_metadata.provider.slice(1) 
+  const providerName = user?.app_metadata?.provider
+    ? user.app_metadata.provider.charAt(0).toUpperCase() + user.app_metadata.provider.slice(1)
     : 'Social Provider';
 
   const reset = () => {
@@ -544,7 +544,7 @@ const PasswordUpdateSection = ({ user }) => {
       {isOAuth ? (
         <div className="bg-indigo-500/5 border border-indigo-500/10 rounded-xl p-4">
           <p className="text-sm text-slate-400 leading-relaxed">
-            Your account is managed via <span className="text-indigo-400 font-semibold">{providerName}</span>. 
+            Your account is managed via <span className="text-indigo-400 font-semibold">{providerName}</span>.
             Password updates are handled through your {providerName} account settings.
           </p>
         </div>
@@ -584,7 +584,7 @@ const PasswordUpdateSection = ({ user }) => {
                   </button>
                 </div>
               </div>
-              
+
               {message.text && (
                 <p className="text-xs font-semibold text-red-400">{message.text}</p>
               )}

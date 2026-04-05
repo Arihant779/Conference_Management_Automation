@@ -19,6 +19,35 @@ export const AppProvider = ({ children }) => {
     // 2. Subscribe to future auth events (login / logout / token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+
+      // Auto-create a `users` row for first-time OAuth sign-ins (e.g. Google).
+      // Fire-and-forget so it never blocks the auth state flow.
+      if (_event === 'SIGNED_IN' && session?.user) {
+        const u = session.user;
+        (async () => {
+          try {
+            const { data: existing } = await supabase
+              .from('users')
+              .select('user_id')
+              .eq('user_id', u.id)
+              .maybeSingle();
+
+            if (!existing) {
+              const displayName =
+                u.user_metadata?.full_name ||
+                u.user_metadata?.name ||
+                u.email?.split('@')[0] ||
+                'User';
+              await supabase.from('users').insert({
+                user_id: u.id,
+                user_name: displayName,
+              });
+            }
+          } catch (err) {
+            console.error('Auto-create user row failed:', err);
+          }
+        })();
+      }
     });
 
     return () => subscription.unsubscribe();
