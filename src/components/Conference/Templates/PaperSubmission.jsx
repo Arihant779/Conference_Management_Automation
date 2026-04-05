@@ -71,6 +71,7 @@ const AuthorField = ({ label, children }) => (
   </div>
 );
 
+
 /* ═══════════════════════════════════════════════════════════════════════════
    COMPONENT
 ═══════════════════════════════════════════════════════════════════════════ */
@@ -85,6 +86,8 @@ const PaperSubmission = ({ conf }) => {
     message_to_editor: '',
   });
   const [file, setFile] = useState(null);
+const [isReviewer, setIsReviewer] = useState(false);
+
   const [authors, setAuthors] = useState([{ ...EMPTY_AUTHOR }]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -102,16 +105,25 @@ const PaperSubmission = ({ conf }) => {
 
   // ── Check if this user already submitted to this conference ─────────────
   useEffect(() => {
-    if (!confId || !user?.id) return;
-    (async () => {
-      const { data } = await supabase
-        .from('paper')
-        .select('paper_id, paper_title, status')
-        .eq('conference_id', confId)
-        .eq('author_id', user.id);
-      setExistingPapers(data || []);
-    })();
-  }, [confId, user?.id]);
+  if (!confId || !user?.id) return;
+  (async () => {
+    const { data } = await supabase
+      .from('paper')
+      .select('paper_id, paper_title, status')
+      .eq('conference_id', confId)
+      .eq('author_id', user.id);
+    setExistingPapers(data || []);
+
+    // ← add this
+    const { data: membership } = await supabase
+      .from('conference_user')
+      .select('role')
+      .eq('conference_id', confId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (membership?.role === 'reviewer') setIsReviewer(true);
+  })();
+}, [confId, user?.id]);
 
   const updateForm = (field) => (e) => setForm((prev) => ({ ...prev, [field]: e.target.value }));
   const updateAuthor = (idx, field) => (e) =>
@@ -277,6 +289,23 @@ const PaperSubmission = ({ conf }) => {
         </div>
       )}
 
+      {isReviewer && (
+  <div className="flex flex-col items-center justify-center py-20 text-center">
+    <div className="w-16 h-16 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto mb-5">
+      <AlertCircle size={28} className="text-amber-400" />
+    </div>
+    <h3 className="text-xl font-bold text-white mb-2">Submission Not Allowed</h3>
+    <p className="text-slate-400 text-sm max-w-sm leading-relaxed">
+      You are part of the <span className="text-amber-400 font-semibold">reviewing team</span> for this conference.
+      Reviewers cannot submit papers to maintain the integrity of the review process.
+    </p>
+    <p className="text-slate-600 text-xs mt-4">
+      If you believe this is a mistake, please contact the conference organizer.
+    </p>
+  </div>
+)}
+
+  {!isReviewer && (
       <form onSubmit={handleSubmit}>
         <div className="bg-[#0f1117] border border-white/10 rounded-xl p-8 space-y-8">
 
@@ -509,6 +538,7 @@ const PaperSubmission = ({ conf }) => {
           </button>
         </div>
       </form>
+      )}
     </div>
   );
 };
