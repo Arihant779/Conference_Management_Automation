@@ -486,6 +486,102 @@ const VolunteerCandidatePanel = ({
   );
 };
 
+
+const UserPickerPanel = ({ confId, members, onSelect }) => {
+  const [search, setSearch]       = useState('');
+  const [allUsers, setAllUsers]   = useState([]);
+  const [loading, setLoading]     = useState(true);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('users')
+        .select('user_id, user_name, user_email')
+        .order('user_name', { ascending: true });
+      if (!error) setAllUsers(data || []);
+      setLoading(false);
+    };
+    fetchUsers();
+  }, []);
+
+  const existingUserIds = new Set(members.map(m => m.user_id));
+
+  const filtered = allUsers
+    .filter(u => !existingUserIds.has(u.user_id))
+    .filter(u => {
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return (
+        u.user_name?.toLowerCase().includes(q) ||
+        u.user_email?.toLowerCase().includes(q)
+      );
+    });
+
+  return (
+    <div className="mt-1">
+      {/* Search */}
+      <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 mb-3">
+        <Search size={12} className="text-slate-600 shrink-0" />
+        <input
+          className="bg-transparent outline-none text-xs text-white placeholder-slate-600 flex-1"
+          style={{ fontFamily: "'DM Sans', sans-serif" }}
+          placeholder="Search by name or email…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+        {search && (
+          <button onClick={() => setSearch('')} className="text-slate-600 hover:text-slate-400">
+            <X size={11} />
+          </button>
+        )}
+      </div>
+
+      {/* List */}
+      {loading ? (
+        <div className="space-y-2">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-12 bg-white/5 rounded-xl animate-pulse" />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="py-6 text-center border border-dashed border-white/10 rounded-xl">
+          <p className="text-slate-600 text-xs">
+            {search ? 'No users match your search.' : 'All registered users are already members.'}
+          </p>
+        </div>
+      ) : (
+        <div className="max-h-64 overflow-y-auto space-y-1.5 pr-0.5">
+          {filtered.map(u => (
+            <div
+              key={u.user_id}
+              onClick={() => onSelect(u)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl border bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 cursor-pointer transition-all group"
+            >
+              {/* Avatar */}
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                {(u.user_name || u.user_email)?.[0]?.toUpperCase()}
+              </div>
+
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-semibold text-slate-200 truncate">
+                  {u.user_name || '(no name)'}
+                </div>
+                <div className="text-[10px] text-slate-600 truncate">{u.user_email}</div>
+              </div>
+
+              <span className="text-[9px] text-slate-600 group-hover:text-indigo-400 transition-colors font-semibold shrink-0">
+                + Select
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 /* ═══════════════════════════════════════════════════════════════════════════
    MAIN ORGANIZER DASHBOARD
 ═══════════════════════════════════════════════════════════════════════════ */
@@ -862,10 +958,20 @@ const OrganizerDashboard = ({ conf, onBack }) => {
   const assigneeName = (id) => { const m = members.find(m => m.id === id || m.user_id === id); return m ? mName(m) : '—'; };
 
   const filteredMembers = members.filter(m =>
+  m.role !== 'attendee' && (
     !memberSearch ||
     mName(m).toLowerCase().includes(memberSearch.toLowerCase()) ||
     m.email?.toLowerCase().includes(memberSearch.toLowerCase())
-  );
+  )
+);
+
+// Add this right below:
+const attendees = members.filter(m => m.role === 'attendee');
+const filteredAttendees = attendees.filter(m =>
+  !memberSearch ||
+  mName(m).toLowerCase().includes(memberSearch.toLowerCase()) ||
+  m.email?.toLowerCase().includes(memberSearch.toLowerCase())
+);
 
   const volunteerMap   = Object.fromEntries(allVolunteers.map(u => [u.user_id, { volunteer_roles: u.volunteer_roles || [], volunteer_domains: u.volunteer_domains || [] }]));
   const volunteersCount = allVolunteers.length;
@@ -886,6 +992,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
     { id: 'overview',      label: 'Overview',        icon: BarChart2,   badge: null },
     { id: 'papers',        label: 'Papers',           icon: FileText,    badge: pendingCount || null },
     { id: 'members',       label: 'Members',          icon: Users,       badge: null },
+    { id: 'attendees',     label: 'Attendees',        icon: Users,       badge: null },   // ← add this
     { id: 'teams',         label: 'Teams',            icon: Layers,      badge: null },
     { id: 'tasks',         label: 'Tasks',            icon: CheckSquare, badge: tasks.filter(t => t.status !== 'done').length || null },
     { id: 'notifications', label: 'Notifications',    icon: Bell,        badge: null },
@@ -951,13 +1058,22 @@ const OrganizerDashboard = ({ conf, onBack }) => {
           {/* ═══ OVERVIEW ═══ */}
           {section === 'overview' && (
             <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold text-white">Event Overview</h2>
-                <p className="text-slate-500 text-sm mt-0.5">Real-time conference metrics</p>
-              </div>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="flex items-between justify-between">  {/* change from just <div> */}
+      <div>
+        <h2 className="text-2xl font-bold text-white">Event Overview</h2>
+        <p className="text-slate-500 text-sm mt-0.5">Real-time conference metrics</p>
+      </div>
+      <Btn
+        variant="danger"
+        onClick={() => setModal('deleteConference')}
+      >
+        <Trash2 size={14} /> Delete Conference
+      </Btn>
+    </div>
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                 {[
-                  { label: 'Members',    value: members.length,                               color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
+                  { label: 'Members',   value: members.filter(m => m.role !== 'attendee').length, color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
+                  { label: 'Attendees', value: members.filter(m => m.role === 'attendee').length, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
                   { label: 'Teams',      value: teams.length,                                 color: 'text-purple-400', bg: 'bg-purple-500/10' },
                   { label: 'Papers',     value: confPapers.length,                            color: 'text-blue-400',   bg: 'bg-blue-500/10'   },
                   { label: 'Open Tasks', value: tasks.filter(t => t.status !== 'done').length, color: 'text-amber-400', bg: 'bg-amber-500/10'  },
@@ -1261,6 +1377,145 @@ const OrganizerDashboard = ({ conf, onBack }) => {
             </div>
           )}
 
+          {/* ═══ ATTENDEES ═══ */}
+{section === 'attendees' && (
+  <div className="space-y-6">
+    <div className="flex justify-between items-center">
+      <div>
+        <h2 className="text-2xl font-bold text-white">Attendees</h2>
+        <p className="text-slate-500 text-sm mt-0.5">
+          {attendees.length} registered attendee{attendees.length !== 1 ? 's' : ''}
+        </p>
+      </div>
+    </div>
+
+    {/* Search */}
+    <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5">
+      <Search size={14} className="text-slate-500 shrink-0" />
+      <input
+        className="bg-transparent outline-none text-sm text-white placeholder-slate-600 flex-1"
+        style={{ fontFamily: "'DM Sans', sans-serif" }}
+        placeholder="Search by name or email…"
+        value={memberSearch}
+        onChange={e => setMemberSearch(e.target.value)}
+      />
+      {memberSearch && (
+        <button onClick={() => setMemberSearch('')} className="text-slate-600 hover:text-slate-400">
+          <X size={13} />
+        </button>
+      )}
+    </div>
+
+    {/* Export CSV button */}
+    {attendees.length > 0 && (
+      <div className="flex justify-end">
+        <button
+          onClick={() => {
+            const headers = ['Name', 'Email', 'Joined'];
+            const rows = attendees.map(a => [
+              mName(a),
+              a.email || '',
+              a.joined_at ? new Date(a.joined_at).toLocaleDateString() : '',
+            ]);
+            const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `attendees-${confId}.csv`;
+            link.click();
+            URL.revokeObjectURL(url);
+          }}
+          className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+        >
+          <FileText size={13} /> Export CSV
+        </button>
+      </div>
+    )}
+
+    {loadingMembers ? (
+      <LoadingRows />
+    ) : filteredAttendees.length === 0 ? (
+      <Empty
+        icon={Users}
+        msg={attendees.length === 0 ? 'No attendees have registered yet.' : 'No attendees match your search.'}
+      />
+    ) : (
+      <div className="space-y-2">
+        {filteredAttendees.map((a, idx) => (
+          <div
+            key={a.id}
+            className="bg-[#0d1117] border border-white/10 rounded-xl px-5 py-3.5 flex items-center gap-4 hover:border-white/20 transition-all"
+          >
+            {/* Index */}
+            <span className="text-xs text-slate-700 font-bold w-5 shrink-0 text-right">{idx + 1}</span>
+
+            {/* Avatar */}
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
+              {mName(a)[0]?.toUpperCase()}
+            </div>
+
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold text-white truncate">{mName(a)}</div>
+              <div className="text-xs text-slate-500 truncate">{a.email || a.user_id}</div>
+              {a.joined_at && (
+                <div className="text-[10px] text-slate-700 mt-0.5">
+                  Registered {new Date(a.joined_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                </div>
+              )}
+            </div>
+
+            {/* Accommodation badge */}
+            {a.accommodation_required && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-amber-500/10 text-amber-400 border-amber-500/20 shrink-0">
+                Accommodation
+              </span>
+            )}
+
+            {/* Remove button */}
+            <button
+              onClick={() => { setModalData(a); setModal('confirmDelete'); }}
+              className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all shrink-0"
+            >
+              <Trash2 size={15} />
+            </button>
+          </div>
+        ))}
+      </div>
+    )}
+
+    {/* Accommodation summary */}
+    {attendees.length > 0 && (
+      <div className="bg-[#0d1117] border border-white/10 rounded-xl p-5">
+        <div className="text-[11px] text-slate-600 uppercase tracking-wider font-bold mb-3">
+          Accommodation Requests
+        </div>
+        {attendees.filter(a => a.accommodation_required).length === 0 ? (
+          <p className="text-xs text-slate-600 italic">No accommodation requests yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {attendees.filter(a => a.accommodation_required).map(a => (
+              <div key={a.id} className="flex items-start gap-3 bg-amber-500/5 border border-amber-500/15 rounded-lg px-3 py-2.5">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                  {mName(a)[0]?.toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-white">{mName(a)}</div>
+                  <div className="text-[10px] text-slate-500 truncate">{a.email}</div>
+                  {a.accommodation_notes && (
+                    <div className="text-[10px] text-amber-400/80 mt-1 leading-relaxed">{a.accommodation_notes}</div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )}
+  </div>
+)}
+
           {/* ═══ TEAMS ═══ */}
           {section === 'teams' && (
             <div className="space-y-6">
@@ -1543,40 +1798,54 @@ const OrganizerDashboard = ({ conf, onBack }) => {
       {/* ══════════════════════════ MODALS ══════════════════════════ */}
 
       {modal === 'addMember' && (
-        <Modal title="Add Member" onClose={() => setModal(null)}>
-          <div className="space-y-4">
-            <Field label="Email Address"><Input type="email" placeholder="member@example.com" value={mForm.email} onChange={e => setMForm({ ...mForm, email: e.target.value })} /></Field>
-            <Field label="Role">
-              <Sel value={mForm.role} onChange={e => setMForm({ ...mForm, role: e.target.value })}>
-                <option value="reviewer">Reviewer</option>
-                <option value="presenter">Presenter</option>
-                <option value="organizer">Organizer</option>
-                <option value="member">Member</option>
-              </Sel>
-            </Field>
-            {/* Show global rating if found */}
-            {mForm.email.trim().length > 5 && (() => {
-              const found = Object.entries(globalRatings).find(([uid]) => {
-                const user = allVolunteers.find(u => u.user_email === mForm.email.trim().toLowerCase());
-                return user && user.user_id === uid;
-              });
-              return found ? (
-                <div className="flex items-center gap-2 bg-amber-500/5 border border-amber-500/15 rounded-lg px-3 py-2">
-                  <Star size={11} className="text-amber-400 fill-amber-400" />
-                  <span className="text-xs text-slate-400">
-                    This user's global average rating: <span className="text-amber-300 font-bold">{found[1].avg.toFixed(1)}/5</span>
-                    <span className="text-slate-600 ml-1">({found[1].count} rating{found[1].count !== 1 ? 's' : ''})</span>
-                  </span>
-                </div>
-              ) : null;
-            })()}
-          </div>
-          <div className="flex gap-3 mt-6">
-            <Btn variant="secondary" className="flex-1" onClick={() => setModal(null)}>Cancel</Btn>
-            <Btn className="flex-1" onClick={addMember} disabled={saving || !mForm.email.trim()}>{saving ? 'Adding…' : 'Add Member'}</Btn>
-          </div>
-        </Modal>
-      )}
+  <Modal title="Add Member" onClose={() => setModal(null)} width="max-w-lg">
+    <div className="space-y-4">
+      <Field label="Role for New Member">
+        <Sel value={mForm.role} onChange={e => setMForm({ ...mForm, role: e.target.value })}>
+          <option value="reviewer">Reviewer</option>
+          <option value="presenter">Presenter</option>
+          <option value="organizer">Organizer</option>
+          <option value="member">Member</option>
+        </Sel>
+      </Field>
+
+      <Field label="Select User">
+        <UserPickerPanel
+          confId={confId}
+          members={members}
+          onSelect={async (user) => {
+            // Check not already a member
+            const already = members.find(m => m.user_id === user.user_id);
+            if (already) { alert('Already a member.'); return; }
+
+            setSaving(true);
+            const { error } = await supabase.from('conference_user').insert([{
+              conference_id: confId,
+              user_id:       user.user_id,
+              email:         user.user_email || '',
+              full_name:     user.user_name  || '',
+              role:          mForm.role,
+              joined_at:     new Date().toISOString(),
+            }]);
+            setSaving(false);
+
+            if (error) { alert(error.message); return; }
+            setModal(null);
+            setMForm({ email: '', role: 'reviewer' });
+            fetchMembers();
+            fetchAllVolunteers();
+          }}
+        />
+      </Field>
+    </div>
+
+    <div className="flex gap-3 mt-6">
+      <Btn variant="secondary" className="flex-1" onClick={() => setModal(null)}>
+        Cancel
+      </Btn>
+    </div>
+  </Modal>
+)}
 
       {modal === 'confirmDelete' && modalData && (
         <Modal title="Remove Member" onClose={() => setModal(null)} width="max-w-sm">
@@ -1723,6 +1992,59 @@ const OrganizerDashboard = ({ conf, onBack }) => {
           onClose={() => setRatingMember(null)}
         />
       )}
+
+      {modal === 'deleteConference' && (
+  <Modal title="Delete Conference" onClose={() => setModal(null)} width="max-w-sm">
+    <div className="mb-6 space-y-3">
+      <p className="text-slate-400 text-sm">
+        Are you sure you want to delete{' '}
+        <span className="text-white font-semibold">"{conf.title}"</span>?
+      </p>
+      <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+        <p className="text-red-400 text-xs leading-relaxed">
+          This will permanently delete the conference and all associated data —
+          members, teams, tasks, papers, and notifications. This cannot be undone.
+        </p>
+      </div>
+    </div>
+    <div className="flex gap-3">
+      <Btn variant="secondary" className="flex-1" onClick={() => setModal(null)}>
+        Cancel
+      </Btn>
+      <Btn
+        variant="danger"
+        className="flex-1"
+        disabled={saving}
+        onClick={async () => {
+          setSaving(true);
+          // Delete in dependency order
+          await supabase.from('notifications').delete().eq('conference_id', confId);
+          await supabase.from('conference_tasks').delete().eq('conference_id', confId);
+          await supabase.from('team_members').delete().eq('conference_id', confId);
+          await supabase.from('conference_teams').delete().eq('conference_id', confId);
+          await supabase.from('paper_assignments').delete().eq('conference_id', confId);
+          await supabase.from('paper_review').delete().in(
+            'paper_id',
+            (await supabase.from('paper').select('paper_id').eq('conference_id', confId)).data?.map(p => p.paper_id) || []
+          );
+          await supabase.from('assignment').delete().eq('conference_id', confId);
+          await supabase.from('paper').delete().eq('conference_id', confId);
+          await supabase.from('conference_user').delete().eq('conference_id', confId);
+          await supabase.from('feedback_questions').delete().in(
+            'form_id',
+            (await supabase.from('feedback_forms').select('id').eq('conference_id', confId)).data?.map(f => f.id) || []
+          );
+          await supabase.from('feedback_forms').delete().eq('conference_id', confId);
+          await supabase.from('conference').delete().eq('conference_id', confId);
+          setSaving(false);
+          onBack(); // go back to hub
+        }}
+      >
+        {saving ? 'Deleting…' : 'Delete Permanently'}
+      </Btn>
+    </div>
+  </Modal>
+)}
     </div>
   );
 };
