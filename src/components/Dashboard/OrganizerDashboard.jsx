@@ -1537,14 +1537,15 @@ const filteredAttendees = attendees.filter(m =>
 
       <div className="flex items-center gap-4 w-full sm:w-auto">
         <button
+          disabled={filteredAttendees.length === 0}
           onClick={() => {
-            if (selectedAttendees.size === filteredAttendees.length) setSelectedAttendees(new Set());
+            if (selectedAttendees.size === filteredAttendees.length && filteredAttendees.length > 0) setSelectedAttendees(new Set());
             else setSelectedAttendees(new Set(filteredAttendees.map(a => a.id)));
           }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-all whitespace-nowrap"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-all whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {selectedAttendees.size === filteredAttendees.length ? <CheckSquare size={14} className="text-indigo-400" /> : <Square size={14} />}
-          {selectedAttendees.size === filteredAttendees.length ? 'Deselect All' : 'Select All'}
+          {selectedAttendees.size === filteredAttendees.length && filteredAttendees.length > 0 ? <CheckSquare size={14} className="text-indigo-400" /> : <Square size={14} />}
+          {selectedAttendees.size === filteredAttendees.length && filteredAttendees.length > 0 ? 'Deselect All' : 'Select All'}
         </button>
 
         {attendees.length > 0 && (

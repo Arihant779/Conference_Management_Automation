@@ -942,16 +942,18 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
 
       // Fetch head titles by checking conference_teams for those membership IDs
       const cuIds = memberships.map(m => m.id);
-      const { data: headTeams } = await supabase
-        .from('conference_teams')
-        .select('conference_id, name')
-        .in('head_id', cuIds);
+      if (cuIds.length > 0) {
+        const { data: headTeams } = await supabase
+          .from('conference_teams')
+          .select('conference_id, name')
+          .in('head_id', cuIds);
 
-      if (headTeams) {
-        headTeams.forEach(team => {
-          // Override 'member' with the specific Team Head title
-          map[team.conference_id] = team.name;
-        });
+        if (headTeams) {
+          headTeams.forEach(team => {
+            // Override 'member' with the specific Team Head title
+            map[team.conference_id] = team.name;
+          });
+        }
       }
     }
 
