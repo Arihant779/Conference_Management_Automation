@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   BarChart2, FileText, Users, CheckSquare, Bell, Plus, X, Send,
-  CheckCircle, XCircle, MapPin, Edit2, Trash2,
+  CheckCircle, XCircle, MapPin, Edit2, Trash2, ArrowRight,
   Search, Layers, Clock, Sparkles, Star, Check
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
@@ -585,7 +585,7 @@ const UserPickerPanel = ({ confId, members, onSelect }) => {
 /* ═══════════════════════════════════════════════════════════════════════════
    MAIN ORGANIZER DASHBOARD
 ═══════════════════════════════════════════════════════════════════════════ */
-const OrganizerDashboard = ({ conf, onBack }) => {
+const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   const { user, permissions, userRoles } = useApp();
   const confId = conf.conference_id || conf.id;
 
@@ -597,6 +597,14 @@ const OrganizerDashboard = ({ conf, onBack }) => {
   const [tasks, setTasks]             = useState([]);
   const [loadingTasks, setLTasks]     = useState(true);
 
+  /* ── navigation logic ────────────────────────────────── */
+  useEffect(() => {
+    if (section === 'site_preview') {
+      onSwitchView('home');
+      setSection('overview');
+    }
+  }, [section, onSwitchView, setSection]);
+
   /* ── identity ────────────────────────────────────────── */
   const myMember = members.find(m => m.user_id === user.id);
   const myMemberId = myMember?.id;
@@ -604,8 +612,38 @@ const OrganizerDashboard = ({ conf, onBack }) => {
   const isOrganizer = isGlobalHead || (userRoles && userRoles.includes('organizer'));
   const myHeadedTeamIds = teams.filter(t => t.head_id === myMemberId).map(t => t.id);
   const isTeamHead = !isOrganizer && myHeadedTeamIds.length > 0;
-  
-  const dashboardTitle = isOrganizer ? 'Organizer Dashboard' : (isTeamHead ? 'Team Management' : 'Conference Dashboard');
+
+  /* ── permissions fallback ───────────────────────────── */
+  const FALLBACK_PERMS = {
+    organizer: ['view_dashboard','view_papers','manage_papers','allocate_papers','view_members','manage_members','view_teams','manage_teams','view_tasks','manage_tasks','view_notifications','send_notifications', 'view_emails', 'send_emails','find_speakers','view_feedback','manage_feedback', 'view_attendees'],
+    programming_head: ['view_dashboard','view_papers','manage_papers','allocate_papers','view_members','view_notifications'],
+    logistics_head: ['view_dashboard','view_teams','manage_teams','view_tasks','manage_tasks','view_notifications'],
+    outreach_head: ['view_dashboard','view_emails','send_emails', 'find_speakers','view_members','view_notifications','send_notifications'],
+    feedback_head: ['view_dashboard','view_feedback','manage_feedback','view_notifications'],
+    event_head: ['view_dashboard','view_teams','view_tasks', 'manage_tasks', 'view_members', 'view_notifications'],
+    technical_head: ['view_dashboard','view_teams','view_tasks', 'manage_tasks', 'view_notifications'],
+    registration_head: ['view_dashboard','view_members','manage_members','view_teams','view_notifications'],
+    sponsorship_head: ['view_dashboard','view_emails','send_emails','view_notifications'],
+    member: ['view_dashboard','view_teams','view_tasks','view_notifications']
+  };
+
+  // Generic fallback for any role ending in _head or _coord
+  const getRolePermissions = (role) => {
+    if (FALLBACK_PERMS[role]) return FALLBACK_PERMS[role];
+    if (role.endsWith('_head') || role.endsWith('_coord') || role.endsWith('_lead')) {
+      return ['view_dashboard', 'view_teams', 'view_tasks', 'manage_tasks', 'view_notifications', 'view_members'];
+    }
+    return [];
+  };
+
+  const effectivePermissions = Array.from(new Set([
+    ...(permissions || []),
+    ...(userRoles ? userRoles.flatMap(getRolePermissions) : [])
+  ]));
+
+  const can = (p) => effectivePermissions.includes(p);
+  const roleLabel = isOrganizer ? 'Organizer' : ((userRoles || []).find(r => r !== 'team_head' && r.endsWith('_head'))?.replace('_', ' ')?.replace(/\b\w/g, l => l.toUpperCase()) || (userRoles?.includes('team_head') || isTeamHead ? 'Team Lead' : (userRoles?.includes('reviewer') ? 'Reviewer' : 'Member')));
+  const dashboardTitle = isOrganizer ? 'Organizer Dashboard' : (isTeamHead || userRoles?.includes('team_head') ? 'Team Management' : (roleLabel.includes('Head') ? `${roleLabel} Dashboard` : 'Conference Dashboard'));
   const [notifs, setNotifs]           = useState([]);
   const [modal, setModal]             = useState(null);
   const [modalData, setModalData]     = useState(null);
@@ -1037,7 +1075,8 @@ const filteredAttendees = attendees.filter(m =>
     { id: 'speakers',      label: 'Find Speakers',    icon: Users,       badge: null, permission: 'find_speakers' },
     { id: 'allocation',    label: 'Paper Allocation', icon: FileText,    badge: null, permission: 'allocate_papers' },
     { id: 'feedback',      label: 'Feedback',         icon: Star,        badge: null, permission: 'view_feedback' },
-  ].filter(item => !item.permission || (permissions && permissions.includes(item.permission)));
+    { id: 'site_preview',  label: 'Site Preview',     icon: Sparkles,    badge: null },
+  ].filter(item => !item.permission || can(item.permission));
 
   /* ══════════════════════════════════════════════════════════
      RENDER
@@ -1046,39 +1085,16 @@ const filteredAttendees = attendees.filter(m =>
     <div className="min-h-screen bg-[#080b11] text-slate-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 
-      {/* HEADER */}
-      <header className="sticky top-0 z-40 bg-[#080b11]/95 backdrop-blur-xl border-b border-white/6 px-6 py-3">
-        <div className="max-w-[1400px] mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="text-slate-500 hover:text-white text-xs font-semibold px-2 py-1.5 hover:bg-white/5 rounded-lg transition-all">← Back</button>
-            <div className="h-4 w-px bg-white/10" />
-            <div>
-              <div className="font-bold text-white text-sm">{conf.title}</div>
-              <div className="text-xs text-slate-600 flex items-center gap-1"><MapPin size={10} />{conf.location ?? 'Location TBD'}</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {volunteersCount > 0 && (
-              <div className="hidden md:flex items-center gap-1.5 text-xs font-semibold text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-md">
-                <Sparkles size={11} />{volunteersCount} volunteer{volunteersCount !== 1 ? 's' : ''}
-              </div>
-            )}
-            <span className="text-xs font-bold text-violet-300 bg-violet-500/10 border border-violet-500/20 px-2.5 py-1 rounded-md uppercase tracking-wider">
-              {isOrganizer ? 'Organizer' : (isTeamHead ? 'Team Lead' : 'Member')}
-            </span>
-            {isOrganizer && (
-              <Btn className="text-xs py-2 px-3" onClick={() => setModal('notification')}><Bell size={13} />Announce</Btn>
-            )}
-          </div>
-        </div>
-      </header>
+
 
       <div className="max-w-[1400px] mx-auto flex">
         {/* SIDEBAR */}
         <aside className="w-52 shrink-0 sticky top-0 h-screen border-r border-white/10 py-5 px-2.5 flex flex-col gap-0.5 overflow-y-auto">
           <div className="px-3 mb-6">
-            <div className="font-bold text-white text-sm truncate">{conf.title}</div>
-            <div className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-1">{dashboardTitle}</div>
+            <div className="text-[11px] text-indigo-400 font-bold uppercase tracking-widest flex items-center gap-2">
+              {(isOrganizer || isTeamHead || userRoles?.includes('team_head')) && <Star size={12} className="fill-current" />}
+              {dashboardTitle}
+            </div>
           </div>
           {nav.map(({ id, label, icon: Icon, badge }) => (
             <button
@@ -1094,6 +1110,12 @@ const filteredAttendees = attendees.filter(m =>
               {badge ? <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/20 px-1.5 py-0.5 rounded-full font-bold">{badge}</span> : null}
             </button>
           ))}
+          <div className="mt-auto px-2 pb-2">
+            <button onClick={onBack} className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium w-full text-slate-500 hover:text-white hover:bg-white/5 transition-all">
+              <ArrowRight className="rotate-180" size={15} />
+              Back to Hub
+            </button>
+          </div>
         </aside>
 
         {/* MAIN CONTENT */}
@@ -1168,7 +1190,7 @@ const filteredAttendees = attendees.filter(m =>
                 <div className="bg-[#0d1117] border border-white/10 rounded-xl p-5">
                   <div className="flex justify-between mb-4">
                     <span className="text-sm font-semibold text-slate-300">Teams</span>
-                    <button onClick={() => setSection('teams')} className="text-xs text-indigo-400 hover:text-indigo-300">Manage →</button>
+                    {can('manage_teams') && <button onClick={() => setSection('teams')} className="text-xs text-indigo-400 hover:text-indigo-300">Manage →</button>}
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {teams.slice(0, 6).map(t => (
@@ -1185,7 +1207,7 @@ const filteredAttendees = attendees.filter(m =>
               <div className="bg-[#0d1117] border border-white/10 rounded-xl p-5">
                 <div className="flex justify-between mb-3">
                   <span className="text-sm font-semibold text-slate-300">Task Completion</span>
-                  <button onClick={() => setSection('tasks')} className="text-xs text-indigo-400 hover:text-indigo-300">Manage →</button>
+                  {can('manage_tasks') && <button onClick={() => setSection('tasks')} className="text-xs text-indigo-400 hover:text-indigo-300">Manage →</button>}
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
@@ -1262,7 +1284,7 @@ const filteredAttendees = attendees.filter(m =>
                                   View File →
                                 </a>
                               )}
-                              {(paper.status === 'pending' || !paper.status) && (
+                              {(can('manage_papers') && (paper.status === 'pending' || !paper.status)) && (
                                 <>
                                   <button
                                     onClick={(e) => { e.stopPropagation(); updatePaperStatus(paper.paper_id, 'accepted'); }}
@@ -1300,7 +1322,7 @@ const filteredAttendees = attendees.filter(m =>
                     {volunteersCount > 0 && <span className="ml-2 text-indigo-400 font-semibold">· {volunteersCount} with volunteer preferences</span>}
                   </p>
                 </div>
-                <Btn onClick={() => setModal('addMember')}><Plus size={15} />Add Member</Btn>
+                {can('manage_members') && <Btn onClick={() => setModal('addMember')}><Plus size={15} />Add Member</Btn>}
               </div>
 
               <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5">
@@ -1742,8 +1764,23 @@ const filteredAttendees = attendees.filter(m =>
                 </div>
                 <Field label="Speaker Source">
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                    {[{key:1,label:'🇮🇳 Indian'},{key:2,label:'🌍 Foreign'},{key:3,label:'💼 LinkedIn'},{key:4,label:'🎓 IIT / NIT'},{key:5,label:'⭐ All Sources'}].map(({ key, label }) => (
-                      <button key={key} onClick={() => setSpSource(key)} className={cls('py-2.5 px-3 rounded-xl text-xs font-bold border transition-all', spSource === key ? 'bg-indigo-600 border-indigo-500 text-white' : 'border-white/10 text-slate-500 hover:text-white hover:border-white/20')}>{label}</button>
+                    {[
+                      { key: 1, label: 'IN Indian' },
+                      { key: 2, label: '🌐 Foreign' },
+                      { key: 3, label: '💼 LinkedIn' },
+                      { key: 4, label: '🎓 IIT / NIT' },
+                      { key: 5, label: '⭐ All Sources' }
+                    ].map(({ key, label }) => (
+                      <button
+                        key={key}
+                        onClick={() => setSpSource(key)}
+                        className={cls(
+                          'py-2.5 px-3 rounded-xl text-[10px] font-bold border transition-all',
+                          spSource === key ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/20' : 'border-white/10 text-slate-500 hover:text-white hover:border-white/5'
+                        )}
+                      >
+                        {label}
+                      </button>
                     ))}
                   </div>
                 </Field>
@@ -1850,32 +1887,46 @@ const filteredAttendees = attendees.filter(m =>
       {(modal === 'createTeam' || modal === 'editTeam') && (
         <Modal title={modal === 'createTeam' ? 'Create Team' : 'Manage Team'} onClose={() => setModal(null)} width="max-w-xl">
           <div className="space-y-6">
-            {/* 1. Team Info (Mostly for Organizers) */}
+            {/* 1. TEAM CONFIGURATION (Restored) */}
             <div className={cls('space-y-4', !isOrganizer && 'opacity-70 pointer-events-none')}>
-              <Field label="Team Details">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input placeholder="Team Name" value={tmForm.name} onChange={e => setTmForm({ ...tmForm, name: e.target.value })} disabled={!isOrganizer} />
-                  <Sel value={tmForm.head_id} onChange={e => setTmForm({ ...tmForm, head_id: e.target.value })} disabled={!isOrganizer}>
+              <Field label="Team Type">
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-1.5 max-h-52 overflow-y-auto pr-0.5">
+                    {TEAM_TYPES.map(({ id, label }) => (
+                      <button key={id} type="button" onClick={() => setTmForm({ ...tmForm, type: id, name: label })} className={cls('text-left px-3 py-2 rounded-lg border text-xs font-medium transition-all flex items-center gap-2', tmForm.type === id ? 'bg-indigo-500/15 border-indigo-500/50 text-indigo-300' : 'bg-white/5 border-white/10 text-slate-500 hover:border-indigo-500/30 hover:text-slate-200')}>
+                        {tmForm.type === id && <Check size={10} className="shrink-0 text-indigo-400" />}{label}
+                      </button>
+                    ))}
+                    <button type="button" onClick={() => setTmForm({ ...tmForm, type: 'custom', name: '' })} className={cls('text-left px-3 py-2 rounded-lg border text-xs font-medium transition-all flex items-center gap-2 col-span-2', tmForm.type === 'custom' ? 'bg-slate-500/15 border-slate-400/40 text-slate-300' : 'bg-white/5 border-white/10 text-slate-500 hover:border-white/20 hover:text-slate-200')}>
+                      {tmForm.type === 'custom' && <Check size={10} className="shrink-0" />}✏️ Custom name…
+                    </button>
+                  </div>
+                  {tmForm.type === 'custom' && <Input autoFocus placeholder="Enter a custom team name…" value={tmForm.name} onChange={e => setTmForm({ ...tmForm, name: e.target.value })} />}
+                </div>
+              </Field>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Description (optional)">
+                  <Input placeholder="What does this team do?" value={tmForm.description} onChange={e => setTmForm({ ...tmForm, description: e.target.value })} />
+                </Field>
+                <Field label="Team Head (optional)">
+                  <Sel value={tmForm.head_id} onChange={e => setTmForm({ ...tmForm, head_id: e.target.value })}>
                     <option value="">— No team head —</option>
                     {members.map(m => <option key={m.id} value={m.id} className="bg-[#0d1117]">{mName(m)} ({m.role})</option>)}
                   </Sel>
+                </Field>
+              </div>
+
+              <Field label="Team Color">
+                <div className="flex gap-2 flex-wrap">
+                  {TEAM_COLORS.map(c => (
+                    <button key={c} onClick={() => setTmForm({ ...tmForm, color: c })} className={cls('w-8 h-8 rounded-lg transition-all border-2', tmForm.color === c ? 'border-white scale-110' : 'border-transparent hover:scale-105')} style={{ backgroundColor: c }} />
+                  ))}
                 </div>
               </Field>
-              {isOrganizer && (
-                 <Field label="Description & Color">
-                   <div className="flex gap-4">
-                     <Input className="flex-1" placeholder="Optional description" value={tmForm.description} onChange={e => setTmForm({ ...tmForm, description: e.target.value })} />
-                     <div className="flex gap-1.5 items-center bg-white/5 border border-white/10 rounded-xl px-2">
-                       {TEAM_COLORS.slice(0, 4).map(c => (
-                         <button key={c} onClick={() => setTmForm({ ...tmForm, color: c })} className={cls('w-5 h-5 rounded-md transition-all', tmForm.color === c ? 'ring-2 ring-white scale-110' : 'opacity-40 hover:opacity-100')} style={{ backgroundColor: c }} />
-                       ))}
-                     </div>
-                   </div>
-                 </Field>
-              )}
             </div>
 
-            {/* 2. Member Management (The Core Feature) */}
+            {/* 2. MEMBER MANAGEMENT (Preserved) */}
             <div className="border-t border-white/10 pt-5 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -1890,26 +1941,21 @@ const filteredAttendees = attendees.filter(m =>
               </div>
 
               {modal === 'editTeam' && modalData.memberList?.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">
                   {(modalData.memberList || []).map(tm => {
                     const m = members.find(mem => mem.id === tm.conference_user_id);
                     if (!m) return null;
                     return (
-                      <div key={m.id} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl p-2.5 group">
+                      <div key={m.id} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl p-2 group">
                         <div className="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
                           {mName(m)[0]?.toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-xs font-semibold text-white truncate">{mName(m)}</div>
-                          <div className="text-[9px] text-slate-500 uppercase font-bold">{m.role}</div>
+                          <div className="text-[11px] font-semibold text-white truncate">{mName(m)}</div>
                         </div>
-                        <button 
-                          onClick={() => removeFromTeam(modalData.id, m.id)}
-                          className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all"
-                          title="Remove from team"
-                        >
-                          <X size={14} />
-                        </button>
+                        {isOrganizer && (
+                          <button onClick={() => removeFromTeam(modalData.id, m.id)} className="p-1 px-2 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all"><X size={12} /></button>
+                        )}
                       </div>
                     );
                   })}
@@ -1922,22 +1968,14 @@ const filteredAttendees = attendees.filter(m =>
                   <span className="text-xs font-bold text-indigo-300 uppercase tracking-wider">Add New Members</span>
                 </div>
                 <VolunteerCandidatePanel
-                  allVolunteers={allVolunteers} 
-                  members={members} 
-                  teamMembers={modalData?.memberList || []}
+                  allVolunteers={allVolunteers} members={members} teamMembers={modalData?.memberList || []}
                   teamTypeId={tmForm.type !== 'custom' ? tmForm.type : null}
                   confId={confId} 
                   onAdd={(memberId) => addToTeam(modal === 'editTeam' ? modalData.id : null, memberId)}
                   onAddVolunteer={async (v) => {
-                    // Logic to add a volunteer to the conference first, then to the team
                     setSaving(true);
                     const { data, error } = await supabase.from('conference_user').insert([{
-                      conference_id: confId,
-                      user_id: v.user_id,
-                      email: v.user_email || '',
-                      full_name: v.user_name || '',
-                      role: 'member',
-                      joined_at: new Date().toISOString()
+                      conference_id: confId, user_id: v.user_id, email: v.user_email || '', full_name: v.user_name || '', role: 'member', joined_at: new Date().toISOString()
                     }]).select().single();
                     setSaving(false);
                     if (error) { alert(error.message); return null; }
@@ -1954,7 +1992,7 @@ const filteredAttendees = attendees.filter(m =>
             <Btn variant="secondary" className="flex-1" onClick={() => setModal(null)}>Close</Btn>
             {isOrganizer && (
               <Btn className="flex-1" onClick={modal === 'createTeam' ? createTeam : saveTeam} disabled={saving || !tmForm.name.trim()}>
-                {saving ? 'Saving…' : modal === 'createTeam' ? 'Create Team' : 'Save Team Changes'}
+                {saving ? 'Saving…' : modal === 'createTeam' ? 'Create Team' : 'Save Changes'}
               </Btn>
             )}
           </div>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
 import OrganizerDashboard from './OrganizerDashboard';
@@ -7,10 +7,10 @@ import ReviewerDashboard from './ReviewerDashboard';
 import MemberDashboard from './MemberDashboard';
 import ConferencePage from './ConferencePage';
 
-const RoleBasedDashboard = ({ conf, role: propRole, onBack }) => {
+const RoleBasedDashboard = ({ conf, role: propRole, onBack, onSwitchView }) => {
   const { user, permissions, userRoles, loadingPermissions } = useApp();
 
-  const confId = conf?.conference_id ?? conf?.id;
+
 
   // Handle loading state from AppContext
   if (loadingPermissions) {
@@ -23,10 +23,10 @@ const RoleBasedDashboard = ({ conf, role: propRole, onBack }) => {
 
   // Management roles use the OrganizerDashboard (permissions will control tabs)
   const isManagement = userRoles.some(r => 
-    ['organizer', 'logistics_head', 'event_head', 'programming_head', 'outreach_head', 'feedback_head'].includes(r)
+    r === 'organizer' || r === 'team_head' || r.endsWith('_head')
   );
 
-  if (isManagement) return <OrganizerDashboard conf={conf} onBack={onBack} />;
+  if (isManagement) return <OrganizerDashboard conf={conf} onBack={onBack} onSwitchView={onSwitchView} />;
   if (userRoles.includes('presenter')) return <PresenterDashboard conf={conf} onBack={onBack} />;
   if (userRoles.includes('reviewer'))  return <ReviewerDashboard conf={conf} onBack={onBack} />;
   if (userRoles.includes('member'))    return <MemberDashboard conf={conf} onBack={onBack} />;

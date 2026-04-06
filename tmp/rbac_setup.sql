@@ -48,7 +48,8 @@ WITH all_user_roles AS (
 )
 SELECT aur.conference_id, aur.user_id, aur.role_name, rp.permission_string
 FROM all_user_roles aur
-JOIN public.role_permissions rp ON aur.role_name = rp.role_name;
+  -- Use LEFT JOIN so roles show up even if no permissions are mapped yet
+  LEFT JOIN public.role_permissions rp ON aur.role_name = rp.role_name;
 
 -- 6. Populate Base Roles (using member instead of participant)
 INSERT INTO public.roles (role_name, description) VALUES
@@ -119,5 +120,38 @@ VALUES
   ('programming_head', 'view_papers'),
   ('programming_head', 'manage_papers'),
   ('programming_head', 'allocate_papers'),
-  ('programming_head', 'view_members')
+  ('programming_head', 'view_members'),
+  ('programming_head', 'view_notifications')
+ON CONFLICT DO NOTHING;
+
+-- 12. Map Outreach Head Permissions
+INSERT INTO public.role_permissions (role_name, permission_string)
+VALUES
+  ('outreach_head', 'view_dashboard'),
+  ('outreach_head', 'view_emails'),
+  ('outreach_head', 'send_emails'),
+  ('outreach_head', 'find_speakers'),
+  ('outreach_head', 'view_members'),
+  ('outreach_head', 'view_notifications'),
+  ('outreach_head', 'send_notifications')
+ON CONFLICT DO NOTHING;
+
+-- 13. Map Feedback Head Permissions
+INSERT INTO public.role_permissions (role_name, permission_string)
+VALUES
+  ('feedback_head', 'view_dashboard'),
+  ('feedback_head', 'view_feedback'),
+  ('feedback_head', 'manage_feedback'),
+  ('feedback_head', 'view_notifications')
+ON CONFLICT DO NOTHING;
+
+-- 14. Map Event Head Permissions
+INSERT INTO public.role_permissions (role_name, permission_string)
+VALUES
+  ('event_head', 'view_dashboard'),
+  ('event_head', 'view_teams'),
+  ('event_head', 'view_tasks'),
+  ('event_head', 'manage_tasks'),
+  ('event_head', 'view_members'),
+  ('event_head', 'view_notifications')
 ON CONFLICT DO NOTHING;
