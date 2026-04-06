@@ -898,9 +898,46 @@ const OrganizerDashboard = ({ conf, onBack }) => {
   };
 
 
+  const addToTeam = async (teamId, confUserId) => {
+    const member = members.find(m => m.id === confUserId);
+    if (!member) return;
+    
+    // Check if already in team
+    const team = teams.find(t => t.id === teamId);
+    if (team?.memberList.some(tm => tm.conference_user_id === confUserId)) {
+      alert('Already in team.');
+      return;
+    }
+
+    setSaving(true);
+    const { error } = await supabase.from('team_members').insert([{
+      conference_id: confId,
+      team_id: teamId,
+      user_id: member.user_id,
+      conference_user_id: confUserId
+    }]);
+    setSaving(false);
+
+    if (error) {
+      alert(`Add error: ${error.message}`);
+    } else {
+      fetchTeams();
+    }
+  };
+
   const removeFromTeam = async (teamId, confUserId) => {
-    await supabase.from('team_members').delete().eq('team_id', teamId).eq('conference_user_id', confUserId);
-    fetchTeams();
+    setSaving(true);
+    const { error } = await supabase.from('team_members')
+      .delete()
+      .eq('team_id', teamId)
+      .eq('conference_user_id', confUserId);
+    setSaving(false);
+    
+    if (error) {
+      alert(`Remove error: ${error.message}`);
+    } else {
+      fetchTeams();
+    }
   };
 
   /* ── task CRUD ───────────────────────────────────────────── */
@@ -1811,58 +1848,115 @@ const filteredAttendees = attendees.filter(m =>
       )}
 
       {(modal === 'createTeam' || modal === 'editTeam') && (
-        <Modal title={modal === 'createTeam' ? 'Create Team' : 'Edit Team'} onClose={() => setModal(null)} width="max-w-xl">
-          <div className="space-y-4">
-            <Field label="Team Type">
-              <div className="space-y-2">
-                <div className="grid grid-cols-2 gap-1.5 max-h-52 overflow-y-auto pr-0.5">
-                  {TEAM_TYPES.map(({ id, label }) => (
-                    <button key={id} type="button" onClick={() => setTmForm({ ...tmForm, type: id, name: label })} className={cls('text-left px-3 py-2 rounded-lg border text-xs font-medium transition-all flex items-center gap-2', tmForm.type === id ? 'bg-indigo-500/15 border-indigo-500/50 text-indigo-300' : 'bg-white/5 border-white/10 text-slate-500 hover:border-indigo-500/30 hover:text-slate-200')}>
-                      {tmForm.type === id && <Check size={10} className="shrink-0 text-indigo-400" />}{label}
-                    </button>
-                  ))}
-                  <button type="button" onClick={() => setTmForm({ ...tmForm, type: 'custom', name: '' })} className={cls('text-left px-3 py-2 rounded-lg border text-xs font-medium transition-all flex items-center gap-2 col-span-2', tmForm.type === 'custom' ? 'bg-slate-500/15 border-slate-400/40 text-slate-300' : 'bg-white/5 border-white/10 text-slate-500 hover:border-white/20 hover:text-slate-200')}>
-                    {tmForm.type === 'custom' && <Check size={10} className="shrink-0" />}✏️ Custom name…
-                  </button>
+        <Modal title={modal === 'createTeam' ? 'Create Team' : 'Manage Team'} onClose={() => setModal(null)} width="max-w-xl">
+          <div className="space-y-6">
+            {/* 1. Team Info (Mostly for Organizers) */}
+            <div className={cls('space-y-4', !isOrganizer && 'opacity-70 pointer-events-none')}>
+              <Field label="Team Details">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input placeholder="Team Name" value={tmForm.name} onChange={e => setTmForm({ ...tmForm, name: e.target.value })} disabled={!isOrganizer} />
+                  <Sel value={tmForm.head_id} onChange={e => setTmForm({ ...tmForm, head_id: e.target.value })} disabled={!isOrganizer}>
+                    <option value="">— No team head —</option>
+                    {members.map(m => <option key={m.id} value={m.id} className="bg-[#0d1117]">{mName(m)} ({m.role})</option>)}
+                  </Sel>
                 </div>
-                {tmForm.type === 'custom' && <Input autoFocus placeholder="Enter a custom team name…" value={tmForm.name} onChange={e => setTmForm({ ...tmForm, name: e.target.value })} />}
+              </Field>
+              {isOrganizer && (
+                 <Field label="Description & Color">
+                   <div className="flex gap-4">
+                     <Input className="flex-1" placeholder="Optional description" value={tmForm.description} onChange={e => setTmForm({ ...tmForm, description: e.target.value })} />
+                     <div className="flex gap-1.5 items-center bg-white/5 border border-white/10 rounded-xl px-2">
+                       {TEAM_COLORS.slice(0, 4).map(c => (
+                         <button key={c} onClick={() => setTmForm({ ...tmForm, color: c })} className={cls('w-5 h-5 rounded-md transition-all', tmForm.color === c ? 'ring-2 ring-white scale-110' : 'opacity-40 hover:opacity-100')} style={{ backgroundColor: c }} />
+                       ))}
+                     </div>
+                   </div>
+                 </Field>
+              )}
+            </div>
+
+            {/* 2. Member Management (The Core Feature) */}
+            <div className="border-t border-white/10 pt-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Users size={16} className="text-indigo-400" />
+                  <h4 className="text-sm font-bold text-white uppercase tracking-wider">Member Management</h4>
+                </div>
+                {modal === 'editTeam' && (
+                  <span className="text-[10px] font-bold text-slate-500 bg-white/5 px-2 py-0.5 rounded border border-white/10">
+                    {modalData.memberList?.length || 0} Members
+                  </span>
+                )}
               </div>
-            </Field>
-            <Field label="Description (optional)"><Input placeholder="What does this team do?" value={tmForm.description} onChange={e => setTmForm({ ...tmForm, description: e.target.value })} /></Field>
-            <Field label="Team Head (optional)">
-              <Sel value={tmForm.head_id} onChange={e => setTmForm({ ...tmForm, head_id: e.target.value })}>
-                <option value="">— No team head —</option>
-                {members.map(m => <option key={m.id} value={m.id} className="bg-[#0d1117]">{mName(m)} ({m.role})</option>)}
-              </Sel>
-            </Field>
-            <Field label="Team Color">
-              <div className="flex gap-2 flex-wrap">
-                {TEAM_COLORS.map(c => (
-                  <button key={c} onClick={() => setTmForm({ ...tmForm, color: c })} className={cls('w-8 h-8 rounded-lg transition-all border-2', tmForm.color === c ? 'border-white scale-110' : 'border-transparent hover:scale-105')} style={{ backgroundColor: c }} />
-                ))}
-              </div>
-            </Field>
-            {(tmForm.type && tmForm.type !== 'custom' || (tmForm.type === 'custom' && tmForm.name.trim().length >= 3)) && (
-              <div className="border-t border-white/10 pt-4">
+
+              {modal === 'editTeam' && modalData.memberList?.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {(modalData.memberList || []).map(tm => {
+                    const m = members.find(mem => mem.id === tm.conference_user_id);
+                    if (!m) return null;
+                    return (
+                      <div key={m.id} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl p-2.5 group">
+                        <div className="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+                          {mName(m)[0]?.toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-semibold text-white truncate">{mName(m)}</div>
+                          <div className="text-[9px] text-slate-500 uppercase font-bold">{m.role}</div>
+                        </div>
+                        <button 
+                          onClick={() => removeFromTeam(modalData.id, m.id)}
+                          className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all"
+                          title="Remove from team"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="bg-indigo-500/5 rounded-2xl p-4 border border-indigo-500/10">
                 <div className="flex items-center gap-2 mb-3">
-                  <Sparkles size={13} className="text-indigo-400" />
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Suggested Volunteers</span>
+                  <Plus size={14} className="text-indigo-400" />
+                  <span className="text-xs font-bold text-indigo-300 uppercase tracking-wider">Add New Members</span>
                 </div>
                 <VolunteerCandidatePanel
-                  allVolunteers={allVolunteers} members={members} teamMembers={[]}
+                  allVolunteers={allVolunteers} 
+                  members={members} 
+                  teamMembers={modalData?.memberList || []}
                   teamTypeId={tmForm.type !== 'custom' ? tmForm.type : null}
-                  confId={confId} onAdd={() => {}} onAddVolunteer={() => Promise.resolve(null)}
+                  confId={confId} 
+                  onAdd={(memberId) => addToTeam(modal === 'editTeam' ? modalData.id : null, memberId)}
+                  onAddVolunteer={async (v) => {
+                    // Logic to add a volunteer to the conference first, then to the team
+                    setSaving(true);
+                    const { data, error } = await supabase.from('conference_user').insert([{
+                      conference_id: confId,
+                      user_id: v.user_id,
+                      email: v.user_email || '',
+                      full_name: v.user_name || '',
+                      role: 'member',
+                      joined_at: new Date().toISOString()
+                    }]).select().single();
+                    setSaving(false);
+                    if (error) { alert(error.message); return null; }
+                    fetchMembers();
+                    return data.id;
+                  }}
                   globalRatings={globalRatings}
                 />
-                <p className="text-[10px] text-slate-600 mt-2">You can add members after the team is created.</p>
               </div>
-            )}
+            </div>
           </div>
-          <div className="flex gap-3 mt-6">
-            <Btn variant="secondary" className="flex-1" onClick={() => setModal(null)}>Cancel</Btn>
-            <Btn className="flex-1" onClick={modal === 'createTeam' ? createTeam : saveTeam} disabled={saving || !tmForm.name.trim()}>
-              {saving ? 'Saving…' : modal === 'createTeam' ? 'Create Team' : 'Save Changes'}
-            </Btn>
+
+          <div className="flex gap-3 mt-8">
+            <Btn variant="secondary" className="flex-1" onClick={() => setModal(null)}>Close</Btn>
+            {isOrganizer && (
+              <Btn className="flex-1" onClick={modal === 'createTeam' ? createTeam : saveTeam} disabled={saving || !tmForm.name.trim()}>
+                {saving ? 'Saving…' : modal === 'createTeam' ? 'Create Team' : 'Save Team Changes'}
+              </Btn>
+            )}
           </div>
         </Modal>
       )}
