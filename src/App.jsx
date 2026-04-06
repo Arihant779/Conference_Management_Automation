@@ -26,7 +26,7 @@ const clearPending = () => sessionStorage.removeItem(PENDING_KEY);
 // ─────────────────────────────────────────────────────────────────────────────
 
 const App = () => {
-  const { user, setUser } = useApp();
+  const { user, setUser, setActiveConfId } = useApp();
   const [view, setView]                 = useState('dashboard');
   const [selectedConf, setSelectedConf] = useState(null);
   const [initialView, setInitialView]   = useState('home');
@@ -59,6 +59,7 @@ const App = () => {
           setSelectedConf(confData);
           setInitialView(pending.intent || 'home');
           setView('conference');
+          setActiveConfId(pending.confId);
         }
       }
 
@@ -95,6 +96,7 @@ const App = () => {
           setSelectedConf(confData);
           setInitialView(pending.intent || 'home'); // ← restores 'submitPaper'
           setView('conference');
+          setActiveConfId(pending.confId);
         }
       };
 
@@ -127,6 +129,7 @@ const App = () => {
           onBack={() => {
             setView('dashboard');
             setSelectedConf(null);
+            setActiveConfId(null);
             clearPending();
           }}
           onRequireAuth={(intent) => {
@@ -164,6 +167,7 @@ const App = () => {
           setView('dashboard');
           setSelectedConf(null);
           setInitialView('home');
+          setActiveConfId(null);
           clearPending();
         }}
       />
@@ -175,6 +179,7 @@ const App = () => {
       onSelectConf={(conf) => {
         setSelectedConf(conf);
         setInitialView('home');
+        setActiveConfId(conf.conference_id ?? conf.id);
         setView('conference');
       }}
       onCreateConf={() => setView('create')}

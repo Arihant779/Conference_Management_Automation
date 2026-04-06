@@ -38,9 +38,9 @@ const ReviewerDashboard = ({ conf, onBack }) => {
     setLoadingPrefs(true);
     fetchPrefs();
     fetchAssignedPapers();
-  }, [user, confId]);
+  }, [user, confId, fetchPrefs, fetchAssignedPapers]);
 
-  const fetchPrefs = async () => {
+  const fetchPrefs = React.useCallback(async () => {
     const { data } = await supabase
       .from('conference_user')
       .select('expertise, max_papers')
@@ -59,9 +59,9 @@ const ReviewerDashboard = ({ conf, onBack }) => {
       setIsEditing(true);
     }
     setLoadingPrefs(false);
-  };
+  }, [confId, user.id]);
 
-  const fetchAssignedPapers = async () => {
+  const fetchAssignedPapers = React.useCallback(async () => {
     if (!user || !confId) return;
     setLoadingPapers(true);
 
@@ -101,7 +101,7 @@ const ReviewerDashboard = ({ conf, onBack }) => {
       })));
     }
     setLoadingPapers(false);
-  };
+  }, [confId, user.id]);
 
   const savePrefs = async () => {
     setSavingPrefs(true);

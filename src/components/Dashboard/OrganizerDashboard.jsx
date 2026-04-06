@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   BarChart2, FileText, Users, CheckSquare, Bell, Plus, X, Send,
-  ChevronDown, CheckCircle, XCircle, MapPin, Edit2, Trash2,
-  Search, Layers, Clock, Sparkles, Star, Check, Settings
+  CheckCircle, XCircle, MapPin, Edit2, Trash2,
+  Search, Layers, Clock, Sparkles, Star, Check
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
@@ -586,7 +586,7 @@ const UserPickerPanel = ({ confId, members, onSelect }) => {
    MAIN ORGANIZER DASHBOARD
 ═══════════════════════════════════════════════════════════════════════════ */
 const OrganizerDashboard = ({ conf, onBack }) => {
-  useApp();
+  const { user, permissions, userRoles } = useApp();
   const confId = conf.conference_id || conf.id;
 
   const [section, setSection]         = useState('overview');
@@ -596,12 +596,21 @@ const OrganizerDashboard = ({ conf, onBack }) => {
   const [loadingTeams, setLT]         = useState(true);
   const [tasks, setTasks]             = useState([]);
   const [loadingTasks, setLTasks]     = useState(true);
+
+  /* ── identity ────────────────────────────────────────── */
+  const myMember = members.find(m => m.user_id === user.id);
+  const myMemberId = myMember?.id;
+  const isGlobalHead = conf.conference_head_id === user.id;
+  const isOrganizer = isGlobalHead || (userRoles && userRoles.includes('organizer'));
+  const myHeadedTeamIds = teams.filter(t => t.head_id === myMemberId).map(t => t.id);
+  const isTeamHead = !isOrganizer && myHeadedTeamIds.length > 0;
+  
+  const dashboardTitle = isOrganizer ? 'Organizer Dashboard' : (isTeamHead ? 'Team Management' : 'Conference Dashboard');
   const [notifs, setNotifs]           = useState([]);
   const [modal, setModal]             = useState(null);
   const [modalData, setModalData]     = useState(null);
   const [saving, setSaving]           = useState(false);
   const [memberSearch, setMemberSearch] = useState('');
-  const [expandedTeam, setExpandedTeam] = useState(null);
   const [paperFilter, setPaperFilter] = useState('all');
   const [allVolunteers, setAllVolunteers] = useState([]);
 
@@ -836,18 +845,6 @@ const OrganizerDashboard = ({ conf, onBack }) => {
   }, [fetchMembers, fetchAllVolunteers, fetchTeams, fetchTasks, fetchNotifs, fetchPapers, fetchGlobalRatings]);
 
   /* ── member CRUD ─────────────────────────────────────────── */
-  const addMember = async () => {
-    if (!mForm.email.trim()) return;
-    setSaving(true);
-    const { data: foundUser, error: userError } = await supabase.from('users').select('user_id,user_name,user_email').eq('user_email', mForm.email.trim().toLowerCase()).maybeSingle();
-    if (userError || !foundUser) { alert('No account found with that email.'); setSaving(false); return; }
-    const { data: existing } = await supabase.from('conference_user').select('id').eq('conference_id', confId).eq('user_id', foundUser.user_id).maybeSingle();
-    if (existing) { alert('Already a member.'); setSaving(false); return; }
-    const { error: insertError } = await supabase.from('conference_user').insert([{ conference_id: confId, user_id: foundUser.user_id, email: foundUser.user_email, full_name: foundUser.user_name, role: mForm.role, joined_at: new Date().toISOString() }]);
-    setSaving(false);
-    if (insertError) alert(insertError.message);
-    else { setModal(null); setMForm({ email: '', role: 'reviewer' }); fetchMembers(); fetchAllVolunteers(); }
-  };
 
   const updateRole = async (id, role) => {
     const { error } = await supabase.from('conference_user').update({ role }).eq('id', id);
@@ -864,7 +861,16 @@ const OrganizerDashboard = ({ conf, onBack }) => {
   const createTeam = async () => {
     if (!tmForm.name.trim()) return;
     setSaving(true);
-    const { error } = await supabase.from('conference_teams').insert([{ conference_id: confId, name: tmForm.name.trim(), description: tmForm.description.trim(), color: tmForm.color, head_id: tmForm.head_id || null, created_at: new Date().toISOString() }]);
+    const { data: newTeam, error } = await supabase.from('conference_teams').insert([{ conference_id: confId, name: tmForm.name.trim(), description: tmForm.description.trim(), color: tmForm.color, head_id: tmForm.head_id || null, created_at: new Date().toISOString() }]).select().single();
+    
+    // RBAC: If a head is assigned and the type is a known role, map it
+    if (!error && newTeam && tmForm.head_id && tmForm.type && tmForm.type !== 'custom') {
+      await supabase.from('conference_user_roles_mapping').upsert({
+        conference_user_id: tmForm.head_id,
+        role_name: tmForm.type
+      }, { onConflict: 'conference_user_id,role_name' });
+    }
+
     setSaving(false);
     if (!error) { setModal(null); setTmForm({ name: '', type: '', description: '', color: '#6366f1', head_id: '' }); fetchTeams(); } else alert(error.message);
   };
@@ -872,7 +878,16 @@ const OrganizerDashboard = ({ conf, onBack }) => {
   const saveTeam = async () => {
     if (!tmForm.name.trim()) return;
     setSaving(true);
-    await supabase.from('conference_teams').update({ name: tmForm.name.trim(), description: tmForm.description.trim(), color: tmForm.color, head_id: tmForm.head_id || null }).eq('id', modalData.id);
+    const { error } = await supabase.from('conference_teams').update({ name: tmForm.name.trim(), description: tmForm.description.trim(), color: tmForm.color, head_id: tmForm.head_id || null }).eq('id', modalData.id);
+    
+    // RBAC: Sync roles if head changed or updated
+    if (!error && tmForm.head_id && tmForm.type && tmForm.type !== 'custom') {
+      await supabase.from('conference_user_roles_mapping').upsert({
+        conference_user_id: tmForm.head_id,
+        role_name: tmForm.type
+      }, { onConflict: 'conference_user_id,role_name' });
+    }
+
     setSaving(false); setModal(null); fetchTeams();
   };
 
@@ -882,21 +897,6 @@ const OrganizerDashboard = ({ conf, onBack }) => {
     fetchTeams(); fetchTasks();
   };
 
-  const addVolunteerToConference = async (volunteer) => {
-    const { data: existing } = await supabase.from('conference_user').select('id').eq('conference_id', confId).eq('user_id', volunteer.user_id).maybeSingle();
-    if (existing) { await fetchMembers(); return existing.id; }
-    const { data, error } = await supabase.from('conference_user').insert([{ conference_id: confId, user_id: volunteer.user_id, email: volunteer.user_email || '', full_name: volunteer.user_name || '', role: 'member', joined_at: new Date().toISOString() }]).select('id').single();
-    if (error) { console.error(error); return null; }
-    await fetchMembers();
-    return data.id;
-  };
-
-  const addToTeam = async (teamId, confUserId) => {
-    const m = members.find(m => m.id === confUserId);
-    if (!m) return;
-    await supabase.from('team_members').insert([{ team_id: teamId, conference_id: confId, conference_user_id: confUserId, user_id: m.user_id }]);
-    fetchTeams();
-  };
 
   const removeFromTeam = async (teamId, confUserId) => {
     await supabase.from('team_members').delete().eq('team_id', teamId).eq('conference_user_id', confUserId);
@@ -989,18 +989,18 @@ const filteredAttendees = attendees.filter(m =>
   };
 
   const nav = [
-    { id: 'overview',      label: 'Overview',        icon: BarChart2,   badge: null },
-    { id: 'papers',        label: 'Papers',           icon: FileText,    badge: pendingCount || null },
-    { id: 'members',       label: 'Members',          icon: Users,       badge: null },
-    { id: 'attendees',     label: 'Attendees',        icon: Users,       badge: null },   // ← add this
-    { id: 'teams',         label: 'Teams',            icon: Layers,      badge: null },
-    { id: 'tasks',         label: 'Tasks',            icon: CheckSquare, badge: tasks.filter(t => t.status !== 'done').length || null },
-    { id: 'notifications', label: 'Notifications',    icon: Bell,        badge: null },
-    { id: 'emails',        label: 'Emails',           icon: Send,        badge: null },
-    { id: 'speakers',      label: 'Find Speakers',    icon: Users,       badge: null },
-    { id: 'allocation',    label: 'Paper Allocation', icon: FileText,    badge: null },
-    { id: 'feedback',      label: 'Feedback',         icon: Star,        badge: null },
-  ];
+    { id: 'overview',      label: 'Overview',        icon: BarChart2,   badge: null, permission: 'view_dashboard' },
+    { id: 'papers',        label: 'Papers',           icon: FileText,    badge: pendingCount || null, permission: 'view_papers' },
+    { id: 'members',       label: 'Members',          icon: Users,       badge: null, permission: 'view_members' },
+    { id: 'attendees',     label: 'Attendees',        icon: Users,       badge: null, permission: 'view_attendees' },
+    { id: 'teams',         label: 'Teams',            icon: Layers,      badge: null, permission: 'view_teams' },
+    { id: 'tasks',         label: 'Tasks',            icon: CheckSquare, badge: tasks.filter(t => t.status !== 'done').length || null, permission: 'view_tasks' },
+    { id: 'notifications', label: 'Notifications',    icon: Bell,        badge: null, permission: 'view_notifications' },
+    { id: 'emails',        label: 'Emails',           icon: Send,        badge: null, permission: 'view_emails' },
+    { id: 'speakers',      label: 'Find Speakers',    icon: Users,       badge: null, permission: 'find_speakers' },
+    { id: 'allocation',    label: 'Paper Allocation', icon: FileText,    badge: null, permission: 'allocate_papers' },
+    { id: 'feedback',      label: 'Feedback',         icon: Star,        badge: null, permission: 'view_feedback' },
+  ].filter(item => !item.permission || (permissions && permissions.includes(item.permission)));
 
   /* ══════════════════════════════════════════════════════════
      RENDER
@@ -1009,7 +1009,7 @@ const filteredAttendees = attendees.filter(m =>
     <div className="min-h-screen bg-[#080b11] text-slate-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 
-      {/* HEADER - hidden/commented out
+      {/* HEADER */}
       <header className="sticky top-0 z-40 bg-[#080b11]/95 backdrop-blur-xl border-b border-white/6 px-6 py-3">
         <div className="max-w-[1400px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -1026,16 +1026,23 @@ const filteredAttendees = attendees.filter(m =>
                 <Sparkles size={11} />{volunteersCount} volunteer{volunteersCount !== 1 ? 's' : ''}
               </div>
             )}
-            <span className="text-xs font-bold text-violet-300 bg-violet-500/10 border border-violet-500/20 px-2.5 py-1 rounded-md uppercase tracking-wider">Organizer</span>
-            <Btn className="text-xs py-2 px-3" onClick={() => setModal('notification')}><Bell size={13} />Announce</Btn>
+            <span className="text-xs font-bold text-violet-300 bg-violet-500/10 border border-violet-500/20 px-2.5 py-1 rounded-md uppercase tracking-wider">
+              {isOrganizer ? 'Organizer' : (isTeamHead ? 'Team Lead' : 'Member')}
+            </span>
+            {isOrganizer && (
+              <Btn className="text-xs py-2 px-3" onClick={() => setModal('notification')}><Bell size={13} />Announce</Btn>
+            )}
           </div>
         </div>
       </header>
-      */}
 
       <div className="max-w-[1400px] mx-auto flex">
         {/* SIDEBAR */}
-        <aside className="w-52 shrink-0 sticky top-[53px] h-[calc(100vh-53px)] border-r border-white/10 py-5 px-2.5 flex flex-col gap-0.5 overflow-y-auto">
+        <aside className="w-52 shrink-0 sticky top-0 h-screen border-r border-white/10 py-5 px-2.5 flex flex-col gap-0.5 overflow-y-auto">
+          <div className="px-3 mb-6">
+            <div className="font-bold text-white text-sm truncate">{conf.title}</div>
+            <div className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-1">{dashboardTitle}</div>
+          </div>
           {nav.map(({ id, label, icon: Icon, badge }) => (
             <button
               key={id}
@@ -1058,18 +1065,17 @@ const filteredAttendees = attendees.filter(m =>
           {/* ═══ OVERVIEW ═══ */}
           {section === 'overview' && (
             <div className="space-y-6">
-              <div className="flex items-between justify-between">  {/* change from just <div> */}
-      <div>
-        <h2 className="text-2xl font-bold text-white">Event Overview</h2>
-        <p className="text-slate-500 text-sm mt-0.5">Real-time conference metrics</p>
-      </div>
-      <Btn
-        variant="danger"
-        onClick={() => setModal('deleteConference')}
-      >
-        <Trash2 size={14} /> Delete Conference
-      </Btn>
-    </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Event Overview</h2>
+                  <p className="text-slate-500 text-sm mt-0.5">Real-time conference metrics</p>
+                </div>
+                {isGlobalHead && (
+                  <Btn variant="danger" onClick={() => setModal('deleteConference')}>
+                    <Trash2 size={14} /> Delete Conference
+                  </Btn>
+                )}
+              </div>
               <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                 {[
                   { label: 'Members',   value: members.filter(m => m.role !== 'attendee').length, color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
@@ -1522,125 +1528,72 @@ const filteredAttendees = attendees.filter(m =>
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-2xl font-bold text-white">Teams</h2>
-                  <p className="text-slate-500 text-sm mt-0.5">{teams.length} teams</p>
+                  <p className="text-slate-500 text-sm mt-0.5">{teams.filter(t => isOrganizer || t.head_id === myMemberId).length} teams</p>
                 </div>
-                <Btn onClick={() => { setTmForm({ name:'',type:'',description:'',color:'#6366f1',head_id:'' }); setModal('createTeam'); }}>
-                  <Plus size={15} />Create Team
-                </Btn>
+                {isOrganizer && (
+                  <Btn onClick={() => { setTmForm({ name:'',type:'',description:'',color:'#6366f1',head_id:'' }); setModal('createTeam'); }}>
+                    <Plus size={15} />Create Team
+                  </Btn>
+                )}
               </div>
+              
               {loadingTeams ? <LoadingRows /> : teams.length === 0
-                ? <Empty icon={Layers} msg="No teams yet." action={{ label: '+ Create Team', onClick: () => setModal('createTeam') }} />
+                ? <Empty icon={Layers} msg="No teams yet." action={{ label: isOrganizer ? '+ Create Team' : null, onClick: () => setModal('createTeam') }} />
                 : (
-                  <div className="space-y-3">
-                    {teams.map(team => {
-                      const isOpen = expandedTeam === team.id;
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {teams.filter(t => isOrganizer || t.head_id === myMemberId).map(team => {
                       const teamMembers = team.memberList.map(tm => members.find(m => m.id === tm.conference_user_id || m.user_id === tm.user_id)).filter(Boolean);
-                      const nonMembers  = members.filter(m => !team.memberList.some(tm => tm.conference_user_id === m.id));
-                      const teamTasks   = tasks.filter(t => t.team_id === team.id);
+                      const head = team.head_id ? members.find(m => m.id === team.head_id) : null;
 
                       return (
-                        <div key={team.id} className="bg-[#0d1117] border border-white/10 rounded-xl overflow-hidden">
-                          <div className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => setExpandedTeam(isOpen ? null : team.id)}>
-                            <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: team.color }} />
-                            <div className="flex-1">
-                              <div className="font-semibold text-white text-sm">{team.name}</div>
-                              {team.description && <div className="text-xs text-slate-500 mt-0.5">{team.description}</div>}
-                            </div>
-                            <div className="flex items-center gap-3">
-                              {team.head_id && members.find(m => m.id === team.head_id) && (
-                                <span className="text-xs text-indigo-400/70 font-medium">Head: {mName(members.find(m => m.id === team.head_id))}</span>
+                        <div key={team.id} className="bg-[#0d1117] border border-white/10 rounded-xl p-5 hover:border-white/20 transition-all flex flex-col h-full">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: team.color }} />
+                            <h3 className="font-bold text-white flex-1 truncate">{team.name}</h3>
+                            <div className="flex items-center gap-1">
+                              <button onClick={() => openEditTeam(team)} className="p-1.5 rounded-lg text-slate-600 hover:text-white hover:bg-white/5 transition-all"><Edit2 size={13} /></button>
+                              {isOrganizer && (
+                                <button onClick={() => { if (window.confirm(`Delete team "${team.name}"?`)) deleteTeam(team.id); }} className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"><Trash2 size={13} /></button>
                               )}
-                              <span className="text-xs text-slate-500 font-semibold">{team.memberList.length} member{team.memberList.length !== 1 ? 's' : ''}</span>
                             </div>
-                            <button onClick={e => { e.stopPropagation(); openEditTeam(team); }} className="p-1.5 rounded-lg text-slate-600 hover:text-white hover:bg-white/10 transition-all"><Edit2 size={13} /></button>
-                            <button onClick={e => { e.stopPropagation(); if (window.confirm(`Delete team "${team.name}"?`)) deleteTeam(team.id); }} className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"><Trash2 size={13} /></button>
-                            <ChevronDown size={15} className={cls('text-slate-600 transition-transform', isOpen && 'rotate-180')} />
                           </div>
 
-                          {isOpen && (
-                            <div className="border-t border-white/5 px-5 py-5 space-y-6 bg-black/20">
-                              {/* Current members */}
-                              <div>
-                                <div className="text-[11px] text-slate-600 uppercase tracking-wider font-bold mb-2">Members ({teamMembers.length})</div>
-                                {(() => {
-                                  const head = team.head_id ? members.find(m => m.id === team.head_id) : null;
-                                  return head ? (
-                                    <div className="flex items-center gap-2 mb-3 bg-indigo-500/10 border border-indigo-500/15 rounded-lg px-3 py-2 w-fit">
-                                      <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white">{mName(head)[0]?.toUpperCase()}</div>
-                                      <span className="text-xs text-indigo-300 font-semibold">{mName(head)}</span>
-                                      <span className="text-[9px] text-indigo-400/60 uppercase tracking-wider font-bold">Head</span>
-                                    </div>
-                                  ) : null;
-                                })()}
-                                {teamMembers.length === 0
-                                  ? <p className="text-xs text-slate-600 italic">No members yet</p>
-                                  : (
-                                    <div className="flex flex-wrap gap-2">
-                                      {teamMembers.map(m => {
-                                        const gRating = globalRatings[m.user_id];
-                                        return (
-                                          <div key={m.id} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5">
-                                            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white">{mName(m)[0]?.toUpperCase()}</div>
-                                            <span className="text-xs text-slate-300 font-medium">{mName(m)}</span>
-                                            <span className={cls('text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase', ROLE_STYLE[m.role] || ROLE_STYLE.member)}>{m.role}</span>
-                                            {/* Inline global avg for team member chip */}
-                                            {gRating && <RatingBadge avg={gRating.avg} count={gRating.count} size={9} />}
-                                            <button onClick={() => removeFromTeam(team.id, m.id)} className="text-slate-600 hover:text-red-400 transition-colors"><X size={12} /></button>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  )
-                                }
-                              </div>
+                          {team.description && <p className="text-xs text-slate-500 mb-4 line-clamp-2">{team.description}</p>}
 
-                              {/* Volunteer Candidate Panel */}
-                              {nonMembers.length > 0 && (
-                                <div>
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div className="text-[11px] text-slate-600 uppercase tracking-wider font-bold">Add Member to Team</div>
-                                    {volunteersCount > 0 && (
-                                      <div className="flex items-center gap-1 text-[9px] font-bold text-indigo-400/70 bg-indigo-500/10 border border-indigo-500/15 px-1.5 py-0.5 rounded">
-                                        <Sparkles size={8} />Volunteer-aware
-                                      </div>
-                                    )}
+                          <div className="flex-1 space-y-4">
+                             {/* Team Head */}
+                             {head && (
+                               <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-lg px-3 py-2">
+                                  <div className="text-[9px] text-indigo-400 uppercase font-bold tracking-wider mb-1">Team Head</div>
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center text-[10px] font-bold text-white">{mName(head)[0]?.toUpperCase()}</div>
+                                    <span className="text-xs text-indigo-300 font-semibold truncate">{mName(head)}</span>
                                   </div>
-                                  <VolunteerCandidatePanel
-                                    allVolunteers={allVolunteers}
-                                    members={members}
-                                    teamMembers={teamMembers}
-                                    teamTypeId={Object.entries(VOLUNTEER_ROLE_LABELS).find(([,label]) => label === team.name)?.[0] ?? null}
-                                    confId={confId}
-                                    onAdd={(confUserId) => addToTeam(team.id, confUserId)}
-                                    onAddVolunteer={addVolunteerToConference}
-                                    globalRatings={globalRatings}
-                                  />
-                                </div>
-                              )}
+                               </div>
+                             )}
 
-                              {/* Team tasks */}
-                              <div>
-                                <div className="flex justify-between items-center mb-2">
-                                  <div className="text-[11px] text-slate-600 uppercase tracking-wider font-bold">Tasks ({teamTasks.length})</div>
-                                  <button onClick={() => { setTkForm({ title:'',description:'',team_id:team.id,assignee_id:'',priority:'medium',due_date:'' }); setModal('addTask'); }} className="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold">+ Add Task</button>
-                                </div>
-                                {teamTasks.length === 0
-                                  ? <p className="text-xs text-slate-600 italic">No tasks for this team</p>
-                                  : teamTasks.map(task => (
-                                    <div key={task.id} className="flex items-center gap-2.5 py-2 border-t border-white/5 first:border-t-0">
-                                      <div onClick={() => toggleTask(task)} className={cls('w-4 h-4 rounded-full border-2 flex items-center justify-center cursor-pointer shrink-0 transition-colors', task.status === 'done' ? 'bg-emerald-500 border-emerald-500' : 'border-slate-600 hover:border-indigo-400')}>
-                                        {task.status === 'done' && <CheckCircle size={9} className="text-white" />}
-                                      </div>
-                                      <span className={cls('text-xs flex-1', task.status === 'done' ? 'line-through text-slate-600' : 'text-slate-300')}>{task.title}</span>
-                                      <span className={cls('text-[9px] font-bold px-1.5 py-0.5 rounded border', PRIORITY_STYLE[task.priority || 'medium'])}>{task.priority}</span>
-                                      {task.assignee_id && <span className="text-[10px] text-slate-600">{assigneeName(task.assignee_id)}</span>}
-                                      <button onClick={() => openEditTask(task)} className="text-slate-600 hover:text-white transition-colors"><Edit2 size={12} /></button>
-                                    </div>
-                                  ))
-                                }
-                              </div>
-                            </div>
-                          )}
+                             {/* Member summary */}
+                             <div>
+                               <div className="text-[9px] text-slate-600 uppercase font-bold tracking-wider mb-2">Members ({teamMembers.length})</div>
+                               <div className="flex flex-wrap gap-1.5">
+                                 {teamMembers.slice(0, 5).map(m => (
+                                   <div key={m.id} className="w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[9px] font-bold text-slate-400" title={mName(m)}>
+                                      {mName(m)[0]?.toUpperCase()}
+                                   </div>
+                                 ))}
+                                 {teamMembers.length > 5 && (
+                                   <div className="w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[9px] font-bold text-slate-600">
+                                      +{teamMembers.length - 5}
+                                   </div>
+                                 )}
+                               </div>
+                             </div>
+                          </div>
+
+                          <div className="mt-6 pt-4 border-t border-white/5 flex gap-2">
+                            <Btn variant="ghost" className="text-[10px] flex-1 py-2" onClick={() => openEditTeam(team)}>Manage Members</Btn>
+                            <Btn variant="ghost" className="text-[10px] flex-1 py-2" onClick={() => setSection('tasks')}>View Tasks</Btn>
+                          </div>
                         </div>
                       );
                     })}
@@ -1666,7 +1619,7 @@ const filteredAttendees = attendees.filter(m =>
                 ? <Empty icon={CheckSquare} msg="No tasks yet." action={{ label: '+ Add Task', onClick: () => setModal('addTask') }} />
                 : (
                   <div className="space-y-2">
-                    {tasks.map(task => (
+                    {tasks.filter(t => isOrganizer || myHeadedTeamIds.includes(t.team_id)).map(task => (
                       <div key={task.id} className="bg-[#0d1117] border border-white/10 rounded-xl px-5 py-3.5 flex items-center gap-4 hover:border-white/20 transition-all group">
                         <div onClick={() => toggleTask(task)} className={cls('w-5 h-5 rounded-full border-2 flex items-center justify-center cursor-pointer shrink-0 transition-colors', task.status === 'done' ? 'bg-emerald-500 border-emerald-500' : 'border-slate-600 hover:border-indigo-400')}>
                           {task.status === 'done' && <CheckCircle size={11} className="text-white" />}
@@ -1922,8 +1875,8 @@ const filteredAttendees = attendees.filter(m =>
             <div className="grid grid-cols-2 gap-4">
               <Field label="Assign to Team">
                 <Sel value={tkForm.team_id} onChange={e => setTkForm({ ...tkForm, team_id: e.target.value })}>
-                  <option value="">No team</option>
-                  {teams.map(t => <option key={t.id} value={t.id} className="bg-[#0d1117]">{t.name}</option>)}
+                  <option value="">{isOrganizer ? 'No team' : 'Select your team'}</option>
+                  {teams.filter(t => isOrganizer || t.head_id === myMemberId).map(t => <option key={t.id} value={t.id} className="bg-[#0d1117]">{t.name}</option>)}
                 </Sel>
               </Field>
               <Field label="Assignee">
