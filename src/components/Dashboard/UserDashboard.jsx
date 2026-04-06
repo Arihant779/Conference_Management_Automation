@@ -831,7 +831,7 @@ const ConfCard = ({ conf, role, onSelectConf }) => {
             className={`absolute top-3 right-3 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-widest border backdrop-blur-sm ${roleBadgeStyle[role] || 'bg-white/10 text-white border-white/20'
               }`}
           >
-            {role}
+            {role === 'member' ? 'Team Member' : role}
           </div>
         )}
       </div>
@@ -932,18 +932,33 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
 
     const { data: memberships, error } = await supabase
       .from('conference_user')
-      .select('conference_id, role')
+      .select('id, conference_id, role')
       .eq('user_id', user.id);
 
     if (!error && memberships) {
       memberships.forEach(({ conference_id, role }) => {
         map[conference_id] = role;
       });
+
+      // Fetch head titles by checking conference_teams for those membership IDs
+      const cuIds = memberships.map(m => m.id);
+      const { data: headTeams } = await supabase
+        .from('conference_teams')
+        .select('conference_id, name')
+        .in('head_id', cuIds);
+
+      if (headTeams) {
+        headTeams.forEach(team => {
+          // Override 'member' with the specific Team Head title
+          map[team.conference_id] = team.name;
+        });
+      }
     }
 
+    // Finally, ensure organizer role (conference owner) takes top priority
     conferences.forEach((c) => {
       if (c.conference_head_id === user.id) {
-        map[c.conference_id] = map[c.conference_id] ?? 'organizer';
+        map[c.conference_id] = 'Organizer';
       }
     });
 
@@ -983,7 +998,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
     { label: 'My Conferences', value: myConfs.length, color: 'text-indigo-400' },
     { label: 'As Organizer', value: myConfs.filter((c) => roleMap[c.conference_id] === 'organizer').length, color: 'text-violet-400' },
     { label: 'As Reviewer', value: myConfs.filter((c) => roleMap[c.conference_id] === 'reviewer').length, color: 'text-amber-400' },
-    { label: 'As Presenter', value: myConfs.filter((c) => roleMap[c.conference_id] === 'presenter').length, color: 'text-blue-400' },
+    { label: 'As Team Member', value: myConfs.filter((c) => roleMap[c.conference_id] === 'member').length, color: 'text-slate-400' },
   ];
 
   const hasVolunteerPrefs =

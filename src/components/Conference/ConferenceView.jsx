@@ -11,9 +11,9 @@ const ROLE_LABELS = {
   organizer: 'Organizer',
   logistics_head: 'Logistics Team Lead',
   outreach_head: 'Outreach Team Lead',
-  technical_head: 'Technical Team Lead',
-  registration_head: 'Registration Team Lead',
-  sponsorship_head: 'Sponsorship Team Lead',
+  technical_head: 'Reviewing Team Head',
+  registration_head: 'Registration Team Head',
+  sponsorship_head: 'Sponsorship Team Head',
   hospitality_head: 'Hospitality Team Lead',
   publication_head: 'Publications Team Lead',
   finance_head: 'Finance Team Lead',
@@ -23,7 +23,7 @@ const ROLE_LABELS = {
   design_lead: 'Design Lead',
   web_lead: 'Website Lead',
   security_coord: 'Security Coordinator',
-  member: 'Member',
+  member: 'Team Member',
   reviewer: 'Reviewer',
   presenter: 'Presenter',
 };
@@ -116,7 +116,7 @@ const ConferenceView = ({
       .eq('conference_id', confId).eq('head_id', cuData.id);
     if (teamData?.length > 0) {
       setIsTeamLeader(true);
-      setTeamLeaderPosition(`${teamData[0].name} Lead`);
+      setTeamLeaderPosition(teamData[0].name.includes('Head') ? teamData[0].name : `${teamData[0].name} Lead`);
     }
   }, [user, confId, isGuest]);
 

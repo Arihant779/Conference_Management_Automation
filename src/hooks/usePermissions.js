@@ -51,6 +51,15 @@ export const usePermissions = (confId, userId) => {
       rolesSet.add('team_head');
       // Grant base management permissions if they are a head
       ['view_dashboard', 'view_teams', 'view_tasks', 'manage_tasks', 'view_members', 'view_notifications'].forEach(p => permsSet.add(p));
+      
+      // Auto-assign specific role if team name matches a head role
+      headData.forEach(team => {
+        if (team.name.includes('Reviewing Team')) rolesSet.add('technical_head');
+        if (team.name.includes('Logistics')) rolesSet.add('logistics_head');
+        if (team.name.includes('Outreach')) rolesSet.add('outreach_head');
+        if (team.name.includes('Event Management')) rolesSet.add('event_head');
+        if (team.name.includes('Organizing Team')) rolesSet.add('organizer_head');
+      });
     }
 
     setPermissions(Array.from(permsSet));

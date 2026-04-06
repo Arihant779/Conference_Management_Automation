@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  BarChart2, FileText, Users, CheckSquare, Bell, Plus, X, Send,
+  BarChart2, FileText, Users, CheckSquare, Square, Bell, Plus, X, Send,
   CheckCircle, XCircle, MapPin, Edit2, Trash2, ArrowRight,
   Search, Layers, Clock, Sparkles, Star, Check
 } from 'lucide-react';
@@ -31,19 +31,20 @@ const TEAM_COLORS = [
 ];
 const VOLUNTEER_ROLE_LABELS = {
   logistics_head:    'Logistics Team',
-  outreach_head:     'Outreach Team',
-  technical_head:    'Technical Team',
-  registration_head: 'Registration Team',
-  sponsorship_head:  'Sponsorship Team',
-  hospitality_head:  'Hospitality Team',
-  publication_head:  'Publications Team',
-  finance_head:      'Finance Team',
-  program_coord:     'Program Coordinator',
+  outreach_head:     'Outreach Team Head',
+  organizer_head:    'Organizing Team Head',
+  technical_head:    'Reviewing Team Head',
+  program_coord:     'Event Management Team',
   social_coord:      'Social Media Coord.',
   volunteer_coord:   'Volunteer Coordinator',
   design_lead:       'Design Lead',
   web_lead:          'Website Lead',
   security_coord:    'Security Coordinator',
+  registration_head: 'Registration Team',
+  sponsorship_head:  'Sponsorship Team',
+  hospitality_head:  'Hospitality Team',
+  publication_head:  'Publications Team',
+  finance_head:      'Finance Team',
 };
 const TEAM_TYPES = Object.entries(VOLUNTEER_ROLE_LABELS).map(([id, label]) => ({ id, label }));
 
@@ -615,13 +616,14 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
 
   /* ── permissions fallback ───────────────────────────── */
   const FALLBACK_PERMS = {
-    organizer: ['view_dashboard','view_papers','manage_papers','allocate_papers','view_members','manage_members','view_teams','manage_teams','view_tasks','manage_tasks','view_notifications','send_notifications', 'view_emails', 'send_emails','find_speakers','view_feedback','manage_feedback', 'view_attendees'],
+    organizer: ['view_dashboard','view_emails','send_emails','view_papers','manage_papers','allocate_papers','view_members','manage_members','view_teams','manage_teams','view_tasks','manage_tasks','view_notifications','send_notifications','find_speakers','view_feedback','manage_feedback', 'view_attendees'],
+    organizer_head: ['view_dashboard','view_emails','send_emails','view_papers','manage_papers','allocate_papers','view_members','manage_members','view_teams','manage_teams','view_tasks','manage_tasks','view_notifications','send_notifications','find_speakers','view_feedback','manage_feedback', 'view_attendees'],
     programming_head: ['view_dashboard','view_papers','manage_papers','allocate_papers','view_members','view_notifications'],
-    logistics_head: ['view_dashboard','view_teams','manage_teams','view_tasks','manage_tasks','view_notifications'],
+    logistics_head: ['view_dashboard','view_teams','manage_teams','view_tasks','manage_tasks','view_notifications','view_attendees','manage_members'],
     outreach_head: ['view_dashboard','view_emails','send_emails', 'find_speakers','view_members','view_notifications','send_notifications'],
     feedback_head: ['view_dashboard','view_feedback','manage_feedback','view_notifications'],
     event_head: ['view_dashboard','view_teams','view_tasks', 'manage_tasks', 'view_members', 'view_notifications'],
-    technical_head: ['view_dashboard','view_teams','view_tasks', 'manage_tasks', 'view_notifications'],
+    technical_head: ['view_dashboard','view_teams','view_tasks', 'manage_tasks', 'view_notifications', 'view_papers', 'manage_papers', 'allocate_papers'],
     registration_head: ['view_dashboard','view_members','manage_members','view_teams','view_notifications'],
     sponsorship_head: ['view_dashboard','view_emails','send_emails','view_notifications'],
     member: ['view_dashboard','view_teams','view_tasks','view_notifications']
@@ -642,8 +644,8 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   ]));
 
   const can = (p) => effectivePermissions.includes(p);
-  const roleLabel = isOrganizer ? 'Organizer' : ((userRoles || []).find(r => r !== 'team_head' && r.endsWith('_head'))?.replace('_', ' ')?.replace(/\b\w/g, l => l.toUpperCase()) || (userRoles?.includes('team_head') || isTeamHead ? 'Team Lead' : (userRoles?.includes('reviewer') ? 'Reviewer' : 'Member')));
-  const dashboardTitle = isOrganizer ? 'Organizer Dashboard' : (isTeamHead || userRoles?.includes('team_head') ? 'Team Management' : (roleLabel.includes('Head') ? `${roleLabel} Dashboard` : 'Conference Dashboard'));
+  const roleLabel = isOrganizer ? 'Organizer' : ((userRoles || []).find(r => r !== 'team_head' && (r.endsWith('_head') || r.endsWith('_coord') || r.endsWith('_lead')))?.replace(/technical_head/g, 'Reviewing Team Head')?.replace(/outreach_head/g, 'Outreach Team Head')?.replace(/logistics_head/g, 'Logistics Team Head')?.replace(/event_head/g, 'Event Management Team Head')?.replace(/organizer_head/g, 'Organizing Team Head')?.replace(/_/g, ' ')?.replace(/\b\w/g, l => l.toUpperCase()) || (userRoles?.includes('team_head') || isTeamHead ? 'Team Lead' : (userRoles?.includes('reviewer') ? 'Reviewer' : 'Team Member')));
+  const dashboardTitle = isOrganizer ? 'Organizer Dashboard' : (roleLabel.includes('Head') || roleLabel.includes('Lead') || roleLabel.includes('Coord') ? `${roleLabel === 'Team Lead' ? 'Team' : roleLabel} Dashboard` : (isTeamHead || userRoles?.includes('team_head') ? 'Team Management' : 'Conference Dashboard'));
   const [notifs, setNotifs]           = useState([]);
   const [modal, setModal]             = useState(null);
   const [modalData, setModalData]     = useState(null);
@@ -651,6 +653,8 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   const [memberSearch, setMemberSearch] = useState('');
   const [paperFilter, setPaperFilter] = useState('all');
   const [allVolunteers, setAllVolunteers] = useState([]);
+  const [selectedAttendees, setSelectedAttendees] = useState(new Set());
+  const [updatingBulk, setUpdatingBulk] = useState(false);
 
   /* ── rating state ─────────────────────────────────────── */
   // My ratings for this conference: Map<rated_user_id, { id, rating, comment }>
@@ -690,7 +694,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     setLM(true);
     const { data, error } = await supabase
       .from('conference_user')
-      .select('id, user_id, role, email, full_name, joined_at, users(user_name, user_email)')
+      .select('id, user_id, role, email, full_name, joined_at, accommodation_required, accommodation_notes, room_assigned, room_number, users(user_name, user_email)')
       .eq('conference_id', confId)
       .order('joined_at', { ascending: false });
 
@@ -699,11 +703,38 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
       ...m,
       email:     m.email     || m.users?.user_email || '',
       full_name: m.full_name || m.users?.user_name  || '',
+      room_assigned: !!m.room_assigned,
+      room_number: m.room_number || ''
     }));
     setMembers(enriched);
     setLM(false);
     return enriched;
   }, [confId]);
+
+  const handleBulkRoomUpdate = async (assign) => {
+    if (selectedAttendees.size === 0) return;
+    setUpdatingBulk(true);
+    const ids = Array.from(selectedAttendees);
+    const { error } = await supabase
+      .from('conference_user')
+      .update({ room_assigned: assign })
+      .in('id', ids);
+    
+    setUpdatingBulk(false);
+    if (!error) {
+      setSelectedAttendees(new Set());
+      fetchMembers();
+    } else {
+      alert('Error updating rooms: ' + error.message);
+    }
+  };
+
+  const handleSingleRoomUpdate = async (id, assign, roomNum = null) => {
+    const updates = { room_assigned: assign };
+    if (roomNum !== null) updates.room_number = roomNum;
+    const { error } = await supabase.from('conference_user').update(updates).eq('id', id);
+    if (!error) fetchMembers();
+  };
 
   const fetchAllVolunteers = useCallback(async () => {
     const { data, error } = await supabase
@@ -918,12 +949,22 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     setSaving(true);
     const { error } = await supabase.from('conference_teams').update({ name: tmForm.name.trim(), description: tmForm.description.trim(), color: tmForm.color, head_id: tmForm.head_id || null }).eq('id', modalData.id);
     
-    // RBAC: Sync roles if head changed or updated
-    if (!error && tmForm.head_id && tmForm.type && tmForm.type !== 'custom') {
-      await supabase.from('conference_user_roles_mapping').upsert({
-        conference_user_id: tmForm.head_id,
-        role_name: tmForm.type
-      }, { onConflict: 'conference_user_id,role_name' });
+    // RBAC: Sync roles if team type or head changed
+    if (!error && tmForm.head_id) {
+      // 1. If type changed, remove the OLD role first
+      if (tmForm.type !== tmForm.originalType && tmForm.originalType && tmForm.originalType !== 'custom') {
+        await supabase.from('conference_user_roles_mapping')
+          .delete()
+          .eq('conference_user_id', tmForm.head_id)
+          .eq('role_name', tmForm.originalType);
+      }
+      // 2. Add/Update the NEW role
+      if (tmForm.type && tmForm.type !== 'custom') {
+        await supabase.from('conference_user_roles_mapping').upsert({
+          conference_user_id: tmForm.head_id,
+          role_name: tmForm.type
+        }, { onConflict: 'conference_user_id,role_name' });
+      }
     }
 
     setSaving(false); setModal(null); fetchTeams();
@@ -1054,7 +1095,7 @@ const filteredAttendees = attendees.filter(m =>
   const openEditTeam = (t) => {
     setModalData(t);
     const matchedType = Object.entries(VOLUNTEER_ROLE_LABELS).find(([, label]) => label === t.name)?.[0] || 'custom';
-    setTmForm({ name: t.name, type: matchedType, description: t.description || '', color: t.color || '#6366f1', head_id: t.head_id || '' });
+    setTmForm({ name: t.name, type: matchedType, originalType: matchedType, description: t.description || '', color: t.color || '#6366f1', head_id: t.head_id || '' });
     setModal('editTeam');
   };
   const openEditTask = (t) => {
@@ -1359,7 +1400,7 @@ const filteredAttendees = attendees.filter(m =>
                               <span className="text-sm font-semibold text-white truncate">{mName(m)}</span>
                               {hasVol && <Star size={10} className="text-indigo-400 fill-indigo-400 shrink-0" title="Has volunteer preferences" />}
                             </div>
-                            <div className="text-xs text-slate-500 truncate">{m.email || m.user_id}</div>
+                            {isOrganizer && <div className="text-xs text-slate-500 truncate">{m.email || m.user_id}</div>}
 
                             {/* Rating row */}
                             <div className="flex items-center gap-3 mt-1 flex-wrap">
@@ -1417,21 +1458,29 @@ const filteredAttendees = attendees.filter(m =>
                               {myRating && <span className="text-[10px] font-bold">{myRating.rating}</span>}
                             </button>
 
-                            <select
-                              value={m.role}
-                              onChange={e => updateRole(m.id, e.target.value)}
-                              className={cls('text-xs font-bold px-2.5 py-1 rounded-md border uppercase tracking-wider bg-transparent cursor-pointer outline-none', ROLE_STYLE[m.role] || ROLE_STYLE.member)}
-                            >
-                              {['organizer','reviewer','presenter','member'].map(r => (
-                                <option key={r} value={r} className="bg-[#0d1117] text-white normal-case">{r}</option>
-                              ))}
-                            </select>
-                            <button
-                              onClick={() => { setModalData(m); setModal('confirmDelete'); }}
-                              className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
-                            >
-                              <Trash2 size={15} />
-                            </button>
+                            {isOrganizer ? (
+                              <>
+                                <select
+                                  value={m.role}
+                                  onChange={e => updateRole(m.id, e.target.value)}
+                                  className={cls('text-xs font-bold px-2.5 py-1 rounded-md border uppercase tracking-wider bg-transparent cursor-pointer outline-none', ROLE_STYLE[m.role] || ROLE_STYLE.member)}
+                                >
+                                  {['organizer','reviewer','presenter','member'].map(r => (
+                                    <option key={r} value={r} className="bg-[#0d1117] text-white normal-case">{r === 'member' ? 'Team Member' : r}</option>
+                                  ))}
+                                </select>
+                                <button
+                                  onClick={() => { setModalData(m); setModal('confirmDelete'); }}
+                                  className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              </>
+                            ) : (
+                              <div className={cls('text-[10px] font-bold px-2.5 py-1 rounded-md border uppercase tracking-widest', ROLE_STYLE[m.role] || ROLE_STYLE.member)}>
+                                {m.role === 'member' ? 'Team Member' : m.role}
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -1444,7 +1493,7 @@ const filteredAttendees = attendees.filter(m =>
 
           {/* ═══ ATTENDEES ═══ */}
 {section === 'attendees' && (
-  <div className="space-y-6">
+  <div className="space-y-6 pb-20">
     <div className="flex justify-between items-center">
       <div>
         <h2 className="text-2xl font-bold text-white">Attendees</h2>
@@ -1454,128 +1503,171 @@ const filteredAttendees = attendees.filter(m =>
       </div>
     </div>
 
-    {/* Search */}
-    <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5">
-      <Search size={14} className="text-slate-500 shrink-0" />
-      <input
-        className="bg-transparent outline-none text-sm text-white placeholder-slate-600 flex-1"
-        style={{ fontFamily: "'DM Sans', sans-serif" }}
-        placeholder="Search by name or email…"
-        value={memberSearch}
-        onChange={e => setMemberSearch(e.target.value)}
-      />
-      {memberSearch && (
-        <button onClick={() => setMemberSearch('')} className="text-slate-600 hover:text-slate-400">
-          <X size={13} />
-        </button>
-      )}
-    </div>
+    {/* Logistics Stats */}
+    {roleLabel.includes('Logistics') || isOrganizer ? (
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+          <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-1">Total Registered</div>
+          <div className="text-2xl font-bold text-white">{attendees.length}</div>
+        </div>
+        <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-2xl p-4">
+          <div className="text-[10px] text-emerald-500/70 uppercase tracking-widest font-bold mb-1">Room Assigned</div>
+          <div className="text-2xl font-bold text-emerald-400">{attendees.filter(a => a.room_assigned).length}</div>
+        </div>
+        <div className="bg-amber-500/5 border border-amber-500/10 rounded-2xl p-4">
+          <div className="text-[10px] text-amber-500/70 uppercase tracking-widest font-bold mb-1">Pending Allotment</div>
+          <div className="text-2xl font-bold text-amber-400">{attendees.filter(a => !a.room_assigned).length}</div>
+        </div>
+      </div>
+    ) : null}
 
-    {/* Export CSV button */}
-    {attendees.length > 0 && (
-      <div className="flex justify-end">
+    {/* Search & Select All */}
+    <div className="flex flex-col sm:flex-row gap-4 items-center">
+      <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 flex-1 w-full">
+        <Search size={14} className="text-slate-500 shrink-0" />
+        <input
+          className="bg-transparent outline-none text-sm text-white placeholder-slate-600 flex-1"
+          style={{ fontFamily: "'DM Sans', sans-serif" }}
+          placeholder="Search by name or email…"
+          value={memberSearch}
+          onChange={e => setMemberSearch(e.target.value)}
+        />
+        {memberSearch && <button onClick={() => setMemberSearch('')} className="text-slate-600 hover:text-slate-400"><X size={13} /></button>}
+      </div>
+
+      <div className="flex items-center gap-4 w-full sm:w-auto">
         <button
           onClick={() => {
-            const headers = ['Name', 'Email', 'Joined'];
-            const rows = attendees.map(a => [
-              mName(a),
-              a.email || '',
-              a.joined_at ? new Date(a.joined_at).toLocaleDateString() : '',
-            ]);
-            const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `attendees-${confId}.csv`;
-            link.click();
-            URL.revokeObjectURL(url);
+            if (selectedAttendees.size === filteredAttendees.length) setSelectedAttendees(new Set());
+            else setSelectedAttendees(new Set(filteredAttendees.map(a => a.id)));
           }}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-all whitespace-nowrap"
         >
-          <FileText size={13} /> Export CSV
+          {selectedAttendees.size === filteredAttendees.length ? <CheckSquare size={14} className="text-indigo-400" /> : <Square size={14} />}
+          {selectedAttendees.size === filteredAttendees.length ? 'Deselect All' : 'Select All'}
         </button>
+
+        {attendees.length > 0 && (
+          <button
+            onClick={() => {
+              const headers = ['Name', 'Email', 'Joined', 'Accommodation Required', 'Room Assigned', 'Room Number'];
+              const rows = attendees.map(a => [
+                mName(a),
+                a.email || '',
+                a.joined_at ? new Date(a.joined_at).toLocaleDateString() : '',
+                a.accommodation_required ? 'Yes' : 'No',
+                a.room_assigned ? 'Yes' : 'No',
+                a.room_number || ''
+              ]);
+              const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+              const blob = new Blob([csv], { type: 'text/csv' });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a'); link.href = url; link.download = `attendees-${confId}.csv`; link.click(); URL.revokeObjectURL(url);
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+          >
+            <FileText size={14} /> Export
+          </button>
+        )}
+      </div>
+    </div>
+
+    {/* Bulk Action Bar */}
+    {selectedAttendees.size > 0 && (
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-indigo-600 text-white rounded-2xl shadow-2xl shadow-indigo-500/40 border border-indigo-400/30 px-6 py-4 flex items-center gap-6 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="flex items-center gap-2 border-r border-indigo-400/30 pr-6">
+          <div className="w-6 h-6 rounded-full bg-white text-indigo-600 flex items-center justify-center text-xs font-black">{selectedAttendees.size}</div>
+          <span className="text-xs font-bold uppercase tracking-widest">Selected</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            disabled={updatingBulk}
+            onClick={() => handleBulkRoomUpdate(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold transition-all disabled:opacity-50"
+          >
+            <CheckCircle size={14} /> Mark Assigned
+          </button>
+          <button
+            disabled={updatingBulk}
+            onClick={() => handleBulkRoomUpdate(false)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold transition-all disabled:opacity-50"
+          >
+            <XCircle size={14} /> Mark Unassigned
+          </button>
+        </div>
+        <button onClick={() => setSelectedAttendees(new Set())} className="text-indigo-200 hover:text-white transition-colors"><X size={16} /></button>
       </div>
     )}
 
     {loadingMembers ? (
       <LoadingRows />
     ) : filteredAttendees.length === 0 ? (
-      <Empty
-        icon={Users}
-        msg={attendees.length === 0 ? 'No attendees have registered yet.' : 'No attendees match your search.'}
-      />
+      <Empty icon={Users} msg={attendees.length === 0 ? 'No attendees have registered yet.' : 'No attendees match your search.'} />
     ) : (
       <div className="space-y-2">
-        {filteredAttendees.map((a, idx) => (
+        {filteredAttendees.map((a) => (
           <div
             key={a.id}
-            className="bg-[#0d1117] border border-white/10 rounded-xl px-5 py-3.5 flex items-center gap-4 hover:border-white/20 transition-all"
+            onClick={() => {
+              const next = new Set(selectedAttendees);
+              if (next.has(a.id)) next.delete(a.id); else next.add(a.id);
+              setSelectedAttendees(next);
+            }}
+            className={cls(
+              'group bg-[#0d1117] border rounded-xl px-5 py-4 flex items-center gap-4 transition-all cursor-pointer',
+              selectedAttendees.has(a.id) ? 'border-indigo-500 bg-indigo-500/5 shadow-lg shadow-indigo-500/5' : 'border-white/10 hover:border-white/20'
+            )}
           >
-            {/* Index */}
-            <span className="text-xs text-slate-700 font-bold w-5 shrink-0 text-right">{idx + 1}</span>
+            {/* Checkbox */}
+            <div className={cls('w-5 h-5 rounded-md border flex items-center justify-center transition-all', selectedAttendees.has(a.id) ? 'bg-indigo-500 border-indigo-500' : 'border-slate-700 bg-white/5')}>
+              {selectedAttendees.has(a.id) && <Check size={12} className="text-white" />}
+            </div>
 
             {/* Avatar */}
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
               {mName(a)[0]?.toUpperCase()}
             </div>
 
             {/* Info */}
             <div className="flex-1 min-w-0">
               <div className="text-sm font-semibold text-white truncate">{mName(a)}</div>
-              <div className="text-xs text-slate-500 truncate">{a.email || a.user_id}</div>
-              {a.joined_at && (
-                <div className="text-[10px] text-slate-700 mt-0.5">
-                  Registered {new Date(a.joined_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                </div>
-              )}
+              <div className="text-xs text-slate-500 truncate">{a.email}</div>
             </div>
 
-            {/* Accommodation badge */}
-            {a.accommodation_required && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-amber-500/10 text-amber-400 border-amber-500/20 shrink-0">
-                Accommodation
-              </span>
-            )}
-
-            {/* Remove button */}
-            <button
-              onClick={() => { setModalData(a); setModal('confirmDelete'); }}
-              className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all shrink-0"
-            >
-              <Trash2 size={15} />
-            </button>
+            {/* Logistics Controls */}
+            <div className="flex items-center gap-4" onClick={e => e.stopPropagation()}>
+              {(roleLabel.includes('Logistics') || isOrganizer) ? (
+                <button
+                  onClick={() => handleSingleRoomUpdate(a.id, !a.room_assigned)}
+                  className={cls(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all',
+                    a.room_assigned 
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
+                      : 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+                  )}
+                >
+                  {a.room_assigned ? <CheckCircle size={10} /> : <Clock size={10} />}
+                  {a.room_assigned ? 'Room Assigned' : 'Awaiting Room'}
+                </button>
+              ) : (
+                a.room_assigned && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border bg-emerald-500/10 border-emerald-500/30 text-emerald-400">
+                    <CheckCircle size={10} /> Room Assigned
+                  </div>
+                )
+              )}
+              
+              {isOrganizer && (
+                <button
+                  onClick={() => { setModalData(a); setModal('confirmDelete'); }}
+                  className="p-2 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </div>
           </div>
         ))}
-      </div>
-    )}
-
-    {/* Accommodation summary */}
-    {attendees.length > 0 && (
-      <div className="bg-[#0d1117] border border-white/10 rounded-xl p-5">
-        <div className="text-[11px] text-slate-600 uppercase tracking-wider font-bold mb-3">
-          Accommodation Requests
-        </div>
-        {attendees.filter(a => a.accommodation_required).length === 0 ? (
-          <p className="text-xs text-slate-600 italic">No accommodation requests yet.</p>
-        ) : (
-          <div className="space-y-2">
-            {attendees.filter(a => a.accommodation_required).map(a => (
-              <div key={a.id} className="flex items-start gap-3 bg-amber-500/5 border border-amber-500/15 rounded-lg px-3 py-2.5">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                  {mName(a)[0]?.toUpperCase()}
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-semibold text-white">{mName(a)}</div>
-                  <div className="text-[10px] text-slate-500 truncate">{a.email}</div>
-                  {a.accommodation_notes && (
-                    <div className="text-[10px] text-amber-400/80 mt-1 leading-relaxed">{a.accommodation_notes}</div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     )}
   </div>
@@ -1590,7 +1682,7 @@ const filteredAttendees = attendees.filter(m =>
                   <p className="text-slate-500 text-sm mt-0.5">{teams.filter(t => isOrganizer || t.head_id === myMemberId).length} teams</p>
                 </div>
                 {isOrganizer && (
-                  <Btn onClick={() => { setTmForm({ name:'',type:'',description:'',color:'#6366f1',head_id:'' }); setModal('createTeam'); }}>
+                  <Btn onClick={() => { setTmForm({ name:'',type:'',originalType:'',description:'',color:'#6366f1',head_id:'' }); setModal('createTeam'); }}>
                     <Plus size={15} />Create Team
                   </Btn>
                 )}
