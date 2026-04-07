@@ -112,7 +112,7 @@ const PaperAllocation = ({ conf }) => {
               paper_id: a.paper_id,
               paper_name: a.paper?.paper_title || 'Untitled',
               reviewer_id: a.reviewer_id,
-              reviewer_name: a.reviewer?.user_name || 'Reviewer',
+              reviewer_name: a.reviewer?.full_name || 'Reviewer',
               similarity_score: a.similarity || 0,
               dbId: a.id
             })),

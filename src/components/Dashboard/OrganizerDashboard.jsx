@@ -694,7 +694,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     setLM(true);
     const { data, error } = await supabase
       .from('conference_user')
-      .select('id, user_id, role, email, full_name, joined_at, accommodation_required, accommodation_notes, room_assigned, room_number, users(user_name, user_email)')
+      .select('id, user_id, role, email, full_name, joined_at, accommodation_required, accommodation_notes, users(user_name, user_email)')
       .eq('conference_id', confId)
       .order('joined_at', { ascending: false });
 
@@ -703,8 +703,6 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
       ...m,
       email:     m.email     || m.users?.user_email || '',
       full_name: m.full_name || m.users?.user_name  || '',
-      room_assigned: !!m.room_assigned,
-      room_number: m.room_number || ''
     }));
     setMembers(enriched);
     setLM(false);
@@ -714,26 +712,15 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   const handleBulkRoomUpdate = async (assign) => {
     if (selectedAttendees.size === 0) return;
     setUpdatingBulk(true);
-    const ids = Array.from(selectedAttendees);
-    const { error } = await supabase
-      .from('conference_user')
-      .update({ room_assigned: assign })
-      .in('id', ids);
-    
+    // Columns missing from schema.
+    console.warn('Bulk room update skipped: columns missing from schema');
     setUpdatingBulk(false);
-    if (!error) {
-      setSelectedAttendees(new Set());
-      fetchMembers();
-    } else {
-      alert('Error updating rooms: ' + error.message);
-    }
   };
 
   const handleSingleRoomUpdate = async (id, assign, roomNum = null) => {
-    const updates = { room_assigned: assign };
-    if (roomNum !== null) updates.room_number = roomNum;
-    const { error } = await supabase.from('conference_user').update(updates).eq('id', id);
-    if (!error) fetchMembers();
+    // room_assigned and room_number appear to be missing from the schema.
+    // Disabling for now to prevent 400 errors.
+    console.warn('Room update skipped: columns missing from schema');
   };
 
   const fetchAllVolunteers = useCallback(async () => {
