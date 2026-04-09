@@ -170,14 +170,14 @@ const MemberDashboard = ({ conf, onBack }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#080b11] text-slate-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="bg-[#080b11] text-slate-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 
       <div className="max-w-[1400px] mx-auto flex">
         {/* SIDEBAR */}
-        <aside className="w-52 shrink-0 sticky top-0 h-screen border-r border-white/10 py-5 px-2.5 flex flex-col gap-0.5 overflow-y-auto">
+        <aside className="w-52 shrink-0 sticky top-4 border-r border-white/10 py-5 px-2.5 flex flex-col gap-0.5 overflow-y-auto" style={{ height: 'calc(100vh - 120px)' }}>
           <div className="px-3 mb-6">
-            <button onClick={onBack} className="text-slate-500 hover:text-white text-xs font-semibold px-2 py-1.5 hover:bg-white/5 rounded-lg transition-all mb-4 block w-fit">← Back to Hub</button>
+
             <div className="font-bold text-white text-sm truncate">{conf.title}</div>
             <div className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-1">Member Dashboard</div>
           </div>
@@ -199,7 +199,7 @@ const MemberDashboard = ({ conf, onBack }) => {
         </aside>
 
         {/* MAIN CONTENT */}
-        <main className="flex-1 p-8 min-h-screen">
+        <main className="flex-1 p-8">
           
           {/* ═══ OVERVIEW ═══ */}
           {section === 'overview' && (

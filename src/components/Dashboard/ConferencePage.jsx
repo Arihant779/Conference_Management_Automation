@@ -59,30 +59,10 @@ const ConferencePage = ({ conf, onBack }) => {
     : null;
 
   return (
-    <div className="min-h-screen bg-[#080b11] text-slate-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="bg-[#080b11] text-slate-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* NAV */}
-      <nav className="sticky top-0 z-40 bg-[#080b11]/90 backdrop-blur-xl border-b border-white/6 px-6 py-3">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
 
-          <button
-            onClick={onBack}
-            className="text-slate-500 hover:text-white text-xs font-semibold transition-colors"
-          >
-            ← Back to Conferences
-          </button>
-
-          {!myPaper && !submitted && (
-            <button
-              onClick={() => setShowSubmit(true)}
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors"
-            >
-              <Upload size={14} /> Submit Paper
-            </button>
-          )}
-
-        </div>
-      </nav>
 
       {/* HERO */}
       <div className="relative h-64 overflow-hidden">

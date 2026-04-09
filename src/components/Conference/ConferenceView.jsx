@@ -196,8 +196,7 @@ const ConferenceView = ({
 
   return (
     <div className="flex flex-col min-h-screen font-sans bg-[#0f1117] text-slate-200">
-      {viewMode !== 'dashboard' && (
-        <nav className="bg-[#0f1117]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+      <nav className="bg-[#0f1117]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
           <div className="flex items-center gap-6">
             {!isGuest && (
               <>
@@ -265,8 +264,6 @@ const ConferenceView = ({
             </div>
           </div>
         </nav>
-      )}
-
       <div className="flex-1 bg-black overflow-y-auto relative">
         {viewMode === 'home' ? (
           conf.template === 'classic'

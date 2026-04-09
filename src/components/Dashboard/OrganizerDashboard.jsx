@@ -1110,14 +1110,14 @@ const filteredAttendees = attendees.filter(m =>
      RENDER
   ══════════════════════════════════════════════════════════ */
   return (
-    <div className="min-h-screen bg-[#080b11] text-slate-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="bg-[#080b11] text-slate-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 
 
 
       <div className="max-w-[1400px] mx-auto flex">
         {/* SIDEBAR */}
-        <aside className="w-52 shrink-0 sticky top-0 h-screen border-r border-white/10 py-5 px-2.5 flex flex-col gap-0.5 overflow-y-auto">
+        <aside className="w-52 shrink-0 sticky top-4 border-r border-white/10 py-5 px-2.5 flex flex-col gap-0.5 overflow-y-auto" style={{ height: 'calc(100vh - 120px)' }}>
           <div className="px-3 mb-6">
             <div className="text-[11px] text-indigo-400 font-bold uppercase tracking-widest flex items-center gap-2">
               {(isOrganizer || isTeamHead || userRoles?.includes('team_head')) && <Star size={12} className="fill-current" />}
@@ -1138,16 +1138,11 @@ const filteredAttendees = attendees.filter(m =>
               {badge ? <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/20 px-1.5 py-0.5 rounded-full font-bold">{badge}</span> : null}
             </button>
           ))}
-          <div className="mt-auto px-2 pb-2">
-            <button onClick={onBack} className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium w-full text-slate-500 hover:text-white hover:bg-white/5 transition-all">
-              <ArrowRight className="rotate-180" size={15} />
-              Back to Hub
-            </button>
-          </div>
+
         </aside>
 
         {/* MAIN CONTENT */}
-        <main className="flex-1 p-8 min-h-screen">
+        <main className="flex-1 p-8">
 
           {/* ═══ OVERVIEW ═══ */}
           {section === 'overview' && (
