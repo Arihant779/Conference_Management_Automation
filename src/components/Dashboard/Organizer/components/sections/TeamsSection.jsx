@@ -1,13 +1,14 @@
 import React from 'react';
-import { Plus, Edit2, Trash2, Layers } from 'lucide-react';
+import { Plus, Edit2, Trash2, Layers, MessageSquare } from 'lucide-react';
 import { mName } from '../../constants';
 import { Btn, Empty, LoadingRows } from '../common/Primitives';
 import { SpotlightCard, AnimatedSection } from '../common/Effects';
 import { useApp } from '../../../../../context/AppContext';
 
 const TeamsSection = ({
-  teams, members, isOrganizer, myMemberId, loadingTeams,
+  teams, members, isOrganizer, myMemberId, myTeamIds, loadingTeams,
   setModal, setTmForm, openEditTeam, deleteTeam, setSection, can,
+  setActiveChatTeamId,
 }) => {
   const { theme } = useApp();
   const isDark = theme === 'dark';
@@ -17,7 +18,7 @@ const TeamsSection = ({
       <div className="flex justify-between items-center mb-8">
         <div>
           <h2 className={`text-3xl font-black transition-colors duration-500 tracking-tight mb-1 ${isDark ? 'text-white' : 'text-zinc-900'}`}>Teams</h2>
-          <p className="text-slate-500 font-medium tracking-wide">{teams.filter(t => isOrganizer || t.head_id === myMemberId).length} active teams</p>
+          <p className="text-slate-500 font-medium tracking-wide">{teams.filter(t => isOrganizer || myTeamIds.includes(t.id)).length} active teams</p>
         </div>
         {isOrganizer && (
           <Btn onClick={() => { setTmForm({ name:'',type:'',originalType:'',description:'',color:'#fbbf24',head_id:'' }); setModal('createTeam'); }}>
@@ -30,7 +31,7 @@ const TeamsSection = ({
         ? <Empty icon={Layers} msg="No teams yet." action={{ label: isOrganizer ? '+ Create Team' : null, onClick: () => setModal('createTeam') }} />
         : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {teams.filter(t => isOrganizer || t.head_id === myMemberId).map((team, i) => {
+            {teams.filter(t => isOrganizer || myTeamIds.includes(t.id)).map((team, i) => {
               const teamMembers = team.memberList.map(tm => members.find(m => m.id === tm.conference_user_id || m.user_id === tm.user_id)).filter(Boolean);
               const head = team.head_id ? members.find(m => m.id === team.head_id) : null;
               return (
@@ -97,7 +98,9 @@ const TeamsSection = ({
                         }`} onClick={() => openEditTeam(team)}>Manage</Btn>
                         <Btn variant="ghost" className={`text-xs font-bold flex-1 py-2.5 h-auto tracking-wide transition-all ${
                           isDark ? 'bg-white/5 hover:bg-white/10 hover:text-amber-400' : 'bg-zinc-100 hover:bg-amber-50 hover:text-amber-600 text-zinc-700'
-                        }`} onClick={() => setSection('tasks')}>Tasks →</Btn>
+                        }`} onClick={() => { setSection('chat'); setActiveChatTeamId(team.id); }}>
+                          <MessageSquare size={12} className="mr-1" />Chat
+                        </Btn>
                       </div>
                     </div>
                   </SpotlightCard>

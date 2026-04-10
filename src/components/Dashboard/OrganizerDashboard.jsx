@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   BarChart2, FileText, Users, CheckSquare, Bell, Send,
-  Layers, Clock, Sparkles, Star, Check,
+  Layers, Clock, Sparkles, Star, Check, MessageSquare,
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
@@ -24,6 +24,7 @@ import TeamsSection from './Organizer/components/sections/TeamsSection';
 import TasksSection from './Organizer/components/sections/TasksSection';
 import NotificationsSection from './Organizer/components/sections/NotificationsSection';
 import SpeakersSection from './Organizer/components/sections/SpeakersSection';
+import ChatSection from './Organizer/components/sections/ChatSection';
 
 import RateMemberModal from './Organizer/components/Modals/RateMemberModal';
 import AddMemberModal from './Organizer/components/Modals/AddMemberModal';
@@ -48,6 +49,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   const [loadingTeams, setLT]         = useState(true);
   const [tasks, setTasks]             = useState([]);
   const [loadingTasks, setLTasks]     = useState(true);
+  const [activeChatTeamId, setActiveChatTeamId] = useState(null);
 
   useEffect(() => {
     if (section === 'site_preview') { onSwitchView('home'); setSection('overview'); }
@@ -58,6 +60,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   const isGlobalHead    = conf.conference_head_id === user.id;
   const isOrganizer     = isGlobalHead || (userRoles && userRoles.includes('organizer'));
   const myHeadedTeamIds = teams.filter(t => t.head_id === myMemberId).map(t => t.id);
+  const myTeamIds       = teams.filter(t => t.head_id === myMemberId || t.memberList?.some(tm => tm.conference_user_id === myMemberId)).map(t => t.id);
   const isTeamHead      = !isOrganizer && myHeadedTeamIds.length > 0;
 
   const FALLBACK_PERMS = {
@@ -391,6 +394,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     { id: 'speakers',      label: 'Find Speakers',    icon: Users,       badge: null,                                      permission: 'find_speakers' },
     { id: 'allocation',    label: 'Paper Allocation', icon: FileText,    badge: null,                                      permission: 'allocate_papers' },
     { id: 'feedback',      label: 'Feedback',         icon: Star,        badge: null,                                      permission: 'view_feedback' },
+    { id: 'chat',          label: 'Leader Chat',      icon: MessageSquare, badge: null },
     { id: 'site_preview',  label: 'Site Preview',     icon: Sparkles,    badge: null },
   ].filter(item => !item.permission || can(item.permission));
 
@@ -452,8 +456,10 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
           {section === 'teams' && (
             <TeamsSection
               teams={teams} members={members} isOrganizer={isOrganizer} myMemberId={myMemberId}
+              myTeamIds={myTeamIds}
               loadingTeams={loadingTeams} setModal={setModal} setTmForm={setTmForm}
               openEditTeam={openEditTeam} deleteTeam={deleteTeam} setSection={setSection} can={can}
+              setActiveChatTeamId={setActiveChatTeamId}
             />
           )}
 
@@ -475,6 +481,13 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
               spTopic={spTopic} setSpTopic={setSpTopic} spLimit={spLimit} setSpLimit={setSpLimit}
               spSource={spSource} setSpSource={setSpSource} spLoading={spLoading}
               spResults={spResults} spError={spError} findSpeakers={findSpeakers}
+            />
+          )}
+
+          {section === 'chat' && (
+            <ChatSection
+              confId={confId} teams={teams} isOrganizer={isOrganizer} myTeamIds={myTeamIds}
+              activeChatTeamId={activeChatTeamId} setActiveChatTeamId={setActiveChatTeamId}
             />
           )}
 

@@ -1,41 +1,52 @@
 import React, { useState } from 'react';
-import { Search, X, Sparkles, Star } from 'lucide-react';
+import { Search, X, Sparkles, Star, Check } from 'lucide-react';
 import { cls, VOLUNTEER_ROLE_LABELS, ROLE_STYLE } from '../../constants';
 import { RatingBadge } from '../common/StarRating';
 
 /* ══════════════════════════════════════════════════════════
    VOLUNTEER CANDIDATE PANEL
+   - Supports selection toggle (pendingAdds) instead of immediate add
 ══════════════════════════════════════════════════════════ */
-const VolunteerCandidatePanel = ({ allVolunteers, members, teamMembers, teamTypeId, confId, onAdd, onAddVolunteer, globalRatings }) => {
+const VolunteerCandidatePanel = ({
+  allVolunteers, members, teamMembers, teamTypeId,
+  confId, onAdd, onAddVolunteer, globalRatings,
+  pendingAdds,  // Set<conf_user_id> — items staged for addition
+}) => {
   const [search, setSearch]         = useState('');
   const [filterMode, setFilterMode] = useState('volunteers');
   const [adding, setAdding]         = useState(null);
 
   const alreadyInTeamUserIds = new Set(teamMembers.map(m => m.user_id));
-  const alreadyInTeam        = new Set(teamMembers.map(m => m.id));
+  const alreadyInTeam        = new Set(teamMembers.map(m => m.id || m.conference_user_id));
   const memberUserIds        = new Set(members.map(m => m.user_id));
 
   const mName  = (m) => m?.full_name || m?.user_name || m?.email || m?.user_email || m?.user_id?.slice(0, 8) || '?';
   const mEmail = (m) => m?.email || m?.user_email || '';
   const relevantRoleLabel = teamTypeId ? VOLUNTEER_ROLE_LABELS[teamTypeId] : null;
 
+  // Users in this conference with a role other than 'member' should not appear as candidates
+  const nonMemberUserIds = new Set(members.filter(m => m.role !== 'member').map(m => m.user_id));
+
   const matchedVolunteers = (allVolunteers || [])
     .filter(u => !alreadyInTeamUserIds.has(u.user_id))
+    .filter(u => !nonMemberUserIds.has(u.user_id))
     .filter(u => !teamTypeId ? u.volunteer_roles?.length > 0 : u.volunteer_roles?.includes(teamTypeId))
     .filter(u => { if (!search) return true; const q = search.toLowerCase(); return mName(u).toLowerCase().includes(q) || mEmail(u).toLowerCase().includes(q); });
 
   const nonTeamMembers = members
     .filter(m => !alreadyInTeam.has(m.id))
+    .filter(m => m.role === 'member')
     .filter(m => { if (!search) return true; const q = search.toLowerCase(); return mName(m).toLowerCase().includes(q) || mEmail(m).toLowerCase().includes(q); });
 
   const candidates     = filterMode === 'volunteers' ? matchedVolunteers : nonTeamMembers;
-  const volunteerCount = (allVolunteers || []).filter(u => !alreadyInTeamUserIds.has(u.user_id)).filter(u => !teamTypeId ? u.volunteer_roles?.length > 0 : u.volunteer_roles?.includes(teamTypeId)).length;
+  const volunteerCount = (allVolunteers || []).filter(u => !alreadyInTeamUserIds.has(u.user_id)).filter(u => !nonMemberUserIds.has(u.user_id)).filter(u => !teamTypeId ? u.volunteer_roles?.length > 0 : u.volunteer_roles?.includes(teamTypeId)).length;
 
   const handleAdd = async (candidate) => {
     if (adding) return;
     setAdding(candidate.user_id);
     try {
       if (filterMode === 'volunteers' && !memberUserIds.has(candidate.user_id)) {
+        // Volunteer not yet a conference member — invite first, then toggle
         const confUserId = await onAddVolunteer(candidate);
         if (confUserId) onAdd(confUserId);
       } else if (filterMode === 'all') {
@@ -45,6 +56,14 @@ const VolunteerCandidatePanel = ({ allVolunteers, members, teamMembers, teamType
         if (confMember) onAdd(confMember.id);
       }
     } finally { setAdding(null); }
+  };
+
+  // Check if a candidate is currently selected (in pendingAdds)
+  const isSelected = (c) => {
+    if (!pendingAdds) return false;
+    if (filterMode === 'all') return pendingAdds.has(c.id);
+    const confMember = members.find(m => m.user_id === c.user_id);
+    return confMember ? pendingAdds.has(confMember.id) : false;
   };
 
   return (
@@ -84,12 +103,26 @@ const VolunteerCandidatePanel = ({ allVolunteers, members, teamMembers, teamType
             const isAdding        = adding === c.user_id;
             const key             = c.user_id || c.id;
             const ratingInfo      = globalRatings?.[c.user_id];
+            const selected        = isSelected(c);
+
             return (
               <div key={key} onClick={() => !isAdding && handleAdd(c)}
                 className={cls('flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group', isAdding ? 'opacity-50 cursor-wait' : 'cursor-pointer')}
-                style={isVolTab
-                  ? { background: 'rgba(245,197,24,0.05)', border: '1px solid rgba(245,197,24,0.15)' }
-                  : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                style={selected
+                  ? { background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.35)' }
+                  : isVolTab
+                    ? { background: 'rgba(245,197,24,0.05)', border: '1px solid rgba(245,197,24,0.15)' }
+                    : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }
+                }>
+                {/* Selection indicator */}
+                <div className={cls('w-5 h-5 rounded-md border flex items-center justify-center transition-all shrink-0')}
+                  style={selected
+                    ? { background: '#10b981', borderColor: '#10b981' }
+                    : { background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.15)' }
+                  }>
+                  {selected && <Check size={11} className="text-white" />}
+                </div>
+
                 <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                   style={isVolTab ? { background: '#f5c518', color: '#000' } : { background: '#27293a', color: '#9ca3af' }}>
                   {mName(c)[0]?.toUpperCase()}
@@ -111,8 +144,10 @@ const VolunteerCandidatePanel = ({ allVolunteers, members, teamMembers, teamType
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0">
                   {!isVolTab && <span className={cls('text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase', ROLE_STYLE[c.role] || ROLE_STYLE.member)}>{c.role}</span>}
-                  <span className="text-[9px] text-zinc-600 group-hover:text-yellow-400 transition-colors font-semibold">
-                    {isAdding ? '…' : isVolTab && !isAlreadyMember ? '+ Invite & Add' : '+ Add'}
+                  <span className={cls('text-[9px] font-semibold transition-colors',
+                    selected ? 'text-emerald-400' : 'text-zinc-600 group-hover:text-yellow-400'
+                  )}>
+                    {isAdding ? '…' : selected ? '✓ Selected' : (isVolTab && !isAlreadyMember ? '+ Invite & Add' : '+ Select')}
                   </span>
                 </div>
               </div>
