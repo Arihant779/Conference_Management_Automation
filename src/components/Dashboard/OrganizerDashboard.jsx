@@ -11,6 +11,7 @@ import { mName, VOLUNTEER_ROLE_LABELS } from './Organizer/constants';
 import EmailComposer from './EmailComposer';
 import PaperAllocation from './PaperAllocation';
 import EmailSettings from './EmailSettings';
+import EmailAutomationsManager from './EmailAutomationsManager';
 import FeedbackManager from './FeedbackManager';
 
 /* ── modular sub-components ── */
@@ -52,9 +53,9 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     if (section === 'site_preview') { onSwitchView('home'); setSection('overview'); }
   }, [section, onSwitchView, setSection]);
 
-  const myMember        = members.find(m => m.user_id === user.id);
+  const myMember        = members.find(m => m.user_id === user?.id);
   const myMemberId      = myMember?.id;
-  const isGlobalHead    = conf.conference_head_id === user.id;
+  const isGlobalHead    = conf.conference_head_id === user?.id;
   const isOrganizer     = isGlobalHead || (userRoles && userRoles.includes('organizer'));
   const myHeadedTeamIds = teams.filter(t => t.head_id === myMemberId).map(t => t.id);
   const isTeamHead      = !isOrganizer && myHeadedTeamIds.length > 0;
@@ -174,7 +175,43 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     const { error } = await supabase.from('paper').upsert({ paper_id: paperId, status: newStatus, conference_id: confId }, { onConflict: 'paper_id' });
     setSaving(false);
     if (error) { alert(`Failed to update status: ${error.message}`); return; }
-    setConfPapers(prev => prev.map(p => p.paper_id === paperId ? { ...p, status: newStatus } : p));
+    
+    setConfPapers(prev => {
+      const updated = prev.map(p => p.paper_id === paperId ? { ...p, status: newStatus } : p);
+      
+      // Execute Email Automation hook
+      const targetPaper = updated.find(p => p.paper_id === paperId);
+      if (targetPaper && (newStatus === 'accepted' || newStatus === 'rejected') && targetPaper.users?.user_email) {
+        const triggerType = newStatus === 'accepted' ? 'on_paper_accepted' : 'on_paper_rejected';
+        supabase.from('conference_automations')
+          .select('*')
+          .eq('conference_id', confId)
+          .eq('trigger_type', triggerType)
+          .eq('is_active', true)
+          .then(({ data: autos }) => {
+            if (autos && autos.length > 0) {
+              for (const auto of autos) {
+                const personalizedBody = auto.body
+                  .replace(/{AuthorName}/g, targetPaper.users.user_name || 'Author')
+                  .replace(/{PaperTitle}/g, targetPaper.paper_title || 'Untitled Paper');
+                
+                fetch('http://localhost:4000/api/send-email', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    to: [targetPaper.users.user_email],
+                    subject: auto.subject,
+                    body: personalizedBody,
+                    senderRole: 'organizer',
+                    conferenceId: confId
+                  })
+                }).catch(e => console.error(`Automation ${triggerType} failed:`, e));
+              }
+            }
+          });
+      }
+      return updated;
+    });
   };
 
   const fetchTeams = useCallback(async () => {
@@ -387,6 +424,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     { id: 'tasks',         label: 'Tasks',            icon: CheckSquare, badge: tasks.filter(t => t.status !== 'done').length || null, permission: 'view_tasks' },
     { id: 'notifications', label: 'Notifications',    icon: Bell,        badge: null,                                      permission: 'view_notifications' },
     { id: 'emails',        label: 'Emails',           icon: Send,        badge: null,                                      permission: 'view_emails' },
+    { id: 'welcome_email', label: 'Automations',      icon: Sparkles,    badge: null,                                      permission: 'view_emails' },
     { id: 'speakers',      label: 'Find Speakers',    icon: Users,       badge: null,                                      permission: 'find_speakers' },
     { id: 'allocation',    label: 'Paper Allocation', icon: FileText,    badge: null,                                      permission: 'allocate_papers' },
     { id: 'feedback',      label: 'Feedback',         icon: Star,        badge: null,                                      permission: 'view_feedback' },
@@ -480,6 +518,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
           {section === 'feedback'      && <FeedbackManager conf={conf} />}
           {section === 'emails'        && <EmailComposer conf={conf} senderRole="organizer" onOpenEmailSettings={() => setSection('emailSettings')} />}
           {section === 'emailSettings' && <EmailSettings conf={conf} />}
+          {section === 'welcome_email' && <EmailAutomationsManager conf={conf} />}
           {section === 'allocation'    && <PaperAllocation conf={conf} />}
 
         </main>

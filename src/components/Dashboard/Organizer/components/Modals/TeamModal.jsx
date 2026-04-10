@@ -3,13 +3,18 @@ import { Users, Plus, X, Check } from 'lucide-react';
 import { cls, mName, TEAM_TYPES, TEAM_COLORS } from '../../constants';
 import { Modal, Field, Input, Sel, Btn } from '../common/Primitives';
 import VolunteerCandidatePanel from '../Panels/VolunteerCandidatePanel';
+import { useApp } from '../../../../../context/AppContext';
 
 const TeamModal = ({
   mode, modalData, tmForm, setTmForm,
   isOrganizer, saving, members, allVolunteers, confId, globalRatings,
   onClose, onCreate, onSave, onAddToTeam, onRemoveFromTeam, onAddVolunteer,
-}) => (
-  <Modal title={mode === 'createTeam' ? 'Create Team' : 'Manage Team'} onClose={onClose} width="max-w-xl">
+}) => {
+  const { theme } = useApp();
+  const isDark = theme === 'dark';
+
+  return (
+    <Modal title={mode === 'createTeam' ? 'Create Team' : 'Manage Team'} onClose={onClose} width="max-w-xl">
     <div className="space-y-6">
       <div className={cls('space-y-4', !isOrganizer && 'opacity-70 pointer-events-none')}>
         <Field label="Team Type">
@@ -18,17 +23,17 @@ const TeamModal = ({
               {TEAM_TYPES.map(({ id, label }) => (
                 <button key={id} type="button" onClick={() => setTmForm({ ...tmForm, type: id, name: label })}
                   className="text-left px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2"
-                  style={tmForm.type === id
-                    ? { background: 'rgba(245,197,24,0.12)', border: '1px solid rgba(245,197,24,0.35)', color: '#f5c518' }
-                    : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#6b7280' }}>
+                    style={tmForm.type === id
+                      ? { background: 'rgba(245,197,24,0.12)', border: '1px solid rgba(245,197,24,0.35)', color: '#f5c518' }
+                      : { background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(15,23,42,0.03)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)'}`, color: isDark ? '#6b7280' : '#71717a' }}>
                   {tmForm.type === id && <Check size={10} className="shrink-0" style={{ color: '#f5c518' }} />}{label}
                 </button>
               ))}
               <button type="button" onClick={() => setTmForm({ ...tmForm, type: 'custom', name: '' })}
                 className="text-left px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 col-span-2"
                 style={tmForm.type === 'custom'
-                  ? { background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.18)', color: '#d4d4d8' }
-                  : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#6b7280' }}>
+                  ? { background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.06)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.18)' : 'rgba(15,23,42,0.15)'}`, color: isDark ? '#d4d4d8' : '#3f3f46' }
+                  : { background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(15,23,42,0.03)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)'}`, color: isDark ? '#6b7280' : '#71717a' }}>
                 {tmForm.type === 'custom' && <Check size={10} className="shrink-0" />}✏️ Custom name…
               </button>
             </div>
@@ -42,7 +47,7 @@ const TeamModal = ({
           <Field label="Team Head (optional)">
             <Sel value={tmForm.head_id} onChange={e => setTmForm({ ...tmForm, head_id: e.target.value })}>
               <option value="">— No team head —</option>
-              {members.map(m => <option key={m.id} value={m.id} style={{ background: '#13151c' }}>{mName(m)} ({m.role})</option>)}
+              {members.map(m => <option key={m.id} value={m.id}>{mName(m)} ({m.role})</option>)}
             </Sel>
           </Field>
         </div>
@@ -51,20 +56,20 @@ const TeamModal = ({
             {TEAM_COLORS.map(c => (
               <button key={c} onClick={() => setTmForm({ ...tmForm, color: c })}
                 className="w-8 h-8 rounded-lg transition-all"
-                style={{ backgroundColor: c, border: tmForm.color === c ? '2px solid #fff' : '2px solid transparent', transform: tmForm.color === c ? 'scale(1.1)' : 'scale(1)' }} />
+                style={{ backgroundColor: c, border: tmForm.color === c ? (isDark ? '2px solid #fff' : '2px solid #000') : '2px solid transparent', transform: tmForm.color === c ? 'scale(1.1)' : 'scale(1)' }} />
             ))}
           </div>
         </Field>
       </div>
 
-      <div className="pt-5 space-y-4" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Users size={16} style={{ color: '#f5c518' }} />
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider">Member Management</h4>
-          </div>
+        <div className="pt-5 space-y-4" style={{ borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.07)'}` }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users size={16} style={{ color: '#f5c518' }} />
+              <h4 className={`text-sm font-bold uppercase tracking-wider ${isDark ? 'text-white' : 'text-zinc-900'}`}>Member Management</h4>
+            </div>
           {mode === 'editTeam' && (
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ color: '#6b7280', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ color: '#6b7280', background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(15,23,42,0.03)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)'}` }}>
               {modalData.memberList?.length || 0} Members
             </span>
           )}
@@ -77,12 +82,12 @@ const TeamModal = ({
               if (!m) return null;
               return (
                 <div key={m.id} className="flex items-center gap-3 rounded-xl p-2 group"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(15,23,42,0.02)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)'}` }}>
                   <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: '#27293a' }}>
                     {mName(m)[0]?.toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-[11px] font-semibold text-white truncate">{mName(m)}</div>
+                    <div className={`text-[11px] font-semibold truncate ${isDark ? 'text-white' : 'text-zinc-900'}`}>{mName(m)}</div>
                   </div>
                   {isOrganizer && (
                     <button onClick={() => onRemoveFromTeam(modalData.id, m.id)}
@@ -122,8 +127,9 @@ const TeamModal = ({
           {saving ? 'Saving…' : mode === 'createTeam' ? 'Create Team' : 'Save Changes'}
         </Btn>
       )}
-    </div>
-  </Modal>
-);
+      </div>
+    </Modal>
+  );
+};
 
 export default TeamModal;

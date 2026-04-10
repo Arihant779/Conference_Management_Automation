@@ -246,7 +246,44 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
         accommodation_notes: form.accommodation_notes || null,
       }]);
 
-      if (cuErr && cuErr.code !== '23505') throw cuErr; /* ignore duplicate */
+      if (cuErr) {
+        if (String(cuErr.code) === '23505' || String(cuErr.code) === '409') {
+          throw new Error('This email address is already registered for the conference.');
+        } else {
+          throw cuErr;
+        }
+      }
+
+      /* 3. Execute Email Automations */
+      if (!cuErr) {
+        try {
+          const { data: autos } = await supabase
+            .from('conference_automations')
+            .select('*')
+            .eq('conference_id', confId)
+            .eq('trigger_type', 'on_registration')
+            .eq('is_active', true);
+
+          if (autos && autos.length > 0) {
+            for (const auto of autos) {
+              const personalizedBody = auto.body.replace(/{Name}/g, form.first_name.trim());
+              await fetch('http://localhost:4000/api/send-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  to: [form.email.trim().toLowerCase()],
+                  subject: auto.subject,
+                  body: personalizedBody,
+                  senderRole: 'organizer',
+                  conferenceId: confId
+                })
+              }).catch(e => console.error('Auto email failed:', e));
+            }
+          }
+        } catch (emailErr) {
+          console.error('Failed to dispatch generic registration automations:', emailErr);
+        }
+      }
 
       setSubmitted(true);
       if (onSuccess) setTimeout(onSuccess, 3000);

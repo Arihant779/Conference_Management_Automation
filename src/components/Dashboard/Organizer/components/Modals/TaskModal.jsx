@@ -15,13 +15,13 @@ const TaskModal = ({
         <Field label="Assign to Team">
           <Sel value={tkForm.team_id} onChange={e => setTkForm({ ...tkForm, team_id: e.target.value })}>
             <option value="">{isOrganizer ? 'No team' : 'Select your team'}</option>
-            {teams.filter(t => isOrganizer || t.head_id === myMemberId).map(t => <option key={t.id} value={t.id} style={{ background: '#13151c' }}>{t.name}</option>)}
+            {teams.filter(t => isOrganizer || t.head_id === myMemberId).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
           </Sel>
         </Field>
         <Field label="Assignee">
           <Sel value={tkForm.assignee_id} onChange={e => setTkForm({ ...tkForm, assignee_id: e.target.value })}>
             <option value="">Unassigned</option>
-            {members.map(m => <option key={m.id} value={m.id} style={{ background: '#13151c' }}>{mName(m)}</option>)}
+            {members.map(m => <option key={m.id} value={m.id}>{mName(m)}</option>)}
           </Sel>
         </Field>
         <Field label="Priority">

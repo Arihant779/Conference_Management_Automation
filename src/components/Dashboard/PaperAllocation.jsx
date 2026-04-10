@@ -61,6 +61,7 @@ const PaperAllocation = ({ conf }) => {
           setDbReviewers(data.map(m => ({
             id: m.id,
             userId: m.user_id,
+            email: m.email || m.users?.user_email || '',
             name: m.full_name || m.users?.user_name || m.email || 'Reviewer',
             expertise: m.expertise || '',
             capacity: m.max_papers || 3,
@@ -348,7 +349,48 @@ const PaperAllocation = ({ conf }) => {
       if (insError) throw insError;
 
       setConfirmed(true);
-      alert(`Successfully saved ${toInsert.length} assignments to the database! All papers (including manual uploads) are now persistent.`);
+      alert(`Success: ${toInsert.length} assignments saved!`);
+
+      /* ── Execute Email Automations (on_paper_assigned) ── */
+      try {
+        const { data: autos } = await supabase
+          .from('conference_automations')
+          .select('*')
+          .eq('conference_id', confId)
+          .eq('trigger_type', 'on_paper_assigned')
+          .eq('is_active', true);
+
+        if (autos && autos.length > 0) {
+          for (const auto of autos) {
+            for (const item of toInsert) {
+               // Find paper name and reviewer details
+               const pData = updatedPapers.find(p => p.dbId === item.paper_id);
+               const rData = validReviewers.find(r => r.userId === item.reviewer_id);
+
+               if (rData && rData.email) {
+                 const personalizedBody = auto.body
+                   .replace(/{ReviewerName}/g, rData.name)
+                   .replace(/{PaperTitle}/g, pData?.name || 'Untitled Paper');
+
+                 await fetch('http://localhost:4000/api/send-email', {
+                   method: 'POST',
+                   headers: { 'Content-Type': 'application/json' },
+                   body: JSON.stringify({
+                     to: [rData.email.trim().toLowerCase()],
+                     subject: auto.subject,
+                     body: personalizedBody,
+                     senderRole: 'organizer',
+                     conferenceId: confId
+                   })
+                 }).catch(e => console.error('on_paper_assigned email failed:', e));
+               }
+            }
+          }
+        }
+      } catch (errAuto) {
+        console.error('Failed to run on_paper_assigned automations:', errAuto);
+      }
+
     } catch (err) {
       console.error('Failed to save assignments:', err);
       setError(`Critical Error: ${err.message}`);

@@ -36,6 +36,7 @@ const ReviewerDashboard = ({ conf, onBack }) => {
   ];
 
   const fetchPrefs = React.useCallback(async () => {
+    if (!user?.id) return;
     const { data } = await supabase
       .from('conference_user')
       .select('expertise, max_papers')
@@ -54,7 +55,7 @@ const ReviewerDashboard = ({ conf, onBack }) => {
       setIsEditing(true);
     }
     setLoadingPrefs(false);
-  }, [confId, user.id]);
+  }, [confId, user?.id]);
 
   const fetchAssignedPapers = React.useCallback(async () => {
     if (!user || !confId) return;
@@ -78,7 +79,7 @@ const ReviewerDashboard = ({ conf, onBack }) => {
         )
       `)
       .eq('conference_id', confId)
-      .eq('reviewer_id', user.id);
+      .eq('reviewer_id', user?.id);
 
     if (error) {
       console.error("Error fetching reviewer papers:", error);
@@ -96,7 +97,7 @@ const ReviewerDashboard = ({ conf, onBack }) => {
       })));
     }
     setLoadingPapers(false);
-  }, [confId, user.id]);
+  }, [confId, user?.id]);
 
   useEffect(() => {
     if (!user || !confId) return;
@@ -112,7 +113,7 @@ const ReviewerDashboard = ({ conf, onBack }) => {
         .from('conference_user')
         .upsert({
           conference_id: confId,
-          user_id: user.id,
+          user_id: user?.id,
           role: 'reviewer',
           expertise: localExpertise,
           max_papers: maxPapers

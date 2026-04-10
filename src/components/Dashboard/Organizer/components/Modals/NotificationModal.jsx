@@ -15,7 +15,7 @@ const NotificationModal = ({ nForm, setNForm, teams, saving, onClose, onSend }) 
         <Field label="Target Team">
           <Sel value={nForm.target_team_id} onChange={e => setNForm({ ...nForm, target_team_id: e.target.value })}>
             <option value="">All Teams</option>
-            {teams.map(t => <option key={t.id} value={t.id} style={{ background: '#13151c' }}>{t.name}</option>)}
+            {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
           </Sel>
         </Field>
       </div>
