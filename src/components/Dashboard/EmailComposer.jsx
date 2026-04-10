@@ -264,7 +264,7 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
   const renderCertificatePdf = async (name) => {
     if (!certConfig) return null;
 
-    const { templateDataURL, templateWidth, templateHeight, namePos, font: certFont, fontSize: certFontSize, signatureDataURL, signaturePos, signatureSize } = certConfig;
+    const { templateDataURL, templateWidth, templateHeight, namePos, font: certFont, fontSize: certFontSize, signatureDataURL, signaturePos, signatureSize, textItems: certTextItems } = certConfig;
 
     // Create an offscreen canvas at the template's native resolution
     const offscreen = document.createElement('canvas');
@@ -294,6 +294,18 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(name, namePos.x, namePos.y);
+
+    // Draw custom text items
+    if (certTextItems && certTextItems.length > 0) {
+      certTextItems.forEach(item => {
+        if (!item.pos || !item.text) return;
+        ctx.font = `${item.fontSize}px ${item.font}, serif`;
+        ctx.fillStyle = item.color || '#1a1a2e';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(item.text, item.pos.x, item.pos.y);
+      });
+    }
 
     // Draw signature if present
     if (signatureDataURL && signaturePos && signatureSize) {
