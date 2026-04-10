@@ -100,4 +100,13 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+  /* Permanent Floating Motion */
+  @keyframes boatFloat {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    50% { transform: translateY(-8px) rotate(0.4deg); }
+  }
+
+  .animate-float-permanent {
+    animation: boatFloat 6s ease-in-out infinite;
+  }
 }

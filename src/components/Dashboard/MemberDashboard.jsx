@@ -25,15 +25,15 @@ const cls = (...c) => c.filter(Boolean).join(' ');
 
 const ROLE_STYLE = {
   organizer: 'bg-violet-500/10 text-violet-300 border-violet-500/25',
-  reviewer:  'bg-amber-500/10  text-amber-300  border-amber-500/25',
+  reviewer: 'bg-amber-500/10  text-amber-300  border-amber-500/25',
   presenter: 'bg-blue-500/10   text-blue-300   border-blue-500/25',
-  member:    'bg-slate-500/10  text-slate-300  border-slate-500/25',
+  member: 'bg-slate-500/10  text-slate-300  border-slate-500/25',
 };
 
 const PRIORITY_STYLE = {
-  high:   'bg-red-500/10 text-red-400 border-red-500/20',
+  high: 'bg-red-500/10 text-red-400 border-red-500/20',
   medium: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  low:    'bg-slate-500/10 text-slate-400 border-slate-500/20',
+  low: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
 };
 
 const LoadingRows = () => (
@@ -70,18 +70,18 @@ const MemberDashboard = ({ conf, onBack }) => {
   const isDark = theme === 'dark';
   const confId = conf.conference_id || conf.id;
 
-  const [section, setSection]         = useState('overview');
-  const [members, setMembers]         = useState([]);
-  const [loadingMembers, setLM]       = useState(true);
-  const [teams, setTeams]             = useState([]);
-  const [loadingTeams, setLT]         = useState(true);
-  const [tasks, setTasks]             = useState([]);
-  const [loadingTasks, setLTasks]     = useState(true);
+  const [section, setSection] = useState('my_teams');
+  const [members, setMembers] = useState([]);
+  const [loadingMembers, setLM] = useState(true);
+  const [teams, setTeams] = useState([]);
+  const [loadingTeams, setLT] = useState(true);
+  const [tasks, setTasks] = useState([]);
+  const [loadingTasks, setLTasks] = useState(true);
   const [expandedTeam, setExpandedTeam] = useState(null);
   const [globalRatings, setGlobalRatings] = useState({});
 
-  const [confPapers, setConfPapers]   = useState([]);
-  const [loadingPapers, setLP]       = useState(false);
+  const [confPapers, setConfPapers] = useState([]);
+  const [loadingPapers, setLP] = useState(false);
 
   /* ── fetch ─────────────────────────────────────────────── */
   const fetchMembers = useCallback(async () => {
@@ -95,8 +95,8 @@ const MemberDashboard = ({ conf, onBack }) => {
     if (error) console.error('fetchMembers error:', error);
     const enriched = (data || []).map(m => ({
       ...m,
-      email:     m.email     || m.users?.user_email || '',
-      full_name: m.full_name || m.users?.user_name  || '',
+      email: m.email || m.users?.user_email || '',
+      full_name: m.full_name || m.users?.user_name || '',
     }));
     setMembers(enriched);
     setLM(false);
@@ -127,7 +127,7 @@ const MemberDashboard = ({ conf, onBack }) => {
     const agg = {};
     (data || []).forEach(r => {
       if (!agg[r.rated_user_id]) agg[r.rated_user_id] = { sum: 0, count: 0 };
-      agg[r.rated_user_id].sum   += r.rating;
+      agg[r.rated_user_id].sum += r.rating;
       agg[r.rated_user_id].count += 1;
     });
     const result = {};
@@ -155,7 +155,7 @@ const MemberDashboard = ({ conf, onBack }) => {
   /* ── permissions & logic ── */
   const myMember = members.find(m => m.user_id === user?.id);
   const myMemberId = myMember?.id;
-  
+
   const myTeams = teams.filter(t => t.memberList.some(m => m.conference_user_id === myMemberId || m.user_id === user?.id));
   const myTeamNames = myTeams.map(t => t.name.toLowerCase());
 
@@ -167,18 +167,16 @@ const MemberDashboard = ({ conf, onBack }) => {
   };
 
   const nav = [
-    { id: 'overview',  label: 'Overview',   icon: BarChart2 },
-    { id: 'my_teams',  label: 'My Teams',   icon: Users },
-    { id: 'my_tasks',  label: 'My Tasks',   icon: CheckSquare },
+    { id: 'my_teams', label: 'My Teams', icon: Users },
+    { id: 'my_tasks', label: 'My Tasks', icon: CheckSquare },
     ...(can('view_papers') ? [{ id: 'papers', label: 'Papers', icon: FileText }] : []),
-    ...(can('view_attendees') ? [{ id: 'attendees', label: 'Attendees', icon: MapPin }] : []),
     ...(can('view_speakers') ? [{ id: 'speakers', label: 'Speakers', icon: Users }] : []),
     { id: 'notifications', label: 'Notifications', icon: Bell },
   ];
 
-  const mName        = (m) => m?.full_name || m?.email || m?.user_id?.substring(0, 8) || '?';
-  const teamName     = (id) => teams.find(t => t.id === id)?.name || '—';
-  
+  const mName = (m) => m?.full_name || m?.email || m?.user_id?.substring(0, 8) || '?';
+  const teamName = (id) => teams.find(t => t.id === id)?.name || '—';
+
   const toggleTask = async (task) => {
     const s = task.status === 'done' ? 'pending' : 'done';
     const { error } = await supabase.from('conference_tasks').update({ status: s }).eq('id', task.id);
@@ -195,7 +193,10 @@ const MemberDashboard = ({ conf, onBack }) => {
           pendingCount={confPapers.filter(p => p.status === 'pending').length}
           accepted={confPapers.filter(p => p.status === 'accepted').length}
           rejected={confPapers.filter(p => p.status === 'rejected').length}
-          isOrganizer={false}
+          volunteersCount={0} volunteerMap={{}}
+          isGlobalHead={false}
+          can={can}
+          setSection={setSection}
         />
       );
     }
@@ -218,15 +219,13 @@ const MemberDashboard = ({ conf, onBack }) => {
               {myTeams.map(team => {
                 const isOpen = expandedTeam === team.id;
                 const teamMembers = team.memberList.map(tm => members.find(m => m.id === tm.conference_user_id || m.user_id === tm.user_id)).filter(Boolean);
-                const teamTasks   = tasks.filter(t => t.team_id === team.id);
+                const teamTasks = tasks.filter(t => t.team_id === team.id);
 
                 return (
-                  <div key={team.id} className={`backdrop-blur-md border transition-all duration-300 rounded-xl overflow-hidden ${
-                    isDark ? 'bg-[#0d1117]/60 border-white/10' : 'bg-white border-zinc-200 shadow-sm'
-                  }`}>
-                    <div className={`flex items-center gap-3 px-5 py-4 cursor-pointer transition-colors ${
-                      isDark ? 'hover:bg-white/5' : 'hover:bg-zinc-50'
-                    }`} onClick={() => setExpandedTeam(isOpen ? null : team.id)}>
+                  <div key={team.id} className={`backdrop-blur-md border transition-all duration-300 rounded-xl overflow-hidden ${isDark ? 'bg-[#0d1117]/60 border-white/10' : 'bg-white border-zinc-200 shadow-sm'
+                    }`}>
+                    <div className={`flex items-center gap-3 px-5 py-4 cursor-pointer transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-zinc-50'
+                      }`} onClick={() => setExpandedTeam(isOpen ? null : team.id)}>
                       <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: team.color }} />
                       <div className="flex-1">
                         <div className={`font-semibold text-sm transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>{team.name}</div>
@@ -255,13 +254,12 @@ const MemberDashboard = ({ conf, onBack }) => {
                           {teamTasks.length === 0 ? <p className="text-xs text-slate-600 italic">No tasks assigned.</p> : (
                             <div className="space-y-2">
                               {teamTasks.map(t => (
-                                <div key={t.id} className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
-                                  isDark ? 'bg-white/[0.02] border-white/5' : 'bg-zinc-50 border-zinc-100'
-                                }`}>
-                                   <div onClick={() => toggleTask(t)} className={cls('w-4 h-4 rounded-full border-2 flex items-center justify-center cursor-pointer transition-all', t.status === 'done' ? 'bg-emerald-500 border-emerald-500' : 'border-slate-700 hover:border-amber-500')}>
-                                      {t.status === 'done' && <CheckCircle size={10} className="text-white" />}
-                                   </div>
-                                   <span className={cls('text-xs flex-1', t.status === 'done' ? 'text-slate-600 line-through' : (isDark ? 'text-slate-300' : 'text-zinc-800'))}>{t.title}</span>
+                                <div key={t.id} className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${isDark ? 'bg-white/[0.02] border-white/5' : 'bg-zinc-50 border-zinc-100'
+                                  }`}>
+                                  <div onClick={() => toggleTask(t)} className={cls('w-4 h-4 rounded-full border-2 flex items-center justify-center cursor-pointer transition-all', t.status === 'done' ? 'bg-emerald-500 border-emerald-500' : 'border-slate-700 hover:border-amber-500')}>
+                                    {t.status === 'done' && <CheckCircle size={10} className="text-white" />}
+                                  </div>
+                                  <span className={cls('text-xs flex-1', t.status === 'done' ? 'text-slate-600 line-through' : (isDark ? 'text-slate-300' : 'text-zinc-800'))}>{t.title}</span>
                                 </div>
                               ))}
                             </div>
@@ -288,9 +286,8 @@ const MemberDashboard = ({ conf, onBack }) => {
           {loadingTasks ? <LoadingRows /> : myTasks.length === 0 ? <Empty icon={CheckSquare} msg="All caught up!" /> : (
             <div className="space-y-3">
               {myTasks.map(task => (
-                <div key={task.id} className={`backdrop-blur-md border rounded-xl px-5 py-4 flex items-center gap-4 transition-all group ${
-                  isDark ? 'bg-[#0d1117]/60 border-white/10 hover:border-amber-500/30' : 'bg-white border-zinc-200 hover:border-amber-500/30 shadow-sm'
-                }`}>
+                <div key={task.id} className={`backdrop-blur-md border rounded-xl px-5 py-4 flex items-center gap-4 transition-all group ${isDark ? 'bg-[#0d1117]/60 border-white/10 hover:border-amber-500/30' : 'bg-white border-zinc-200 hover:border-amber-500/30 shadow-sm'
+                  }`}>
                   <div onClick={() => toggleTask(task)} className={cls('w-5 h-5 rounded-full border-2 flex items-center justify-center cursor-pointer shrink-0 transition-all', task.status === 'done' ? 'bg-emerald-500 border-emerald-500' : 'border-slate-700 hover:border-amber-500')}>
                     {task.status === 'done' && <CheckCircle size={12} className="text-white" />}
                   </div>
@@ -316,7 +313,7 @@ const MemberDashboard = ({ conf, onBack }) => {
       <AmbientBackground />
 
       <div className="w-full h-screen flex relative z-10 overflow-hidden">
-        <Sidebar nav={nav} section={section} setSection={setSection} isOrganizer={false} onBack={onBack} roleLabel="Member" />
+        <Sidebar nav={nav} section={section} setSection={setSection} isOrganizer={false} roleLabel={myMember?.role || 'Member'} onBack={onBack} />
 
         <main className="flex-1 overflow-y-auto p-8 custom-scrollbar">
           <div className="max-w-6xl mx-auto">

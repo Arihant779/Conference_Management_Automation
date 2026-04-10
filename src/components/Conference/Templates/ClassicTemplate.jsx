@@ -104,6 +104,7 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEd
 
   const [pageData, setPageData] = useState({
     tagline: initialConf.tagline || 'Advancing Knowledge, Forging Connections',
+    banner_url: initialConf.banner_url || '',
     contact_email: initialConf.contact_email || 'contact@conference.org',
     contact_phone: initialConf.contact_phone || '+1 (555) 000-0000',
     website: initialConf.website || 'https://yourconference.org',
@@ -265,7 +266,7 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEd
         {/* Hero banner */}
         <div style={{ position: 'relative', height: 480, overflow: 'hidden' }}>
           <img
-            src={conf.banner_url || 'https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?w=1600'}
+            src={pageData.banner_url || conf.banner_url || 'https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?w=1600'}
             alt="Conference Banner"
             style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(60%) contrast(1.1)', display: 'block' }}
           />
@@ -284,6 +285,14 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEd
             }}>
               {displayName}
             </h1>
+            
+            {isEditing && (
+              <div style={{ marginBottom: 20, width: '100%', maxWidth: 400 }}>
+                <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.gold, marginBottom: 4, ...sansS }}>Change Header Image URL</div>
+                <EditableText value={pageData.banner_url} onChange={v => update('banner_url', v)} className="" isEditing={isEditing} placeholder="Image URL…" />
+              </div>
+            )}
+
             <div style={{ width: 60, height: 2, background: C.gold, margin: '0 auto 16px' }} />
             <p style={{ fontSize: '1.15rem', color: 'rgba(253,250,244,0.85)', maxWidth: 600, margin: '0 0 28px', fontStyle: 'italic', lineHeight: 1.5 }}>
               {isEditing

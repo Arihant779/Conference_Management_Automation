@@ -22,7 +22,7 @@ const OverviewSection = ({
           <p className="text-slate-500 font-medium tracking-wide">Real-time conference metrics</p>
         </div>
         {isGlobalHead && (
-          <Btn variant="danger" onClick={() => setModal('deleteConference')}>
+          <Btn variant="danger" onClick={() => setModal?.('deleteConference')}>
             <Trash2 size={16} /> Delete Conference
           </Btn>
         )}
@@ -83,7 +83,7 @@ const OverviewSection = ({
             }`}>
               <div className="flex justify-between items-center mb-5">
                 <span className={`text-sm font-bold tracking-wide transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>Paper Review</span>
-                <button onClick={() => setSection('papers')} className="text-xs font-bold text-amber-500 hover:text-amber-400 transition-colors">View all →</button>
+                <button onClick={() => setSection?.('papers')} className="text-xs font-bold text-amber-500 hover:text-amber-400 transition-colors">View all →</button>
               </div>
               <div className={`h-3 rounded-full overflow-hidden flex shadow-inner transition-colors ${isDark ? 'bg-white/5' : 'bg-zinc-100'}`}>
                 <div className="h-full bg-emerald-500 shadow-sm" style={{ width: `${(accepted / confPapers.length) * 100}%` }} />
@@ -109,7 +109,7 @@ const OverviewSection = ({
             }`}>
               <div className="flex justify-between items-center mb-5">
                 <span className={`text-sm font-bold tracking-wide transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>Active Teams</span>
-                {can('manage_teams') && <button onClick={() => setSection('teams')} className="text-xs font-bold text-amber-500 hover:text-amber-400 transition-colors">Manage →</button>}
+                {can?.('manage_teams') && <button onClick={() => setSection?.('teams')} className="text-xs font-bold text-amber-500 hover:text-amber-400 transition-colors">Manage →</button>}
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {teams.slice(0, 6).map(t => (
@@ -132,7 +132,7 @@ const OverviewSection = ({
           }`}>
             <div className="flex justify-between items-center mb-5">
               <span className={`text-sm font-bold tracking-wide transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>Task Completion</span>
-              {can('manage_tasks') && <button onClick={() => setSection('tasks')} className="text-xs font-bold text-amber-500 hover:text-amber-400 transition-colors">Manage →</button>}
+              {can?.('manage_tasks') && <button onClick={() => setSection?.('tasks')} className="text-xs font-bold text-amber-500 hover:text-amber-400 transition-colors">Manage →</button>}
             </div>
             <div className="flex items-center gap-4">
               <div className={`flex-1 h-3 rounded-full overflow-hidden shadow-inner transition-colors ${isDark ? 'bg-white/5' : 'bg-zinc-100'}`}>
