@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
+import { CinematicBackground } from './Organizer/components/common/Effects';
 
 /* ─── helpers ──────────────────────────────────────────────────────────── */
 const cls = (...c) => c.filter(Boolean).join(' ');
@@ -551,12 +552,11 @@ const PresenterDashboard = ({ conf, onBack }) => {
   const withSlides = papers.filter(p => p.slide_url).length;
 
   return (
-    <div className="bg-[#080b11] text-slate-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <div className="relative min-h-screen text-slate-200 selection:bg-amber-500/30" style={{ background: '#04070D', fontFamily: "'Space Grotesk', 'Inter', system-ui, sans-serif" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+      <CinematicBackground />
 
-
-
-      <div className="max-w-5xl mx-auto p-8 space-y-8">
+      <div className="max-w-5xl mx-auto p-8 space-y-8 relative z-10">
 
         {/* ── Page title ── */}
         <div>

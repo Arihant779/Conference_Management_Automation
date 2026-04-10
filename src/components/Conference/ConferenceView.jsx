@@ -165,6 +165,7 @@ const ConferenceView = ({
       capacity: pageData.capacity, registration_fee_general: pageData.registration_fee_general,
       registration_fee_student: pageData.registration_fee_student,
       registration_fee_early: pageData.registration_fee_early, about_extra: pageData.about_extra,
+      map_url: pageData.map_url,
     }).eq('conference_id', confId);
     if (error) throw new Error(error.message);
   };
@@ -195,8 +196,8 @@ const ConferenceView = ({
   };
 
   return (
-    <div className="flex flex-col min-h-screen font-sans bg-[#0f1117] text-slate-200">
-      <nav className="bg-[#0f1117]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+    <div className="flex flex-col h-screen overflow-hidden font-sans bg-[#0f1117] text-slate-200">
+      <nav className="bg-[#0f1117] border-b border-white/5 px-6 py-4 flex justify-between items-center z-50 shrink-0">
           <div className="flex items-center gap-6">
             {!isGuest && (
               <>
@@ -264,7 +265,7 @@ const ConferenceView = ({
             </div>
           </div>
         </nav>
-      <div className="flex-1 bg-black overflow-y-auto relative">
+      <div className="flex-1 bg-black overflow-y-auto relative no-scrollbar" id="conf-scroll-area">
         {viewMode === 'home' ? (
           conf.template === 'classic'
             ? <ClassicTemplate {...templateProps} />

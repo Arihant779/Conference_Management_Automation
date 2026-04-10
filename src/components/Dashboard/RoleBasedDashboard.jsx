@@ -24,12 +24,16 @@ const RoleBasedDashboard = ({ conf, role: propRole, onBack, onSwitchView }) => {
   // Management roles use the OrganizerDashboard (permissions will control tabs)
   const isManagement = userRoles.some(r => 
     r === 'organizer' || r === 'team_head' || r.endsWith('_head')
-  );
+  ) || propRole === 'organizer' || propRole?.endsWith('_head');
+  
+  const isReviewer = userRoles.includes('reviewer') || propRole === 'reviewer';
+  const isPresenter = userRoles.includes('presenter') || propRole === 'presenter';
+  const isMember = userRoles.includes('member') || propRole === 'member';
 
   if (isManagement) return <OrganizerDashboard conf={conf} onBack={onBack} onSwitchView={onSwitchView} />;
-  if (userRoles.includes('presenter')) return <PresenterDashboard conf={conf} onBack={onBack} />;
-  if (userRoles.includes('reviewer'))  return <ReviewerDashboard conf={conf} onBack={onBack} />;
-  if (userRoles.includes('member'))    return <MemberDashboard conf={conf} onBack={onBack} />;
+  if (isPresenter) return <PresenterDashboard conf={conf} onBack={onBack} />;
+  if (isReviewer)  return <ReviewerDashboard conf={conf} onBack={onBack} />;
+  if (isMember)    return <MemberDashboard conf={conf} onBack={onBack} />;
 
   return <ConferencePage conf={conf} onBack={onBack} />;
 };

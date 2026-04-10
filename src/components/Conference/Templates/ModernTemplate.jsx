@@ -1,10 +1,329 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useMotionTemplate } from 'framer-motion';
 import {
   MapPin, Calendar, Users, Mail, Phone, Globe,
-  Twitter, Linkedin, Edit3, Check, X, Plus, Trash2, Save, AlertCircle, Clock
+  Twitter, Linkedin, Edit3, Check, X, Plus, Trash2, Save, AlertCircle, Clock,
+  ArrowRight, Sparkles, Navigation, MonitorPlay, ChevronRight, Award, Zap, Target
 } from 'lucide-react';
 import ScheduleEditor from '../ScheduleEditor';
 import ConferenceRegistration from './../ConferenceRegistration';
+
+/* ═════════════════════════════════════════════════════════
+   AWWWARDS-LEVEL INTERACTIVE EFFECTS
+   ═════════════════════════════════════════════════════════ */
+
+/* ─── MAGNETIC BUTTON ─── */
+const MagneticButton = ({ children, className = '', strength = 0.35, ...props }) => {
+  const ref = useRef(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const sx = useSpring(x, { damping: 15, stiffness: 150 });
+  const sy = useSpring(y, { damping: 15, stiffness: 150 });
+
+  const handleMouse = (e) => {
+    const rect = ref.current?.getBoundingClientRect();
+    if (!rect) return;
+    x.set((e.clientX - rect.left - rect.width / 2) * strength);
+    y.set((e.clientY - rect.top - rect.height / 2) * strength);
+  };
+
+  return (
+    <motion.div ref={ref} data-magnetic onMouseMove={handleMouse} onMouseLeave={() => { x.set(0); y.set(0); }}
+      style={{ x: sx, y: sy }} className={`inline-block ${className}`} {...props}>
+      {children}
+    </motion.div>
+  );
+};
+
+/* ─── SPOTLIGHT CARD (cursor-following radial light) ─── */
+const SpotlightCard = ({ children, className = '', spotlightColor = 'rgba(251,191,36,0.07)' }) => {
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  const handleMouse = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    mouseX.set(e.clientX - rect.left);
+    mouseY.set(e.clientY - rect.top);
+  };
+
+  const spotBg = useMotionTemplate`radial-gradient(350px circle at ${mouseX}px ${mouseY}px, ${spotlightColor}, transparent 80%)`;
+
+  return (
+    <div className={`relative group ${className}`} onMouseMove={handleMouse}>
+      <motion.div className="absolute inset-0 rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-0"
+        style={{ background: spotBg }} />
+      <div className="relative z-10">{children}</div>
+    </div>
+  );
+};
+
+/* ─── INFINITE MARQUEE BAND ─── */
+const MarqueeBand = ({ items, speed = 30 }) => {
+  const doubled = [...items, ...items];
+  return (
+    <div className="relative overflow-hidden py-8 -rotate-1" style={{ background: 'rgba(251,191,36,0.03)', borderTop: '1px solid rgba(251,191,36,0.08)', borderBottom: '1px solid rgba(251,191,36,0.08)' }}>
+      <motion.div className="flex whitespace-nowrap gap-12"
+        animate={{ x: [0, -50 * items.length + '%'] }}
+        transition={{ duration: speed, repeat: Infinity, ease: 'linear' }}>
+        {doubled.map((item, i) => (
+          <span key={i} className="text-2xl md:text-4xl font-black uppercase tracking-widest flex items-center gap-8" style={{ color: 'rgba(251,191,36,0.12)' }}>
+            {item} <span className="w-2 h-2 rounded-full" style={{ background: 'rgba(251,191,36,0.2)' }} />
+          </span>
+        ))}
+      </motion.div>
+    </div>
+  );
+};
+
+/* ─── FLOATING GEOMETRIC SHAPES ─── */
+const FloatingShapes = () => {
+  const shapes = useMemo(() => [
+    { type: 'ring', x: '8%', y: '15%', size: 60, duration: 22, delay: 0 },
+    { type: 'diamond', x: '85%', y: '25%', size: 30, duration: 18, delay: 3 },
+    { type: 'ring', x: '75%', y: '60%', size: 40, duration: 25, delay: 5 },
+    { type: 'cross', x: '15%', y: '70%', size: 20, duration: 20, delay: 2 },
+    { type: 'diamond', x: '50%', y: '85%', size: 25, duration: 24, delay: 7 },
+    { type: 'ring', x: '35%', y: '40%', size: 35, duration: 28, delay: 4 },
+    { type: 'cross', x: '90%', y: '80%', size: 18, duration: 19, delay: 6 },
+  ], []);
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[1] overflow-hidden">
+      {shapes.map((s, i) => (
+        <motion.div key={i} className="absolute"
+          style={{ left: s.x, top: s.y }}
+          animate={{
+            y: [0, -30, 0, 20, 0],
+            x: [0, 15, 0, -10, 0],
+            rotate: [0, 90, 180, 270, 360],
+            opacity: [0.06, 0.12, 0.06],
+          }}
+          transition={{ duration: s.duration, repeat: Infinity, delay: s.delay, ease: 'easeInOut' }}>
+          {s.type === 'ring' && (
+            <div style={{ width: s.size, height: s.size, border: '1.5px solid rgba(251,191,36,0.15)', borderRadius: '50%' }} />
+          )}
+          {s.type === 'diamond' && (
+            <div style={{ width: s.size, height: s.size, border: '1.5px solid rgba(59,130,246,0.12)', transform: 'rotate(45deg)' }} />
+          )}
+          {s.type === 'cross' && (
+            <div className="relative" style={{ width: s.size, height: s.size }}>
+              <div className="absolute top-1/2 left-0 w-full" style={{ height: 1.5, background: 'rgba(251,191,36,0.12)', transform: 'translateY(-50%)' }} />
+              <div className="absolute left-1/2 top-0 h-full" style={{ width: 1.5, background: 'rgba(251,191,36,0.12)', transform: 'translateX(-50%)' }} />
+            </div>
+          )}
+        </motion.div>
+      ))}
+    </div>
+  );
+};
+
+/* ─── SCROLL PROGRESS BAR ─── */
+const ScrollProgressBar = ({ scrollRef }) => {
+  const { scrollYProgress } = useScroll({ container: scrollRef });
+  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
+  return (
+    <motion.div className="fixed top-0 left-0 right-0 z-[999] h-[2px] origin-left"
+      style={{ scaleX, background: 'linear-gradient(90deg, #fbbf24, #f59e0b, #fbbf24)' }} />
+  );
+};
+
+/* ─── REVEAL TEXT (word-by-word) ─── */
+const RevealText = ({ children, className = '', delay = 0 }) => {
+  const words = children.split(' ');
+  return (
+    <span className={className}>
+      {words.map((word, i) => (
+        <span key={i} className="inline-block overflow-hidden">
+          <motion.span className="inline-block"
+            initial={{ y: '100%', opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: delay + i * 0.08, ease: [0.33, 1, 0.68, 1] }}
+          >
+            {word}&nbsp;
+          </motion.span>
+        </span>
+      ))}
+    </span>
+  );
+};
+
+/* ─────────────────────────────────────────────
+   PARTICLES / ANIMATED BACKGROUND
+   ───────────────────────────────────────────── */
+const FloatingParticles = () => {
+  const particles = useMemo(() => Array.from({ length: 40 }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    size: Math.random() * 3 + 1,
+    duration: Math.random() * 20 + 15,
+    delay: Math.random() * 10,
+    opacity: Math.random() * 0.4 + 0.1,
+  })), []);
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {particles.map(p => (
+        <motion.div
+          key={p.id}
+          className="absolute rounded-full"
+          style={{
+            left: `${p.x}%`, top: `${p.y}%`,
+            width: p.size, height: p.size,
+            background: `radial-gradient(circle, rgba(251,191,36,${p.opacity}) 0%, transparent 70%)`,
+            boxShadow: `0 0 ${p.size * 4}px rgba(251,191,36,${p.opacity * 0.5})`,
+          }}
+          animate={{
+            y: [0, -80, 0], x: [0, Math.random() * 40 - 20, 0],
+            opacity: [p.opacity, p.opacity * 1.8, p.opacity],
+          }}
+          transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}
+        />
+      ))}
+    </div>
+  );
+};
+
+const CinematicBackground = () => (
+  <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none" style={{ background: '#04070D' }}>
+    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay" />
+    {/* Warm amber nebula */}
+    <motion.div
+      animate={{ scale: [1, 1.3, 1], opacity: [0.12, 0.25, 0.12], rotate: [0, 45, 0] }}
+      transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
+      className="absolute top-[-15%] left-[-10%] w-[50vw] h-[50vw] rounded-full"
+      style={{ background: 'radial-gradient(circle, rgba(251,191,36,0.15) 0%, rgba(245,158,11,0.05) 50%, transparent 70%)', filter: 'blur(80px)' }}
+    />
+    {/* Deep blue accent */}
+    <motion.div
+      animate={{ scale: [1, 1.4, 1], opacity: [0.1, 0.2, 0.1], x: [0, 80, 0] }}
+      transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
+      className="absolute top-[30%] right-[-10%] w-[40vw] h-[40vw] rounded-full"
+      style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.12) 0%, rgba(37,99,235,0.04) 50%, transparent 70%)', filter: 'blur(100px)' }}
+    />
+    {/* Subtle warm glow bottom */}
+    <motion.div
+      animate={{ scale: [1, 1.2, 1], opacity: [0.08, 0.18, 0.08] }}
+      transition={{ duration: 35, repeat: Infinity, ease: 'linear' }}
+      className="absolute bottom-[-10%] left-[30%] w-[45vw] h-[45vw] rounded-full"
+      style={{ background: 'radial-gradient(circle, rgba(234,88,12,0.1) 0%, transparent 60%)', filter: 'blur(120px)' }}
+    />
+    <FloatingParticles />
+    <FloatingShapes />
+  </div>
+);
+
+/* ─────────────────────────────────────────────
+   ANIMATED COUNTER
+   ───────────────────────────────────────────── */
+const AnimatedCounter = ({ value, suffix = '', className = '' }) => {
+  const num = parseInt(value) || 0;
+  const [count, setCount] = useState(0);
+  const ref = useRef(null);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    const obs = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) setInView(true); }, { threshold: 0.3 });
+    if (ref.current) obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!inView) return;
+    let start = 0;
+    const step = Math.ceil(num / 40);
+    const timer = setInterval(() => {
+      start += step;
+      if (start >= num) { setCount(num); clearInterval(timer); }
+      else setCount(start);
+    }, 30);
+    return () => clearInterval(timer);
+  }, [inView, num]);
+
+  return <span ref={ref} className={className}>{count}{suffix}</span>;
+};
+
+/* ─────────────────────────────────────────────
+   COUNTDOWN TIMER
+   ───────────────────────────────────────────── */
+const CountdownTimer = ({ targetDate }) => {
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+  useEffect(() => {
+    const tick = () => {
+      const diff = new Date(targetDate) - new Date();
+      if (diff <= 0) return;
+      setTimeLeft({
+        days: Math.floor(diff / 86400000),
+        hours: Math.floor((diff % 86400000) / 3600000),
+        minutes: Math.floor((diff % 3600000) / 60000),
+        seconds: Math.floor((diff % 60000) / 1000),
+      });
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [targetDate]);
+
+  return (
+    <div className="flex items-center gap-3">
+      {[
+        { val: timeLeft.days, label: 'Days' },
+        { val: timeLeft.hours, label: 'Hrs' },
+        { val: timeLeft.minutes, label: 'Min' },
+        { val: timeLeft.seconds, label: 'Sec' },
+      ].map(({ val, label }) => (
+        <div key={label} className="flex flex-col items-center">
+          <div className="w-14 h-14 rounded-xl flex items-center justify-center text-xl font-black text-amber-400"
+            style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)', backdropFilter: 'blur(10px)' }}>
+            {String(val).padStart(2, '0')}
+          </div>
+          <span className="text-[9px] uppercase tracking-widest text-slate-500 font-bold mt-1.5">{label}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+/* ─────────────────────────────────────────────
+   3D TILT CARD
+   ───────────────────────────────────────────── */
+const TiltCard = ({ children, className = '', style = {} }) => {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [8, -8]), { stiffness: 200, damping: 20 });
+  const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-8, 8]), { stiffness: 200, damping: 20 });
+
+  const handleMouse = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    x.set((e.clientX - rect.left) / rect.width - 0.5);
+    y.set((e.clientY - rect.top) / rect.height - 0.5);
+  };
+
+  return (
+    <motion.div
+      className={className} style={{ ...style, perspective: 800, rotateX, rotateY, transformStyle: 'preserve-3d' }}
+      onMouseMove={handleMouse}
+      onMouseLeave={() => { x.set(0); y.set(0); }}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
+/* ─────────────────────────────────────────────
+   ANIMATED BORDER GLOW
+   ───────────────────────────────────────────── */
+const GlowCard = ({ children, className = '', glowColor = 'rgba(251,191,36,0.15)' }) => (
+  <div className={`relative group ${className}`}>
+    <div className="absolute -inset-[1px] rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+      style={{ background: `linear-gradient(135deg, ${glowColor}, transparent 60%)` }} />
+    <div className="relative rounded-[inherit] h-full"
+      style={{ background: '#0B0F1A', border: '1px solid rgba(255,255,255,0.06)' }}>
+      {children}
+    </div>
+  </div>
+);
 
 /* ─────────────────────────────────────────────
    INLINE EDITABLE FIELD
@@ -17,42 +336,59 @@ const EditableText = ({ value, onChange, multiline = false, className = '', plac
   if (!isEditing) return <span className={className}>{value || <span className="opacity-40 italic">{placeholder}</span>}</span>;
 
   const shared = {
-    ref,
-    value: local,
-    placeholder,
+    ref, value: local, placeholder,
     onChange: e => setLocal(e.target.value),
     onBlur: () => onChange(local),
-    className: `bg-white/10 border border-indigo-400/60 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-indigo-400 w-full ${className}`,
+    className: `bg-white/5 border border-amber-500/40 backdrop-blur-sm rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-amber-400/40 w-full text-white ${className}`,
   };
   return multiline ? <textarea rows={3} {...shared} /> : <input {...shared} />;
 };
 
 /* ─────────────────────────────────────────────
-   SECTION WRAPPER
+   SECTION WRAPPER WITH ANIMATIONS
    ───────────────────────────────────────────── */
-const Section = ({ id, label, children, isEditing }) => (
-  <section id={id} className="scroll-mt-24">
+const AnimatedSection = ({ id, label, children, isEditing, className = '' }) => (
+  <section id={id} className={`scroll-mt-24 relative z-10 w-full ${className}`}>
     {isEditing && (
-      <div className="flex items-center gap-2 mb-3">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full">
+      <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 mb-4">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-amber-300 bg-amber-500/15 border border-amber-500/25 px-3 py-1 rounded-full shadow-[0_0_10px_rgba(251,191,36,0.15)]">
           Editing: {label}
         </span>
-      </div>
+      </motion.div>
     )}
-    {children}
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-10%' }}
+      transition={{ duration: 0.7, ease: 'easeOut' }}
+    >
+      {children}
+    </motion.div>
   </section>
 );
 
 /* ─────────────────────────────────────────────
-   MAIN TEMPLATE
-   Props:
-     conf                    – conference object from DB
-     isOrganizer             – boolean
-     onSave                  – async fn(pageData)
-     isGuest                 – boolean: true when user is not logged in
-     onRequireAuthForRegister– fn() called when guest clicks Register
-     autoOpenRegister        – boolean: open reg modal immediately on mount
+   SECTION HEADING
    ───────────────────────────────────────────── */
+const SectionHeading = ({ badge, title, highlight, subtitle, align = 'left' }) => (
+  <div className={align === 'center' ? 'text-center mb-16' : 'mb-12'}>
+    {badge && (
+      <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+        className={`inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full mb-6 ${align === 'center' ? 'mx-auto' : ''}`}
+        style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)', color: '#fbbf24' }}>
+        <Sparkles size={12} /> {badge}
+      </motion.div>
+    )}
+    <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tight">
+      {title}{' '}<span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500">{highlight}</span>
+    </h2>
+    {subtitle && <p className="text-slate-400 text-lg mt-4 max-w-2xl font-light leading-relaxed" style={align === 'center' ? { margin: '1rem auto 0' } : {}}>{subtitle}</p>}
+  </div>
+);
+
+/* ═════════════════════════════════════════════
+   MAIN TEMPLATE
+   ═════════════════════════════════════════════ */
 const ModernTemplate = ({
   conf: initialConf,
   isOrganizer = false,
@@ -62,7 +398,6 @@ const ModernTemplate = ({
   members = [],
   onScheduleSave,
   currentUser = null,
-  // Guest / auth-gate props
   isGuest = false,
   onRequireAuthForRegister = null,
   autoOpenRegister = false,
@@ -74,19 +409,28 @@ const ModernTemplate = ({
   const [saveError, setSaveError] = useState(null);
   const [showScheduleEditor, setShowScheduleEditor] = useState(false);
   const [activeNav, setActiveNav] = useState('about');
-
-  // Registration modal state
   const [showReg, setShowReg] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
-  // Auto-open registration modal if returning from login with 'register' intent
+  const scrollRef = useRef(null);
+  useEffect(() => { scrollRef.current = document.getElementById('conf-scroll-area'); }, []);
+  const { scrollY } = useScroll({ container: scrollRef });
+
+  const heroY = useTransform(scrollY, [0, 1000], [0, 300]);
+  const heroOpacity = useTransform(scrollY, [0, 600], [1, 0]);
+
+  useEffect(() => { if (autoOpenRegister && !isGuest) setShowReg(true); }, [autoOpenRegister, isGuest]);
+
   useEffect(() => {
-    if (autoOpenRegister && !isGuest) {
-      setShowReg(true);
-    }
-  }, [autoOpenRegister, isGuest]);
+    const el = document.getElementById('conf-scroll-area');
+    if (!el) return;
+    const handleScroll = (e) => setScrolled(e.target.scrollTop > 50);
+    el.addEventListener('scroll', handleScroll);
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const [pageData, setPageData] = useState({
-    tagline: initialConf.tagline || 'Shaping the Future Together',
+    tagline: initialConf.tagline || 'Where Innovation Meets Excellence',
     contact_email: initialConf.contact_email || 'contact@conference.org',
     contact_phone: initialConf.contact_phone || '+1 (555) 000-0000',
     website: initialConf.website || 'https://yourconference.org',
@@ -136,7 +480,7 @@ const ModernTemplate = ({
     { id: 'about', label: 'About' },
     { id: 'schedule', label: 'Schedule' },
     { id: 'speakers', label: 'Speakers' },
-    { id: 'dates', label: 'Important Dates' },
+    { id: 'dates', label: 'Dates' },
     { id: 'venue', label: 'Venue' },
     { id: 'sponsors', label: 'Sponsors' },
     { id: 'contact', label: 'Contact' },
@@ -148,520 +492,705 @@ const ModernTemplate = ({
   };
 
   const handleSave = async () => {
-    setSaving(true);
-    setSaveError(null);
+    setSaving(true); setSaveError(null);
     try {
       if (onSave) await onSave({ ...pageData, description: conf.description });
-      setSaved(true);
-      setIsEditing(false);
+      setSaved(true); setIsEditing(false);
       setTimeout(() => setSaved(false), 3000);
-    } catch (e) {
-      setSaveError(e.message || 'Save failed');
-    } finally {
-      setSaving(false);
-    }
+    } catch (e) { setSaveError(e.message || 'Save failed'); }
+    finally { setSaving(false); }
   };
 
-  // ── Central "Register Now" handler — gates guests ──────────────────────────
   const handleRegisterClick = () => {
-    if (isGuest) {
-      if (onRequireAuthForRegister) onRequireAuthForRegister();
-    } else {
-      setShowReg(true);
-    }
+    if (isGuest) { if (onRequireAuthForRegister) onRequireAuthForRegister(); }
+    else setShowReg(true);
   };
 
   const sessionTypeStyle = {
-    keynote: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30',
-    panel: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
-    workshop: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-    talk: 'bg-sky-500/20 text-sky-300 border-sky-500/30',
-    break: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
-    social: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+    keynote: 'from-amber-500/20 to-amber-500/5 text-amber-300 border-amber-500/25',
+    panel: 'from-blue-500/20 to-blue-500/5 text-blue-300 border-blue-500/25',
+    workshop: 'from-emerald-500/20 to-emerald-500/5 text-emerald-300 border-emerald-500/25',
+    talk: 'from-sky-500/20 to-sky-500/5 text-sky-300 border-sky-500/25',
+    break: 'from-slate-500/20 to-slate-500/5 text-slate-400 border-slate-500/25',
+    social: 'from-rose-500/20 to-rose-500/5 text-rose-300 border-rose-500/25',
   };
 
   const displayName = conf.title ?? conf.name ?? 'Untitled Conference';
-  const displayDate = conf.start_date
-    ? `${conf.start_date}${conf.end_date ? ` – ${conf.end_date}` : ''}`
-    : 'Date TBD';
+  const displayDate = conf.start_date ? `${conf.start_date}${conf.end_date ? ` – ${conf.end_date}` : ''}` : 'Date TBD';
+
+  const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.12 } } };
+  const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6 } } };
 
   return (
-    <div className="bg-[#020617] min-h-screen text-slate-200 font-sans">
+    <div className="min-h-screen text-slate-200 relative selection:bg-amber-500/30" style={{ background: '#04070D', fontFamily: "'Space Grotesk', 'Inter', system-ui, sans-serif" }}>
+      <style>{`
+        @keyframes morphBlob {
+          0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+          25% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+          50% { border-radius: 50% 60% 30% 60% / 30% 50% 70% 40%; }
+          75% { border-radius: 60% 30% 50% 40% / 50% 70% 30% 60%; }
+        }
+      `}</style>
+      <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+      <ScrollProgressBar scrollRef={scrollRef} />
+      <CinematicBackground />
+      
+      {/* Morphing blob accent */}
+      <div className="fixed top-[20%] right-[10%] w-[300px] h-[300px] pointer-events-none z-[1] opacity-[0.04]" style={{ background: 'linear-gradient(135deg, #fbbf24, #3b82f6)', animation: 'morphBlob 15s ease-in-out infinite', filter: 'blur(60px)' }} />
 
-      {/* ── Registration Modal Overlay ── */}
-      {showReg && (
-        <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[#0f172a] border border-white/10 shadow-2xl">
-            <button
-              onClick={() => setShowReg(false)}
-              className="absolute top-4 right-4 z-10 text-slate-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 rounded-full p-2"
-            >
-              <X size={18} />
-            </button>
-            <ConferenceRegistration
-              conf={conf}
-              currentUser={currentUser}
-              onSuccess={() => setShowReg(false)}
-              onBack={() => setShowReg(false)}
-            />
-          </div>
-        </div>
-      )}
+      {/* ── Registration Modal ── */}
+      <AnimatePresence>
+        {showReg && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-black/85 backdrop-blur-xl flex items-center justify-center p-4">
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+              className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl"
+              style={{ background: '#0B0F1A', border: '1px solid rgba(251,191,36,0.15)' }}>
+              <button onClick={() => setShowReg(false)}
+                className="absolute top-6 right-6 z-10 text-slate-400 hover:text-white transition-all hover:rotate-90 bg-white/5 hover:bg-white/10 rounded-full p-2">
+                <X size={20} />
+              </button>
+              <ConferenceRegistration conf={conf} currentUser={currentUser} onSuccess={() => setShowReg(false)} onBack={() => setShowReg(false)} />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Organizer Edit Bar ── */}
       {isOrganizer && (
-        <div className="sticky top-0 z-[100] bg-indigo-950/95 backdrop-blur-xl border-b border-indigo-500/30 px-6 py-3 flex items-center justify-between">
+        <motion.div initial={{ y: -50 }} animate={{ y: 0 }}
+          className="relative z-[100] px-6 py-3 flex flex-wrap items-center justify-between gap-4"
+          style={{ background: 'rgba(11,15,26,0.9)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(251,191,36,0.15)' }}>
           <div className="flex items-center gap-3">
-            <Edit3 size={16} className="text-indigo-400" />
-            <span className="text-sm font-bold text-white">Organizer Edit Mode</span>
-            {!isEditing && <span className="text-xs text-slate-400">— Click "Edit Page" to modify content</span>}
+            <div className="p-1.5 rounded-md" style={{ background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.25)' }}>
+              <Edit3 size={16} className="text-amber-400" />
+            </div>
+            <span className="text-sm font-bold text-white tracking-wide">Organizer Panel</span>
+            {!isEditing && <span className="text-xs text-slate-500 hidden sm:inline-block">— Click "Edit Page" to modify</span>}
           </div>
           <div className="flex items-center gap-3">
-            {saveError && (
-              <span className="flex items-center gap-1 text-xs text-red-400">
-                <AlertCircle size={12} /> {saveError}
-              </span>
-            )}
-            {saved && <span className="text-xs text-emerald-400 font-medium">✓ Saved!</span>}
+            {saveError && <span className="flex items-center gap-1 text-xs text-red-400 bg-red-400/10 px-3 py-1 rounded-full"><AlertCircle size={12} /> {saveError}</span>}
+            {saved && <span className="text-xs text-emerald-400 font-medium bg-emerald-400/10 px-3 py-1 rounded-full">✓ Saved!</span>}
             {isEditing ? (
-              <>
-                <button
-                  onClick={() => setIsEditing(false)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white border border-white/10 hover:border-white/20 transition-all"
-                >
+              <div className="flex gap-2">
+                <button onClick={() => setIsEditing(false)} className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white border border-white/5 hover:bg-white/5 transition-all">
                   <X size={14} /> Cancel
                 </button>
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/30 transition-all disabled:opacity-60"
-                >
+                <button onClick={handleSave} disabled={saving}
+                  className="flex items-center gap-2 px-5 py-1.5 rounded-lg text-sm font-bold text-black transition-all disabled:opacity-60"
+                  style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', boxShadow: '0 0 20px rgba(251,191,36,0.3)' }}>
                   <Save size={14} /> {saving ? 'Saving…' : 'Save Changes'}
                 </button>
-              </>
+              </div>
             ) : (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold bg-white text-slate-900 hover:bg-slate-100 transition-all"
-              >
+              <button onClick={() => setIsEditing(true)}
+                className="flex items-center gap-2 px-5 py-1.5 rounded-lg text-sm font-bold text-black transition-all"
+                style={{ background: '#fbbf24', boxShadow: '0 0 15px rgba(251,191,36,0.25)' }}>
                 <Edit3 size={14} /> Edit Page
               </button>
             )}
           </div>
-        </div>
+        </motion.div>
       )}
 
-      {/* ── HERO ── */}
-      <div
-        className="relative h-[600px] w-full bg-cover bg-center"
-        style={{ backgroundImage: `url(${conf.banner_url || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1600'})` }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/50 via-slate-900/70 to-[#020617]" />
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
-          <span className="bg-white/10 border border-white/20 text-indigo-200 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest backdrop-blur-md mb-6">
-            {conf.theme || 'Conference Theme'}
-          </span>
-          <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-none text-white mb-4 drop-shadow-2xl">
-            {displayName}
-          </h1>
-          <p className="text-lg md:text-xl text-slate-300 max-w-xl mb-2">
-            {isEditing
-              ? <EditableText value={pageData.tagline} onChange={v => update('tagline', v)} className="text-xl text-center text-slate-300" isEditing={isEditing} placeholder="Conference tagline…" />
-              : pageData.tagline}
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-6 mt-4 text-sm text-slate-400">
-            <span className="flex items-center gap-2"><Calendar size={14} />{displayDate}</span>
-            <span className="flex items-center gap-2"><MapPin size={14} />{conf.location || 'Location TBD'}</span>
-            <span className="flex items-center gap-2"><Users size={14} />{pageData.capacity} Attendees</span>
+      {/* ══════════════════ HERO ══════════════════ */}
+      <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden">
+        {conf.banner_url && (
+          <div className="absolute inset-0 z-0 overflow-hidden">
+            <motion.img 
+              initial={{ scale: 1.1 }} animate={{ scale: 1 }} transition={{ duration: 2, ease: 'easeOut' }}
+              src={conf.banner_url} alt="Banner" 
+              className="w-full h-full object-cover opacity-[0.55] mix-blend-luminosity" 
+            />
+            <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, rgba(4,7,13,0.2) 0%, #04070D 100%)' }} />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 0%, rgba(4,7,13,0.7) 75%, #04070D 100%)' }} />
           </div>
-          <div className="flex gap-4 mt-8">
-            <button
-              onClick={handleRegisterClick}
-              className="bg-indigo-600 text-white px-8 py-3 rounded-full font-bold hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/30"
-            >
-              Register Now{isGuest && <span className="ml-2 text-indigo-200 text-xs font-normal opacity-80">(login required)</span>}
-            </button>
-            <button
-              onClick={() => scrollTo('schedule')}
-              className="bg-white/10 border border-white/20 text-white px-8 py-3 rounded-full font-bold hover:bg-white/20 transition-all backdrop-blur-sm"
-            >
-              View Schedule
-            </button>
-          </div>
-        </div>
+        )}
+
+        <motion.div style={{ y: heroY, opacity: heroOpacity }}
+          className="relative z-10 flex flex-col items-center justify-center text-center px-6 w-full max-w-5xl">
+
+          <motion.div variants={stagger} initial="hidden" animate="visible" className="flex flex-col items-center">
+            {/* Badge */}
+            <motion.div variants={fadeUp}
+              className="flex items-center gap-2 px-5 py-2 rounded-full text-xs font-black uppercase tracking-[0.2em] mb-8"
+              style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)', color: '#fbbf24', backdropFilter: 'blur(10px)' }}>
+              <Sparkles size={14} /> {conf.theme || 'International Conference'}
+            </motion.div>
+
+            {/* Title */}
+            <motion.h1 variants={fadeUp}
+              className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-[-0.04em] leading-[0.9] mb-8"
+              style={{ color: 'transparent', backgroundClip: 'text', WebkitBackgroundClip: 'text', backgroundImage: 'linear-gradient(135deg, #ffffff 0%, #e2e8f0 40%, #94a3b8 100%)' }}>
+              <RevealText delay={0.3}>{displayName}</RevealText>
+            </motion.h1>
+
+            {/* Tagline */}
+            <motion.p variants={fadeUp} className="text-xl md:text-2xl text-slate-300/80 font-light max-w-2xl mb-10 leading-relaxed">
+              {isEditing
+                ? <EditableText value={pageData.tagline} onChange={v => update('tagline', v)} className="text-center w-full" isEditing={isEditing} placeholder="Conference tagline…" />
+                : pageData.tagline}
+            </motion.p>
+
+            {/* Info Bar */}
+            <motion.div variants={fadeUp}
+              className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-300 mb-10 px-8 py-4 rounded-2xl"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(12px)' }}>
+              <span className="flex items-center gap-2"><Calendar size={16} className="text-amber-400" />{displayDate}</span>
+              <span className="w-1 h-1 rounded-full bg-slate-600 hidden sm:block" />
+              <span className="flex items-center gap-2"><MapPin size={16} className="text-amber-400" />{conf.location || 'Location TBD'}</span>
+              <span className="w-1 h-1 rounded-full bg-slate-600 hidden sm:block" />
+              <span className="flex items-center gap-2"><Users size={16} className="text-amber-400" />{pageData.capacity} Attendees</span>
+            </motion.div>
+
+            {/* Countdown */}
+            {conf.start_date && (
+              <motion.div variants={fadeUp} className="mb-10">
+                <CountdownTimer targetDate={conf.start_date} />
+              </motion.div>
+            )}
+
+            {/* CTA */}
+            <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4">
+              <MagneticButton strength={0.3}>
+                <motion.button
+                  whileHover={{ scale: 1.05, boxShadow: '0 0 40px rgba(251,191,36,0.4)' }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleRegisterClick}
+                  className="relative group overflow-hidden px-10 py-4 rounded-full font-black tracking-wide text-black"
+                  style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', boxShadow: '0 0 25px rgba(251,191,36,0.25)' }}>
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                  <span className="relative flex items-center justify-center gap-2">
+                    Register Now {isGuest && <span className="text-[10px] font-bold opacity-60 ml-1 uppercase">(Sign In)</span>}
+                    <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                  </span>
+                </motion.button>
+              </MagneticButton>
+              <MagneticButton strength={0.2}>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => scrollTo('schedule')}
+                  className="px-10 py-4 rounded-full font-bold text-white flex items-center justify-center gap-2 transition-all"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)', backdropFilter: 'blur(10px)' }}>
+                  <MonitorPlay size={18} /> View Schedule
+                </motion.button>
+              </MagneticButton>
+            </motion.div>
+          </motion.div>
+        </motion.div>
+
+        {/* Scroll Indicator */}
+        <motion.div animate={{ y: [0, 12, 0] }} transition={{ duration: 2.5, repeat: Infinity }}
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-40">
+          <span className="text-[9px] uppercase font-black tracking-[0.3em] text-slate-500">Explore</span>
+          <div className="w-[1px] h-16 bg-gradient-to-b from-amber-500/60 to-transparent" />
+        </motion.div>
       </div>
 
       {/* ── STICKY NAV ── */}
-      <nav className="sticky top-0 z-40 bg-[#020617]/90 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-6 flex items-center gap-1 overflow-x-auto">
+      <nav className={`sticky top-0 z-[90] transition-all duration-500 ${scrolled ? 'py-2' : 'py-4'}`}
+        style={{ background: scrolled ? 'rgba(4,7,13,0.92)' : '#04070D', backdropFilter: scrolled ? 'blur(20px)' : 'none', borderBottom: scrolled ? '1px solid rgba(255,255,255,0.05)' : '1px solid transparent' }}>
+        <div className="max-w-7xl mx-auto px-6 flex items-center gap-1 overflow-x-auto no-scrollbar">
           {navItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => scrollTo(item.id)}
-              className={`px-5 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-all ${activeNav === item.id
-                ? 'border-indigo-500 text-white'
-                : 'border-transparent text-slate-500 hover:text-slate-300'
-                }`}
-            >
+            <button key={item.id} onClick={() => scrollTo(item.id)}
+              className={`px-5 py-2 text-sm font-semibold whitespace-nowrap rounded-full transition-all duration-300 ${
+                activeNav === item.id ? 'text-amber-400' : 'text-slate-500 hover:text-slate-300'}`}
+              style={activeNav === item.id ? { background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.2)' } : { border: '1px solid transparent' }}>
               {item.label}
             </button>
           ))}
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-6 py-20 space-y-28">
+      {/* ── MARQUEE BAND ── */}
+      <MarqueeBand items={[displayName, conf.theme || 'Innovation', displayDate, conf.location || 'Global', 'Register Now', 'Call for Papers']} speed={40} />
 
-        {/* ── ABOUT ── */}
-        <Section id="about" label="About" isEditing={isEditing}>
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-16">
-            <div className="lg:col-span-3 space-y-6">
-              <h2 className="text-4xl font-black text-white">About the <span className="text-indigo-400">Conference</span></h2>
-              <p className="text-slate-400 text-lg leading-relaxed">
+      <div className="max-w-7xl mx-auto px-6 py-24 space-y-40 relative z-10">
+
+        {/* ══════════════════ ABOUT ══════════════════ */}
+        <AnimatedSection id="about" label="About" isEditing={isEditing}>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
+            <div className="lg:col-span-7 space-y-8">
+              <SectionHeading badge="About the Event" title="Discover the" highlight="Experience" />
+              <div className="space-y-6 text-slate-400 text-lg leading-relaxed font-light">
                 {isEditing
-                  ? <EditableText value={conf.description} onChange={v => setConf(p => ({ ...p, description: v }))} multiline className="text-slate-400 w-full" isEditing={isEditing} placeholder="Conference description…" />
-                  : conf.description}
-              </p>
-              <p className="text-slate-400 text-lg leading-relaxed">
+                  ? <EditableText value={conf.description} onChange={v => setConf(p => ({ ...p, description: v }))} multiline className="w-full" isEditing={isEditing} placeholder="Conference description…" />
+                  : <p>{conf.description}</p>}
                 {isEditing
-                  ? <EditableText value={pageData.about_extra} onChange={v => update('about_extra', v)} multiline className="text-slate-400 w-full" isEditing={isEditing} placeholder="Additional details…" />
-                  : pageData.about_extra}
-              </p>
+                  ? <EditableText value={pageData.about_extra} onChange={v => update('about_extra', v)} multiline className="w-full" isEditing={isEditing} placeholder="Additional details…" />
+                  : <p>{pageData.about_extra}</p>}
+              </div>
+
+              {/* Quick stats */}
+              <div className="grid grid-cols-3 gap-4 pt-4">
+                {[
+                  { icon: Users, value: pageData.capacity, label: 'Attendees', color: '#fbbf24' },
+                  { icon: Award, value: `${pageData.speakers.length}+`, label: 'Speakers', color: '#3b82f6' },
+                  { icon: Zap, value: `${pageData.schedule.reduce((a, d) => a + (d.sessions?.length || 0), 0)}`, label: 'Sessions', color: '#10b981' },
+                ].map(({ icon: Icon, value, label, color }) => (
+                  <div key={label} className="rounded-2xl p-5 text-center" style={{ background: `${color}08`, border: `1px solid ${color}20` }}>
+                    <Icon size={20} className="mx-auto mb-2" style={{ color }} />
+                    <div className="text-2xl font-black text-white">{value}</div>
+                    <div className="text-[10px] uppercase tracking-widest font-bold mt-1" style={{ color, opacity: 0.7 }}>{label}</div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="lg:col-span-2 space-y-5">
-              {[
-                { label: 'General Admission', key: 'registration_fee_general', accent: 'text-indigo-400' },
-                { label: 'Student Rate', key: 'registration_fee_student', accent: 'text-purple-400' },
-                { label: 'Early Bird (Limited)', key: 'registration_fee_early', accent: 'text-emerald-400' },
-              ].map(({ label, key, accent }) => (
-                <div key={key} className="bg-white/5 border border-white/10 rounded-2xl p-5 flex justify-between items-center">
-                  <span className="text-slate-400 text-sm">{label}</span>
-                  <span className={`text-2xl font-black ${accent}`}>
-                    {isEditing
-                      ? <EditableText value={pageData[key]} onChange={v => update(key, v)} className={`text-xl font-black ${accent} w-24`} isEditing={isEditing} />
-                      : pageData[key]}
-                  </span>
-                </div>
-              ))}
-              <button
-                onClick={handleRegisterClick}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-indigo-500/20"
-              >
-                {isGuest ? 'Register Now (Sign in required) →' : 'Register Now →'}
-              </button>
+
+            {/* Registration Tiers Card */}
+            <div className="lg:col-span-5 relative">
+              <div className="absolute inset-0 bg-gradient-to-tr from-amber-600/10 to-blue-600/10 blur-3xl rounded-full" />
+              <TiltCard className="relative">
+                <GlowCard className="rounded-3xl">
+                  <div className="p-8 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 rounded-full" style={{ background: 'radial-gradient(circle, rgba(251,191,36,0.08), transparent 70%)' }} />
+                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2"><Navigation size={20} className="text-amber-400" /> Registration Tiers</h3>
+                    <div className="space-y-4">
+                      {[
+                        { label: 'General Admission', key: 'registration_fee_general', color: '#fbbf24' },
+                        { label: 'Student Rate', key: 'registration_fee_student', color: '#3b82f6' },
+                        { label: 'Early Bird (Limited)', key: 'registration_fee_early', color: '#10b981' },
+                      ].map(({ label, key, color }) => (
+                        <motion.div whileHover={{ scale: 1.02 }} key={key}
+                          className="rounded-2xl p-4 flex justify-between items-center transition-colors"
+                          style={{ background: `${color}08`, border: `1px solid ${color}18` }}>
+                          <span className="text-slate-300 font-medium">{label}</span>
+                          <span className="text-2xl font-black" style={{ color }}>
+                            {isEditing
+                              ? <EditableText value={pageData[key]} onChange={v => update(key, v)} className={`text-xl font-black w-24 bg-transparent border-b border-white/20 px-0 rounded-none`} isEditing={isEditing} />
+                              : pageData[key]}
+                          </span>
+                        </motion.div>
+                      ))}
+                    </div>
+                    <button onClick={handleRegisterClick}
+                      className="w-full mt-8 font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 hover:gap-4 text-black"
+                      style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', boxShadow: '0 0 20px rgba(251,191,36,0.2)' }}>
+                      {isGuest ? 'Sign In to Register' : 'Get Your Ticket'} <ArrowRight size={18} />
+                    </button>
+                  </div>
+                </GlowCard>
+              </TiltCard>
             </div>
           </div>
-        </Section>
+        </AnimatedSection>
 
-        {/* ── SCHEDULE ── */}
-        <Section id="schedule" label="Schedule" isEditing={isEditing}>
-          <div className="flex items-center justify-between mb-12">
-            <h2 className="text-4xl font-black text-white">Program <span className="text-indigo-400">Schedule</span></h2>
+        {/* ══════════════════ SCHEDULE ══════════════════ */}
+        <AnimatedSection id="schedule" label="Schedule" isEditing={isEditing}>
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+            <SectionHeading badge="Event Program" title="Conference" highlight="Schedule" subtitle="Curated sessions from world-class speakers and industry leaders." />
             {canEditSchedule && (
-              <button
-                onClick={() => setShowScheduleEditor(true)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/30 transition-all"
-              >
-                <Edit3 size={14} /> Edit Schedule
-              </button>
+              <motion.button whileHover={{ scale: 1.05 }} onClick={() => setShowScheduleEditor(true)}
+                className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold text-amber-400 transition-all shrink-0"
+                style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.2)' }}>
+                <Edit3 size={16} /> Manage Schedule
+              </motion.button>
             )}
           </div>
+
           {pageData.schedule.length === 0 ? (
-            <div className="py-20 text-center border border-dashed border-white/8 rounded-2xl">
-              <Clock size={32} className="text-slate-700 mx-auto mb-3" />
-              <p className="text-slate-500 text-sm">No schedule has been created yet.</p>
+            <div className="py-24 text-center rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <Clock size={48} className="text-slate-700 mx-auto mb-6" />
+              <p className="text-slate-400 text-lg mb-4">The event schedule is being finalized.</p>
               {canEditSchedule && (
-                <button onClick={() => setShowScheduleEditor(true)} className="mt-3 text-indigo-400 text-sm hover:text-indigo-300 font-semibold">
-                  + Create Schedule
+                <button onClick={() => setShowScheduleEditor(true)} className="text-amber-400 text-sm font-bold flex items-center justify-center gap-2 mx-auto px-6 py-2 rounded-full"
+                  style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.2)' }}>
+                  <Plus size={16} /> Create Schedule
                 </button>
               )}
             </div>
           ) : (
-            <div className="space-y-10">
+            <div className="space-y-12">
               {pageData.schedule.map((day, di) => (
-                <div key={di}>
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="bg-indigo-600 text-white text-sm font-bold px-4 py-2 rounded-full">{day.day}</div>
-                    <span className="text-slate-500 text-sm">{day.date}</span>
+                <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 * di }}
+                  key={di} className="relative pl-0 md:pl-8 border-l-0 md:border-l border-white/10">
+                  <div className="flex flex-wrap items-center gap-4 mb-8 -ml-0 md:-ml-[42px]">
+                    <div className="text-sm font-black tracking-widest uppercase px-6 py-2 rounded-full text-black"
+                      style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', boxShadow: '0 0 15px rgba(251,191,36,0.2)' }}>{day.day}</div>
+                    <span className="text-slate-400 font-medium">{day.date}</span>
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {day.sessions.map((session, si) => {
                       const isSessionHead = currentUserId && session.head_id === currentUserId;
                       const headMember = session.head_id ? members.find(m => m.user_id === session.head_id) : null;
                       return (
-                        <div
-                          key={si}
-                          className={`flex items-start gap-5 rounded-2xl p-5 transition-all group ${isSessionHead
-                            ? 'bg-indigo-500/10 border-2 border-indigo-500/40 ring-1 ring-indigo-500/20'
-                            : 'bg-white/[0.03] border border-white/5 hover:border-white/10'
-                            }`}
-                        >
-                          <div className="min-w-[90px] text-slate-500 text-sm font-mono pt-0.5">{session.time}</div>
+                        <SpotlightCard key={si} className="rounded-2xl" spotlightColor={isSessionHead ? 'rgba(251,191,36,0.1)' : 'rgba(251,191,36,0.05)'}>
+                        <motion.div whileHover={{ scale: 1.01, x: 5 }}
+                          className={`flex flex-col md:flex-row md:items-start gap-4 md:gap-8 rounded-2xl p-6 transition-all relative overflow-hidden group ${isSessionHead
+                            ? 'ring-1 ring-amber-500/25'
+                            : ''}`}
+                          style={isSessionHead
+                            ? { background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.2)' }
+                            : { background: 'rgba(11,15,26,0.6)', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)' }}>
+                          <div className="absolute top-0 left-0 w-1 h-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(to bottom, #fbbf24, #f59e0b)' }} />
+                          <div className="md:min-w-[120px] text-slate-400 text-sm font-mono md:pt-1 flex items-center gap-2">
+                            <Clock size={14} className="opacity-50" /> {session.time}
+                          </div>
                           <div className="flex-1">
-                            <h4 className="font-bold text-white text-base">{session.title}</h4>
-                            {session.speaker && <p className="text-slate-500 text-sm mt-1">{session.speaker}</p>}
+                            <div className="flex flex-wrap gap-2 items-start justify-between mb-2">
+                              <h4 className="font-bold text-white text-xl leading-tight group-hover:text-amber-200 transition-colors">{session.title}</h4>
+                              <span className={`text-[10px] px-3 py-1 rounded-full border font-bold uppercase tracking-wider bg-gradient-to-r ${sessionTypeStyle[session.type] || sessionTypeStyle.talk}`}>
+                                {session.type}
+                              </span>
+                            </div>
+                            {session.speaker && <p className="text-amber-400/70 font-medium text-sm mb-3">by {session.speaker}</p>}
                             {headMember && (
-                              <div className="flex items-center gap-1.5 mt-2">
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase tracking-wider ${isSessionHead ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' : 'bg-white/5 text-slate-400 border-white/10'}`}>
-                                  Head: {headMember.full_name || headMember.email}
+                              <div className="flex flex-wrap items-center gap-2 mt-4">
+                                <span className={`text-[10px] font-bold px-3 py-1 rounded-full border uppercase tracking-wider ${isSessionHead ? 'text-amber-300 border-amber-500/30' : 'text-slate-400 border-white/10'}`}
+                                  style={isSessionHead ? { background: 'rgba(251,191,36,0.1)' } : { background: 'rgba(255,255,255,0.04)' }}>
+                                  Session Head: {headMember.full_name || headMember.email}
                                 </span>
-                                {isSessionHead && <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-600 text-white">You</span>}
+                                {isSessionHead && <span className="text-[10px] font-bold px-3 py-1 rounded-full text-black" style={{ background: '#fbbf24' }}>This is You</span>}
                               </div>
                             )}
                           </div>
-                          <span className={`text-xs px-3 py-1 rounded-full border font-medium capitalize ${sessionTypeStyle[session.type] || sessionTypeStyle.talk}`}>
-                            {session.type}
-                          </span>
-                        </div>
+                        </motion.div>
+                        </SpotlightCard>
                       );
                     })}
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           )}
-        </Section>
+        </AnimatedSection>
 
-        {/* ── SPEAKERS ── */}
-        <Section id="speakers" label="Speakers" isEditing={isEditing}>
-          <h2 className="text-4xl font-black text-white mb-12">Featured <span className="text-indigo-400">Speakers</span></h2>
+        {/* ══════════════════ SPEAKERS ══════════════════ */}
+        <AnimatedSection id="speakers" label="Speakers" isEditing={isEditing}>
+          <SectionHeading align="center" badge="Featured Speakers" title="Meet the" highlight="Visionaries" subtitle="Learn from the brightest minds shaping our future." />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {pageData.speakers.map((sp, i) => (
-              <div key={i} className="group bg-white/[0.03] border border-white/5 rounded-3xl p-6 hover:border-indigo-500/30 hover:bg-white/[0.06] transition-all relative">
-                {isEditing && (
-                  <button onClick={() => update('speakers', pageData.speakers.filter((_, idx) => idx !== i))} className="absolute top-4 right-4 text-red-400/50 hover:text-red-400 transition-colors">
-                    <X size={14} />
-                  </button>
-                )}
-                <div className="w-20 h-20 rounded-2xl overflow-hidden mb-4 bg-slate-800">
-                  {!isEditing && sp.img && <img src={sp.img} alt={sp.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />}
-                  {isEditing && (
-                    <div className="w-full h-full flex items-center justify-center p-1">
-                      <EditableText value={sp.img} onChange={v => updateNested('speakers', i, 'img', v)} className="text-[8px] text-slate-400 break-all" isEditing={isEditing} placeholder="Image URL" />
+              <TiltCard key={i}>
+                <GlowCard className="rounded-3xl" glowColor="rgba(251,191,36,0.12)">
+                  <div className="p-6 relative">
+                    {isEditing && (
+                      <button onClick={() => update('speakers', pageData.speakers.filter((_, idx) => idx !== i))}
+                        className="absolute top-4 right-4 text-red-500 hover:text-red-400 bg-red-500/10 p-2 rounded-full z-10"><X size={14} /></button>
+                    )}
+                    {/* Avatar with animated ring */}
+                    <div className="relative w-28 h-28 mx-auto mb-6">
+                      <motion.div className="absolute inset-0 rounded-full"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+                        style={{ background: 'conic-gradient(from 0deg, #fbbf24, transparent 30%, transparent 70%, #fbbf24)', padding: 2, borderRadius: '50%' }}>
+                        <div className="w-full h-full rounded-full" style={{ background: '#0B0F1A' }} />
+                      </motion.div>
+                      <div className="absolute inset-[3px] rounded-full overflow-hidden">
+                        {!isEditing && sp.img && <img src={sp.img} alt={sp.name} className="w-full h-full object-cover filter grayscale hover:grayscale-0 transition-all duration-500" />}
+                        {isEditing && (
+                          <div className="w-full h-full flex items-center justify-center bg-slate-800 rounded-full">
+                            <EditableText value={sp.img} onChange={v => updateNested('speakers', i, 'img', v)} className="text-[10px] text-center" isEditing={isEditing} placeholder="Image URL" />
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </div>
-                <h4 className="font-bold text-white text-lg leading-tight">
-                  {isEditing ? <EditableText value={sp.name} onChange={v => updateNested('speakers', i, 'name', v)} className="text-white font-bold" isEditing={isEditing} /> : sp.name}
-                </h4>
-                <p className="text-indigo-400 text-sm font-medium mt-1">
-                  {isEditing ? <EditableText value={sp.role} onChange={v => updateNested('speakers', i, 'role', v)} className="text-indigo-400 text-sm" isEditing={isEditing} /> : sp.role}
-                </p>
-                <p className="text-slate-500 text-sm">
-                  {isEditing ? <EditableText value={sp.org} onChange={v => updateNested('speakers', i, 'org', v)} className="text-slate-500 text-sm" isEditing={isEditing} /> : sp.org}
-                </p>
-                <p className="text-slate-400 text-xs mt-3 leading-relaxed">
-                  {isEditing ? <EditableText value={sp.bio} onChange={v => updateNested('speakers', i, 'bio', v)} multiline className="text-slate-400 text-xs w-full" isEditing={isEditing} /> : sp.bio}
-                </p>
-              </div>
+                    <div className="text-center">
+                      <h4 className="font-bold text-white text-lg mb-1">
+                        {isEditing ? <EditableText value={sp.name} onChange={v => updateNested('speakers', i, 'name', v)} className="font-bold text-center" isEditing={isEditing} /> : sp.name}
+                      </h4>
+                      <p className="text-amber-400 text-sm font-medium mb-1">
+                        {isEditing ? <EditableText value={sp.role} onChange={v => updateNested('speakers', i, 'role', v)} className="text-center" isEditing={isEditing} /> : sp.role}
+                      </p>
+                      <p className="text-slate-500 text-xs uppercase tracking-wider mb-4">
+                        {isEditing ? <EditableText value={sp.org} onChange={v => updateNested('speakers', i, 'org', v)} className="text-center" isEditing={isEditing} /> : sp.org}
+                      </p>
+                      <p className="text-slate-400 text-sm leading-relaxed pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                        {isEditing ? <EditableText value={sp.bio} onChange={v => updateNested('speakers', i, 'bio', v)} multiline className="text-center w-full" isEditing={isEditing} /> : sp.bio}
+                      </p>
+                    </div>
+                  </div>
+                </GlowCard>
+              </TiltCard>
             ))}
             {isEditing && (
-              <button
-                onClick={() => update('speakers', [...pageData.speakers, {
-                  name: 'New Speaker', role: 'Role', org: 'Organization',
-                  img: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
-                  bio: 'Speaker bio goes here.'
-                }])}
-                className="border-2 border-dashed border-white/10 hover:border-indigo-500/40 rounded-3xl p-6 flex flex-col items-center justify-center gap-3 text-slate-500 hover:text-indigo-400 transition-all min-h-[200px]"
-              >
-                <Plus size={24} /><span className="text-sm font-medium">Add Speaker</span>
-              </button>
+              <motion.button whileHover={{ scale: 1.02 }}
+                onClick={() => update('speakers', [...pageData.speakers, { name: 'New Speaker', role: 'Role', org: 'Organization', img: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`, bio: 'Speaker bio goes here.' }])}
+                className="border-2 border-dashed rounded-3xl p-6 flex flex-col items-center justify-center gap-4 transition-all min-h-[300px]"
+                style={{ borderColor: 'rgba(255,255,255,0.1)', color: '#6b7280' }}>
+                <div className="p-4 rounded-full" style={{ background: 'rgba(255,255,255,0.05)' }}><Plus size={24} /></div>
+                <span className="text-sm font-bold uppercase tracking-widest">Add Speaker</span>
+              </motion.button>
             )}
           </div>
-        </Section>
+        </AnimatedSection>
 
-        {/* ── IMPORTANT DATES ── */}
-        <Section id="dates" label="Important Dates" isEditing={isEditing}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+        {/* ══════════════════ IMPORTANT DATES ══════════════════ */}
+        <AnimatedSection id="dates" label="Important Dates" isEditing={isEditing}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
-              <h2 className="text-4xl font-black text-white mb-12">Important <span className="text-indigo-400">Dates</span></h2>
-              <div className="space-y-4">
+              <SectionHeading badge="Key Milestones" title="Timeline &" highlight="Deadlines" subtitle="Don't miss these critical milestones leading up to the main event." />
+              <div className="space-y-4 relative before:absolute before:inset-y-0 before:left-4 before:w-[2px]" style={{ '--tw-before-bg': 'linear-gradient(to bottom, #fbbf24, transparent)' }}>
+                <div className="absolute inset-y-0 left-4 w-[2px]" style={{ background: 'linear-gradient(to bottom, rgba(251,191,36,0.5), transparent)' }} />
                 {pageData.important_dates.map((d, i) => (
-                  <div key={i} className="flex items-center justify-between gap-4 bg-white/[0.03] border border-white/5 rounded-2xl px-6 py-4 hover:border-white/10 transition-all">
-                    <div className="flex items-center gap-3 flex-1">
-                      {isEditing && (
-                        <button onClick={() => update('important_dates', pageData.important_dates.filter((_, idx) => idx !== i))} className="text-red-400/50 hover:text-red-400 transition-colors shrink-0">
-                          <X size={12} />
-                        </button>
-                      )}
-                      <span className="text-slate-300 text-sm font-medium">
-                        {isEditing ? <EditableText value={d.label} onChange={v => updateNested('important_dates', i, 'label', v)} className="text-slate-300 text-sm" isEditing={isEditing} /> : d.label}
+                  <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }} viewport={{ once: true }}
+                    key={i} className="flex items-center gap-6 relative pl-12">
+                    <div className="absolute left-[11px] top-1/2 -translate-y-1/2 w-[10px] h-[10px] rounded-full shadow-[0_0_12px_rgba(251,191,36,0.6)]" style={{ background: '#fbbf24' }} />
+                    <div className="flex-1 rounded-2xl px-6 py-4 transition-all group flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                      style={{ background: 'rgba(11,15,26,0.6)', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)' }}>
+                      <div className="flex items-center gap-3">
+                        {isEditing && (
+                          <button onClick={() => update('important_dates', pageData.important_dates.filter((_, idx) => idx !== i))} className="text-red-500 hover:bg-red-500/20 p-1 rounded-md transition-colors shrink-0"><X size={14} /></button>
+                        )}
+                        <span className="text-slate-200 font-bold">
+                          {isEditing ? <EditableText value={d.label} onChange={v => updateNested('important_dates', i, 'label', v)} isEditing={isEditing} /> : d.label}
+                        </span>
+                      </div>
+                      <span className="text-amber-400 font-mono text-sm px-3 py-1 rounded-md" style={{ background: 'rgba(251,191,36,0.08)' }}>
+                        {isEditing ? <EditableText value={d.date} onChange={v => updateNested('important_dates', i, 'date', v)} isEditing={isEditing} /> : d.date}
                       </span>
                     </div>
-                    <span className="text-indigo-400 font-bold text-sm whitespace-nowrap">
-                      {isEditing ? <EditableText value={d.date} onChange={v => updateNested('important_dates', i, 'date', v)} className="text-indigo-400 text-sm text-right w-32" isEditing={isEditing} /> : d.date}
-                    </span>
-                  </div>
+                  </motion.div>
                 ))}
                 {isEditing && (
-                  <button
-                    onClick={() => update('important_dates', [...pageData.important_dates, { label: 'New Deadline', date: 'Date TBD' }])}
-                    className="w-full border border-dashed border-white/10 hover:border-indigo-500/40 text-slate-500 hover:text-indigo-400 rounded-2xl py-3 text-sm font-medium flex items-center justify-center gap-2 transition-all"
-                  >
-                    <Plus size={14} /> Add Date
+                  <button onClick={() => update('important_dates', [...pageData.important_dates, { label: 'New Deadline', date: 'Date TBD' }])}
+                    className="ml-12 mt-6 w-[calc(100%-3rem)] border-2 border-dashed rounded-2xl py-4 text-sm font-bold flex items-center justify-center gap-2 transition-all"
+                    style={{ borderColor: 'rgba(255,255,255,0.1)', color: '#6b7280', background: 'rgba(255,255,255,0.01)' }}>
+                    <Plus size={16} /> Add Milestone
                   </button>
                 )}
               </div>
             </div>
-            <div className="bg-gradient-to-br from-indigo-950/60 to-slate-900/60 border border-indigo-500/20 rounded-3xl p-8">
-              <h3 className="text-2xl font-bold text-white mb-4">Call for Papers</h3>
-              <p className="text-slate-400 leading-relaxed mb-6">
-                We invite researchers to submit original work on <strong className="text-white">{conf.theme}</strong>. Accepted papers will be published in conference proceedings.
-              </p>
-              <ul className="space-y-2 mb-8">
-                {['Original unpublished research', 'Full papers (8–12 pages)', 'Extended abstracts (2–4 pages)', 'Poster submissions welcome'].map(item => (
-                  <li key={item} className="flex items-center gap-3 text-sm text-slate-400">
-                    <Check size={14} className="text-indigo-400 shrink-0" />{item}
-                  </li>
-                ))}
-              </ul>
-              <button className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition-all">
-                Submit Your Paper
-              </button>
-            </div>
-          </div>
-        </Section>
 
-        {/* ── VENUE ── */}
-        <Section id="venue" label="Venue" isEditing={isEditing}>
-          <h2 className="text-4xl font-black text-white mb-12"><span className="text-indigo-400">Venue</span> & Location</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            <div className="bg-white/[0.03] border border-white/5 rounded-3xl p-8 space-y-6">
-              <div>
-                <h3 className="text-2xl font-bold text-white">
-                  {isEditing ? <EditableText value={pageData.venue_name} onChange={v => update('venue_name', v)} className="text-white text-2xl font-bold" isEditing={isEditing} /> : pageData.venue_name}
-                </h3>
-                <p className="text-slate-500 flex items-center gap-2 mt-2 text-sm">
-                  <MapPin size={14} />
-                  {isEditing ? <EditableText value={pageData.venue_address} onChange={v => update('venue_address', v)} className="text-slate-400 text-sm" isEditing={isEditing} /> : pageData.venue_address}
-                </p>
-              </div>
-              <p className="text-slate-400 leading-relaxed">
-                {isEditing ? <EditableText value={pageData.venue_description} onChange={v => update('venue_description', v)} multiline className="text-slate-400 w-full" isEditing={isEditing} /> : pageData.venue_description}
-              </p>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white/5 rounded-2xl p-4 text-center">
-                  <div className="text-2xl font-black text-white">
-                    {isEditing ? <EditableText value={pageData.capacity} onChange={v => update('capacity', v)} className="text-white text-2xl font-black text-center" isEditing={isEditing} /> : pageData.capacity}
+            {/* Call for Papers */}
+            <TiltCard>
+              <div className="relative p-[1px] rounded-3xl overflow-hidden group">
+                <div className="absolute inset-0 opacity-30 group-hover:opacity-100 transition-opacity duration-500"
+                  style={{ background: 'linear-gradient(135deg, #fbbf24, #3b82f6, #10b981)' }} />
+                <div className="relative rounded-3xl p-10 h-full" style={{ background: '#0B0F1A' }}>
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6" style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.2)' }}>
+                    <Target size={24} className="text-amber-400" />
                   </div>
-                  <div className="text-xs text-slate-500 mt-1">Capacity</div>
-                </div>
-                <div className="bg-white/5 rounded-2xl p-4 text-center">
-                  <div className="text-2xl font-black text-white">{pageData.schedule.length}</div>
-                  <div className="text-xs text-slate-500 mt-1">Days</div>
+                  <h3 className="text-3xl font-black text-white mb-4">Call for Papers</h3>
+                  <p className="text-slate-400 leading-relaxed mb-8">
+                    We invite researchers to submit original work under the theme <strong className="text-amber-400 font-bold">"{conf.theme}"</strong>. Selected submissions will be published in our proceedings.
+                  </p>
+                  <div className="space-y-3 mb-10">
+                    {['Original unpublished research', 'Full papers (8–12 pages)', 'Extended abstracts (2–4 pages)', 'Poster submissions'].map(item => (
+                      <div key={item} className="flex items-center gap-3 text-slate-300">
+                        <div className="w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(251,191,36,0.8)]" style={{ background: '#fbbf24' }} />
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                  <button className="w-full font-black py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-black"
+                    style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)' }}>
+                    Submit Guidelines <ChevronRight size={18} />
+                  </button>
                 </div>
               </div>
+            </TiltCard>
+          </div>
+        </AnimatedSection>
+
+        {/* ══════════════════ VENUE ══════════════════ */}
+        <AnimatedSection id="venue" label="Venue" isEditing={isEditing}>
+          <SectionHeading align="center" badge="Conference Venue" title="The" highlight="Location" subtitle="Experience seamless networking in our state-of-the-art facility." />
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+            <div className="lg:col-span-2">
+              <GlowCard className="rounded-3xl h-full">
+                <div className="p-8 lg:p-10 flex flex-col justify-between h-full relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-64 h-64 rounded-full -translate-y-1/2 translate-x-1/2" style={{ background: 'radial-gradient(circle, rgba(251,191,36,0.08), transparent 60%)' }} />
+                  <div className="relative z-10">
+                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-8" style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.2)' }}>
+                      <MapPin size={32} className="text-amber-400" />
+                    </div>
+                    <h3 className="text-3xl font-black text-white mb-2 leading-tight">
+                      {isEditing ? <EditableText value={pageData.venue_name} onChange={v => update('venue_name', v)} className="text-white text-3xl font-black" isEditing={isEditing} /> : pageData.venue_name}
+                    </h3>
+                    <p className="text-amber-400 font-medium mb-2">
+                      {isEditing ? <EditableText value={pageData.venue_address} onChange={v => update('venue_address', v)} className="text-amber-400" isEditing={isEditing} /> : pageData.venue_address}
+                    </p>
+                    {isEditing && (
+                      <div className="mb-6">
+                        <EditableText value={pageData.map_url} onChange={v => update('map_url', v)} placeholder="Paste Google Maps URL here..." className="text-slate-500 text-sm" isEditing={isEditing} />
+                      </div>
+                    )}
+                    <p className="text-slate-400 leading-relaxed mb-8">
+                      {isEditing ? <EditableText value={pageData.venue_description} onChange={v => update('venue_description', v)} multiline className="w-full" isEditing={isEditing} /> : pageData.venue_description}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 relative z-10">
+                    <div className="rounded-2xl p-5 text-center" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div className="text-3xl font-black text-white mb-1">
+                        {isEditing ? <EditableText value={pageData.capacity} onChange={v => update('capacity', v)} className="text-center" isEditing={isEditing} /> : pageData.capacity}
+                      </div>
+                      <div className="text-xs text-slate-500 uppercase tracking-widest font-bold">Capacity</div>
+                    </div>
+                    <div className="rounded-2xl p-5 text-center" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div className="text-3xl font-black text-white mb-1">{pageData.schedule.length}</div>
+                      <div className="text-xs text-slate-500 uppercase tracking-widest font-bold">Days</div>
+                    </div>
+                  </div>
+                </div>
+              </GlowCard>
             </div>
-            <div className="bg-slate-800/50 rounded-3xl overflow-hidden border border-white/5 min-h-[300px] flex flex-col items-center justify-center gap-3">
-              <MapPin size={48} className="opacity-20" />
-              <p className="text-slate-500 text-sm">{pageData.venue_name}</p>
-              <p className="text-slate-600 text-xs">{pageData.venue_address}</p>
+            <div className="lg:col-span-3 rounded-3xl overflow-hidden relative min-h-[400px] group" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1600')] bg-cover bg-center opacity-60 group-hover:scale-105 transition-transform duration-700 ease-in-out" />
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #0B0F1A, transparent)' }} />
+              <div className="absolute bottom-8 left-8">
+                <motion.a
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  href={pageData.map_url || '#'}
+                  target={pageData.map_url ? "_blank" : "_self"}
+                  rel="noopener noreferrer"
+                  className="backdrop-blur-md px-4 py-1.5 rounded-full text-white text-sm font-bold inline-block border shadow-xl cursor-pointer hover:bg-white/20 transition-all"
+                  style={{ background: 'rgba(255,255,255,0.15)', borderColor: 'rgba(255,255,255,0.2)' }}
+                >
+                  📍 View on Map
+                </motion.a>
+              </div>
             </div>
           </div>
-        </Section>
+        </AnimatedSection>
 
-        {/* ── SPONSORS ── */}
-        <Section id="sponsors" label="Sponsors" isEditing={isEditing}>
-          <h2 className="text-4xl font-black text-white mb-12">Our <span className="text-indigo-400">Sponsors</span></h2>
-          {['platinum', 'gold', 'silver'].map(tier => {
-            const tierSponsors = pageData.sponsors.filter(s => s.tier === tier);
-            if (!tierSponsors.length && !isEditing) return null;
-            return (
-              <div key={tier} className="mb-10">
-                <div className="flex items-center gap-3 mb-5">
-                  <span className={`text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full border ${tier === 'platinum' ? 'bg-slate-300/10 text-slate-300 border-slate-300/20' : tier === 'gold' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'}`}>{tier}</span>
-                </div>
-                <div className={`grid gap-4 ${tier === 'platinum' ? 'grid-cols-1 sm:grid-cols-2' : tier === 'gold' ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-3 sm:grid-cols-5'}`}>
-                  {tierSponsors.map((sp) => {
-                    const globalIndex = pageData.sponsors.indexOf(sp);
-                    return (
-                      <div key={globalIndex} className="bg-white/[0.03] border border-white/5 rounded-2xl p-6 flex items-center justify-center hover:border-white/10 transition-all relative group">
-                        {isEditing && (
-                          <button onClick={() => update('sponsors', pageData.sponsors.filter((_, idx) => idx !== globalIndex))} className="absolute top-2 right-2 text-red-400/50 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all">
-                            <X size={12} />
-                          </button>
-                        )}
-                        <span className={`font-black text-lg ${tier === 'platinum' ? 'text-slate-200' : tier === 'gold' ? 'text-amber-300' : 'text-slate-400'}`}>
-                          {isEditing ? <EditableText value={sp.name} onChange={v => updateNested('sponsors', globalIndex, 'name', v)} className="text-center font-black w-24" isEditing={isEditing} /> : sp.name}
-                        </span>
-                      </div>
-                    );
-                  })}
-                  {isEditing && (
-                    <button onClick={() => update('sponsors', [...pageData.sponsors, { name: 'Sponsor', tier }])} className="border border-dashed border-white/10 hover:border-indigo-500/40 rounded-2xl p-6 flex items-center justify-center text-slate-600 hover:text-indigo-400 transition-all">
-                      <Plus size={16} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </Section>
+        {/* ══════════════════ SPONSORS ══════════════════ */}
+        <AnimatedSection id="sponsors" label="Sponsors" isEditing={isEditing} className="text-center">
+          <SectionHeading align="center" badge="Our Partners" title="Supported by" highlight="Industry Leaders" />
+          <div className="space-y-16">
+            {['platinum', 'gold', 'silver'].map(tier => {
+              const tierSponsors = pageData.sponsors.filter(s => s.tier === tier);
+              if (!tierSponsors.length && !isEditing) return null;
 
-        {/* ── CONTACT ── */}
-        <Section id="contact" label="Contact" isEditing={isEditing}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+              const tierStyles = {
+                platinum: { bg: 'linear-gradient(135deg, #e2e8f0, #94a3b8)', color: '#1e293b' },
+                gold: { bg: 'linear-gradient(135deg, #fbbf24, #d97706)', color: '#451a03' },
+                silver: { bg: 'linear-gradient(135deg, #94a3b8, #64748b)', color: '#f8fafc' },
+              };
+
+              return (
+                <div key={tier} className="relative">
+                  <div className="inline-block relative mb-8">
+                    <span className="text-xs font-black uppercase tracking-[0.2em] px-6 py-2 rounded-full shadow-xl"
+                      style={{ background: tierStyles[tier].bg, color: tierStyles[tier].color }}>
+                      {tier} Sponsors
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-6 max-w-5xl mx-auto">
+                    {tierSponsors.map((sp) => {
+                      const globalIndex = pageData.sponsors.indexOf(sp);
+                      return (
+                        <motion.div whileHover={{ scale: 1.05, y: -5 }} key={globalIndex}>
+                          <GlowCard className={`rounded-2xl ${tier === 'platinum' ? 'w-64 h-32' : tier === 'gold' ? 'w-56 h-28' : 'w-48 h-24'}`}
+                            glowColor={tier === 'platinum' ? 'rgba(226,232,240,0.1)' : tier === 'gold' ? 'rgba(251,191,36,0.1)' : 'rgba(148,163,184,0.1)'}>
+                            <div className="w-full h-full flex items-center justify-center relative group">
+                              {isEditing && (
+                                <button onClick={() => update('sponsors', pageData.sponsors.filter((_, idx) => idx !== globalIndex))}
+                                  className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg z-10"><X size={12} /></button>
+                              )}
+                              <span className={`font-black tracking-tight ${tier === 'platinum' ? 'text-3xl text-slate-200' : tier === 'gold' ? 'text-2xl text-amber-400' : 'text-xl text-slate-400'}`}>
+                                {isEditing ? <EditableText value={sp.name} onChange={v => updateNested('sponsors', globalIndex, 'name', v)} className="text-center font-black w-32" isEditing={isEditing} /> : sp.name}
+                              </span>
+                            </div>
+                          </GlowCard>
+                        </motion.div>
+                      );
+                    })}
+                    {isEditing && (
+                      <button onClick={() => update('sponsors', [...pageData.sponsors, { name: 'Sponsor', tier }])}
+                        className={`border-2 border-dashed rounded-2xl flex items-center justify-center transition-all ${tier === 'platinum' ? 'w-64 h-32' : tier === 'gold' ? 'w-56 h-28' : 'w-48 h-24'}`}
+                        style={{ borderColor: 'rgba(255,255,255,0.1)', color: '#6b7280' }}>
+                        <Plus size={24} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </AnimatedSection>
+
+        {/* ══════════════════ CONTACT ══════════════════ */}
+        <AnimatedSection id="contact" label="Contact" isEditing={isEditing}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
-              <h2 className="text-4xl font-black text-white mb-8">Get in <span className="text-indigo-400">Touch</span></h2>
+              <SectionHeading badge="Reach Out" title="Get in" highlight="Touch" />
               <div className="space-y-5">
                 {[
-                  { icon: Mail, label: 'Email', key: 'contact_email' },
-                  { icon: Phone, label: 'Phone', key: 'contact_phone' },
-                  { icon: Globe, label: 'Website', key: 'website' },
-                  { icon: Twitter, label: 'Twitter', key: 'twitter' },
-                  { icon: Linkedin, label: 'LinkedIn', key: 'linkedin' },
-                ].map(({ icon: Icon, label, key }) => (
-                  <div key={key} className="flex items-center gap-4 text-slate-400 group">
-                    <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/5 group-hover:border-indigo-500/30 group-hover:bg-indigo-500/10 transition-all shrink-0">
-                      <Icon size={16} className="group-hover:text-indigo-400 transition-colors" />
+                  { icon: Mail, label: 'Email Address', key: 'contact_email', color: '#3b82f6' },
+                  { icon: Phone, label: 'Phone Number', key: 'contact_phone', color: '#10b981' },
+                  { icon: Globe, label: 'Official Website', key: 'website', color: '#8b5cf6' },
+                  { icon: Twitter, label: 'Twitter / X', key: 'twitter', color: '#0ea5e9' },
+                  { icon: Linkedin, label: 'LinkedIn', key: 'linkedin', color: '#2563eb' },
+                ].map(({ icon: Icon, label, key, color }) => (
+                  <motion.div whileHover={{ x: 8 }} key={key} className="flex items-center gap-5 group cursor-pointer">
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all shrink-0"
+                      style={{ background: `${color}12`, border: `1px solid ${color}25` }}>
+                      <Icon size={22} style={{ color }} />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">{label}</div>
+                    <div className="flex-1">
+                      <div className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-0.5">{label}</div>
                       {isEditing
-                        ? <EditableText value={pageData[key]} onChange={v => update(key, v)} className="text-slate-300 text-sm" isEditing={isEditing} placeholder={`Enter ${label}…`} />
-                        : <span className="text-slate-300 text-sm truncate block">{pageData[key] || '—'}</span>}
+                        ? <EditableText value={pageData[key]} onChange={v => update(key, v)} className="text-white text-lg font-medium" isEditing={isEditing} placeholder={`Enter ${label}…`} />
+                        : <span className="text-white text-lg font-medium group-hover:text-amber-400 transition-colors">{pageData[key] || '—'}</span>}
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </div>
-            <div className="bg-gradient-to-br from-indigo-950/60 to-slate-900/60 border border-indigo-500/20 rounded-3xl p-8">
-              <h3 className="text-xl font-bold text-white mb-6">Send a Message</h3>
-              <div className="space-y-4">
-                <input className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-300 placeholder-slate-600 outline-none focus:border-indigo-500 transition-colors text-sm" placeholder="Your name" />
-                <input className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-300 placeholder-slate-600 outline-none focus:border-indigo-500 transition-colors text-sm" placeholder="Your email" />
-                <textarea rows={4} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-300 placeholder-slate-600 outline-none focus:border-indigo-500 transition-colors text-sm resize-none" placeholder="Your message…" />
-                <button className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition-all">Send Message</button>
-              </div>
-            </div>
+
+            <TiltCard>
+              <GlowCard className="rounded-3xl" glowColor="rgba(59,130,246,0.1)">
+                <div className="p-10 relative">
+                  <div className="absolute inset-0 rounded-3xl pointer-events-none" style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.04), rgba(139,92,246,0.04))' }} />
+                  <h3 className="text-2xl font-black text-white mb-8">Send an Inquiry</h3>
+                  <form className="space-y-5 relative z-10" onSubmit={e => e.preventDefault()}>
+                    <div className="grid grid-cols-2 gap-5">
+                      <input className="rounded-xl px-5 py-4 text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-amber-400/30 transition-all font-medium"
+                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }} placeholder="First Name" />
+                      <input className="rounded-xl px-5 py-4 text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-amber-400/30 transition-all font-medium"
+                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }} placeholder="Last Name" />
+                    </div>
+                    <input className="w-full rounded-xl px-5 py-4 text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-amber-400/30 transition-all font-medium"
+                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }} placeholder="Email Address" type="email" />
+                    <textarea rows={4} className="w-full rounded-xl px-5 py-4 text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-amber-400/30 transition-all font-medium resize-none"
+                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }} placeholder="How can we help?" />
+                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                      className="w-full font-black py-4 rounded-xl transition-all text-black"
+                      style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', boxShadow: '0 0 20px rgba(251,191,36,0.2)' }}>
+                      Submit Message
+                    </motion.button>
+                  </form>
+                </div>
+              </GlowCard>
+            </TiltCard>
           </div>
-        </Section>
+        </AnimatedSection>
 
       </div>
 
       {/* ── Schedule Editor Modal ── */}
       {showScheduleEditor && (
-        <ScheduleEditor
-          schedule={pageData.schedule}
-          members={members}
-          onSave={async (newSchedule) => {
-            if (onScheduleSave) await onScheduleSave(newSchedule);
-            setPageData(p => ({ ...p, schedule: newSchedule }));
-          }}
-          onClose={() => setShowScheduleEditor(false)}
-        />
+        <div className="relative z-[300]">
+          <ScheduleEditor
+            schedule={pageData.schedule} members={members}
+            onSave={async (newSchedule) => {
+              if (onScheduleSave) await onScheduleSave(newSchedule);
+              setPageData(p => ({ ...p, schedule: newSchedule }));
+            }}
+            onClose={() => setShowScheduleEditor(false)}
+          />
+        </div>
       )}
 
-      {/* ── FOOTER ── */}
-      <footer className="border-t border-white/5 mt-20 py-12 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="text-center md:text-left">
-            <p className="font-bold text-white">{displayName}</p>
-            <p className="text-slate-500 text-sm">{displayDate} · {conf.location}</p>
+      {/* ══════════════════ FOOTER ══════════════════ */}
+      <footer className="relative mt-20 z-10" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(251,191,36,0.03), transparent)' }} />
+        <div className="max-w-7xl mx-auto py-16 px-6 relative z-10">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="text-center md:text-left">
+              <p className="text-2xl font-black text-white tracking-tight mb-2">{displayName}</p>
+              <p className="text-slate-500 font-medium">{displayDate} <span className="mx-2 opacity-30">|</span> {conf.location}</p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-8 text-sm font-bold text-slate-600 uppercase tracking-widest">
+              <a href="#" className="hover:text-amber-400 transition-colors">Privacy</a>
+              <a href="#" className="hover:text-amber-400 transition-colors">Terms</a>
+              <a href={`mailto:${pageData.contact_email}`} className="hover:text-amber-400 transition-colors">Contact</a>
+            </div>
           </div>
-          <div className="flex gap-6 text-slate-600 text-xs">
-            <a href="#" className="hover:text-slate-400 transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-slate-400 transition-colors">Terms of Use</a>
-            <a href={`mailto:${pageData.contact_email}`} className="hover:text-slate-400 transition-colors">Contact</a>
+          <div className="mt-8 pt-8 text-center" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+            <p className="text-xs text-slate-600">© {new Date().getFullYear()} {displayName}. All rights reserved.</p>
           </div>
         </div>
       </footer>

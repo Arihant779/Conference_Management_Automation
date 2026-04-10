@@ -4,6 +4,8 @@ import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
 import MemberNotifications from './MemberNotifications';
 import FeedbackForm from './FeedbackForm';
+import { CinematicBackground } from './Organizer/components/common/Effects';
+import Sidebar from './Organizer/components/Sidebar';
 
 const ReviewerDashboard = ({ conf, onBack }) => {
   const { user } = useApp();
@@ -32,13 +34,6 @@ const ReviewerDashboard = ({ conf, onBack }) => {
     { id: 'feedback', label: 'Feedback', icon: Star, badge: null },
     { id: 'notifications', label: 'Notifications', icon: Bell, badge: null },
   ];
-
-  useEffect(() => {
-    if (!user || !confId) return;
-    setLoadingPrefs(true);
-    fetchPrefs();
-    fetchAssignedPapers();
-  }, [user, confId, fetchPrefs, fetchAssignedPapers]);
 
   const fetchPrefs = React.useCallback(async () => {
     const { data } = await supabase
@@ -102,6 +97,13 @@ const ReviewerDashboard = ({ conf, onBack }) => {
     }
     setLoadingPapers(false);
   }, [confId, user.id]);
+
+  useEffect(() => {
+    if (!user || !confId) return;
+    setLoadingPrefs(true);
+    fetchPrefs();
+    fetchAssignedPapers();
+  }, [user, confId, fetchPrefs, fetchAssignedPapers]);
 
   const savePrefs = async () => {
     setSavingPrefs(true);
@@ -183,31 +185,13 @@ const ReviewerDashboard = ({ conf, onBack }) => {
   };
 
   return (
-    <div className="bg-[#080b11] text-slate-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <div className="relative min-h-screen text-slate-200 selection:bg-amber-500/30" style={{ background: '#04070D', fontFamily: "'Space Grotesk', 'Inter', system-ui, sans-serif" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+      <CinematicBackground />
 
-
-
-      <div className="max-w-[1400px] mx-auto flex">
-        {/* SIDEBAR */}
-        <aside className="w-52 shrink-0 sticky top-4 border-r border-white/6 py-5 px-2.5 flex flex-col gap-0.5" style={{ height: 'calc(100vh - 120px)' }}>
-          {nav.map(({ id, label, icon: Icon, badge }) => (
-            <button
-              key={id}
-              onClick={() => setSection(id)}
-              className={cls(
-                'flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium w-full text-left transition-all',
-                section === id ? 'bg-white/8 text-white' : 'text-slate-500 hover:text-slate-200 hover:bg-white/4',
-              )}
-            >
-              <Icon size={15} className={section === id ? 'text-indigo-400' : ''} />
-              <span className="flex-1">{label}</span>
-              {badge ? (
-                <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/20 px-1.5 py-0.5 rounded-full font-bold">{badge}</span>
-              ) : null}
-            </button>
-          ))}
-        </aside>
+      <div className="w-full flex relative z-10">
+        {/* ── SIDEBAR ── */}
+        <Sidebar nav={nav} section={section} setSection={setSection} isOrganizer={false} roleLabel="Reviewer" />
 
         {/* MAIN CONTENT */}
         <main className="flex-1 p-8">
