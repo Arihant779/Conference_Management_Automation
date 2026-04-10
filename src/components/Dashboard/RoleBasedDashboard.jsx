@@ -4,12 +4,16 @@ import { useApp } from '../../context/AppContext';
 import OrganizerDashboard from './OrganizerDashboard';
 import PresenterDashboard from './PresenterDashboard';
 import ReviewerDashboard from './ReviewerDashboard';
+import TeamLeadDashboard from './TeamLeadDashboard';
+import TeamMemberDashboard from './TeamMemberDashboard';
 import ConferencePage from './ConferencePage';
 
 const RoleBasedDashboard = ({ conf, role: propRole, onBack }) => {
   const { user } = useApp();
   const [role, setRole] = useState(null);
-  const [loading, setLoading] = useState(true); // always load fresh from DB
+  const [isTeamLead, setIsTeamLead] = useState(false);
+  const [isTeamMember, setIsTeamMember] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const confId = conf?.conference_id ?? conf?.id;
 
@@ -28,17 +32,43 @@ const RoleBasedDashboard = ({ conf, role: propRole, onBack }) => {
       return;
     }
 
-    // 2. Always fetch fresh from DB — never trust propRole
-    const { data, error } = await supabase
+    // 2. Fetch role and team associations
+    const { data: cuData, error: cuError } = await supabase
       .from('conference_user')
-      .select('role')
+      .select('id, role')
       .eq('conference_id', confId)
       .eq('user_id', user.id)
       .maybeSingle();
 
-    if (error) console.error('Role lookup error:', error);
+    if (cuError) console.error('Role lookup error:', cuError);
 
-    setRole(data?.role || null);
+    if (cuData) {
+      setRole(cuData.role);
+
+      // Check if Team Lead
+      const { data: teamLeadData } = await supabase
+        .from('conference_teams')
+        .select('id')
+        .eq('conference_id', confId)
+        .eq('head_id', cuData.id)
+        .maybeSingle();
+      
+      if (teamLeadData) {
+        setIsTeamLead(true);
+      } else {
+        // Check if Team Member
+        const { data: teamMemberData } = await supabase
+          .from('team_members')
+          .select('id')
+          .eq('conference_user_id', cuData.id)
+          .maybeSingle();
+        
+        if (teamMemberData) {
+          setIsTeamMember(true);
+        }
+      }
+    }
+
     setLoading(false);
   };
 
@@ -50,7 +80,11 @@ const RoleBasedDashboard = ({ conf, role: propRole, onBack }) => {
     );
   }
 
+  // Priority: Organizer > Team Lead > Team Member > Presenter/Reviewer
   if (role === 'organizer') return <OrganizerDashboard conf={conf} onBack={onBack} />;
+  if (isTeamLead) return <TeamLeadDashboard conf={conf} onBack={onBack} />;
+  if (isTeamMember) return <TeamMemberDashboard conf={conf} onBack={onBack} />;
+  
   if (role === 'presenter') return <PresenterDashboard conf={conf} onBack={onBack} />;
   if (role === 'reviewer') return <ReviewerDashboard conf={conf} onBack={onBack} />;
 

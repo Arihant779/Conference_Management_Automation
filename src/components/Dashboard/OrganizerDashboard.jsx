@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   BarChart2, FileText, Users, CheckSquare, Bell, Plus, X, Send,
   ChevronDown, CheckCircle, XCircle, MapPin, Edit2, Trash2,
-  Search, Layers, Clock, Sparkles, Star, Check, Settings
+  Search, Layers, Clock, Sparkles, Star, Check, Settings, MessageSquare
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
@@ -10,6 +10,8 @@ import EmailComposer from './EmailComposer';
 import PaperAllocation from './PaperAllocation';
 /* ─── helpers ─────────────────────────────────────────────── */
 import EmailSettings from './EmailSettings';
+import FeedbackManager from './FeedbackManager';
+import ChatInterface from '../Chat/ChatInterface';
 
 import FeedbackManager from './FeedbackManager';
 /* ─── helpers ─────────────────────────────────────────────── */
@@ -136,13 +138,109 @@ const LoadingRows = () => (
   </div>
 );
 
-/* ─── VolunteerCandidatePanel ──────────────────────────────────────────────
-   Volunteers tab  → all users in the platform who picked this team type,
-                     regardless of whether they're conference members yet.
-   All Members tab → conference members not yet in this team.
-   Clicking a volunteer who isn't a member yet adds them to the conference
-   first (as 'member' role), then to the team.
-────────────────────────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════
+   RATE MEMBER MODAL
+   Shown when organizer clicks the star icon on a member row.
+══════════════════════════════════════════════════════════ */
+const RateMemberModal = ({ member, confId, organizerId, existingRating, onSave, onClose }) => {
+  const [rating, setRating] = useState(existingRating?.rating || 0);
+  const [comment, setComment] = useState(existingRating?.comment || '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const mName = (m) => m?.full_name || m?.email || m?.user_id?.slice(0, 8) || '?';
+
+  const handleSave = async () => {
+    if (!rating) { setError('Please select a star rating.'); return; }
+    setSaving(true);
+    setError('');
+
+    const payload = {
+      conference_id: confId,
+      rated_user_id: member.user_id,
+      rater_user_id: organizerId,
+      rating,
+      comment: comment.trim() || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    let err;
+    if (existingRating?.id) {
+      ({ error: err } = await supabase
+        .from('member_ratings')
+        .update({ rating, comment: comment.trim() || null, updated_at: payload.updated_at })
+        .eq('id', existingRating.id));
+    } else {
+      ({ error: err } = await supabase
+        .from('member_ratings')
+        .insert([{ ...payload, created_at: new Date().toISOString() }]));
+    }
+
+    setSaving(false);
+    if (err) { setError(err.message); return; }
+    onSave();
+  };
+
+  return (
+    <Modal title="Rate Member" onClose={onClose} width="max-w-md">
+      {/* Member info */}
+      <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-6">
+        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
+          {mName(member)[0]?.toUpperCase()}
+        </div>
+        <div>
+          <div className="text-sm font-semibold text-white">{mName(member)}</div>
+          <div className="text-xs text-slate-500">{member.email}</div>
+        </div>
+        <div className="ml-auto text-xs text-slate-500 capitalize bg-white/5 border border-white/10 px-2 py-0.5 rounded-md">
+          {member.role}
+        </div>
+      </div>
+
+      {/* Star picker */}
+      <div className="mb-6">
+        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-3">
+          Your Rating
+        </label>
+        <div className="flex flex-col items-center gap-3 bg-white/5 border border-white/10 rounded-xl p-5">
+          <StarRating value={rating} onChange={setRating} size={28} />
+          <div className="text-xs text-slate-500 h-4">
+            {rating === 1 && 'Poor'}
+            {rating === 2 && 'Fair'}
+            {rating === 3 && 'Good'}
+            {rating === 4 && 'Very Good'}
+            {rating === 5 && 'Excellent'}
+          </div>
+        </div>
+      </div>
+
+      {/* Comment */}
+      <Field label="Comment (optional)">
+        <Textarea
+          rows={3}
+          placeholder="Share feedback about this member's contribution…"
+          value={comment}
+          onChange={e => setComment(e.target.value)}
+        />
+      </Field>
+
+      {error && (
+        <p className="text-xs text-red-400 mt-3 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">{error}</p>
+      )}
+
+      <div className="flex gap-3 mt-6">
+        <Btn variant="secondary" className="flex-1" onClick={onClose}>Cancel</Btn>
+        <Btn className="flex-1" onClick={handleSave} disabled={saving || !rating}>
+          {saving ? 'Saving…' : existingRating ? 'Update Rating' : 'Submit Rating'}
+        </Btn>
+      </div>
+    </Modal>
+  );
+};
+
+/* ══════════════════════════════════════════════════════════
+   VOLUNTEER CANDIDATE PANEL  (now shows global avg rating)
+══════════════════════════════════════════════════════════ */
 const VolunteerCandidatePanel = ({
   allVolunteers,  // [{ user_id, user_name, user_email, volunteer_roles, volunteer_domains }] — all platform users with prefs
   members,        // conference_user rows (enriched) — for "All Members" tab
@@ -153,21 +251,14 @@ const VolunteerCandidatePanel = ({
   onAddVolunteer, // (userId) => Promise<confUserId>  — adds to conference, returns new confUserId
 }) => {
   const [search, setSearch] = useState('');
-  const [filterMode, setFilterMode] = useState('volunteers'); // 'volunteers' | 'all'
-  const [adding, setAdding] = useState(null); // user_id currently being added
+  const [filterMode, setFilterMode] = useState('volunteers');
+  const [adding, setAdding] = useState(null);
 
-  console.log('[VolunteerCandidatePanel] allVolunteers:', allVolunteers?.length,
-    '| teamTypeId:', teamTypeId, '| members:', members?.length);
-
-  // Set of user_ids already in the team (via their conference_user id)
   const alreadyInTeamUserIds = new Set(teamMembers.map(m => m.user_id));
-  // Set of conference_user ids already in the team
   const alreadyInTeam = new Set(teamMembers.map(m => m.id));
-  // Set of user_ids who are already conference members
-  const memberUserIds = new Set(members.map(m => m.user_id));
+  const memberUserIds = new Set(members.filter(m => m.role === 'member').map(m => m.user_id));
 
-  const mName = (m) =>
-    m?.full_name || m?.user_name || m?.email || m?.user_email || m?.user_id?.slice(0, 8) || '?';
+  const mName = (m) => m?.full_name || m?.user_name || m?.email || m?.user_email || m?.user_id?.slice(0, 8) || '?';
   const mEmail = (m) => m?.email || m?.user_email || '';
 
   // The single relevant role label (for badge display)
@@ -175,6 +266,7 @@ const VolunteerCandidatePanel = ({
 
   /* Volunteers tab: platform users who picked this team type and aren't in team yet */
   const matchedVolunteers = (allVolunteers || [])
+    .filter(u => memberUserIds.has(u.user_id))
     .filter(u => !alreadyInTeamUserIds.has(u.user_id))
     .filter(u => {
       if (!teamTypeId) return u.volunteer_roles?.length > 0;
@@ -188,6 +280,7 @@ const VolunteerCandidatePanel = ({
 
   /* All Members tab: conference members not yet in the team */
   const nonTeamMembers = members
+    .filter(m => m.role === 'member')
     .filter(m => !alreadyInTeam.has(m.id))
     .filter(m => {
       if (!search) return true;
@@ -249,17 +342,12 @@ const VolunteerCandidatePanel = ({
             onClick={() => setFilterMode('all')}
             className={cls(
               'px-3 py-1.5 rounded-md font-semibold transition-all',
-              filterMode === 'all' ? 'bg-white text-black' : 'text-slate-500 hover:text-slate-300',
+              filterMode === 'all' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'
             )}
           >
             Conf. Members
           </button>
         </div>
-        {filterMode === 'volunteers' && (
-          <span className="text-[10px] text-slate-600 italic">
-            Includes users not yet in this conference
-          </span>
-        )}
       </div>
 
       {/* Search */}
@@ -292,10 +380,11 @@ const VolunteerCandidatePanel = ({
         <div className="max-h-64 overflow-y-auto space-y-1.5 pr-0.5">
           {candidates.map(c => {
             const isVolTab = filterMode === 'volunteers';
-            const isAlreadyMember = memberUserIds.has(c.user_id ?? c.user_id);
+            const isAlreadyMember = memberUserIds.has(c.user_id);
             const domains = (c.volunteer_domains || []).slice(0, 2);
-            const isAdding = adding === (c.user_id);
+            const isAdding = adding === c.user_id;
             const key = c.user_id || c.id;
+            const ratingInfo = globalRatings?.[c.user_id];
 
             return (
               <div
@@ -322,28 +411,30 @@ const VolunteerCandidatePanel = ({
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-xs font-semibold text-slate-200 truncate">{mName(c)}</span>
                     {isVolTab && <Star size={9} className="text-indigo-400 shrink-0 fill-indigo-400" />}
-                    {isVolTab && !isAlreadyMember && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold">
-                        Not a member
-                      </span>
-                    )}
                   </div>
                   <div className="text-[10px] text-slate-600 truncate">{mEmail(c)}</div>
                   {/* Preference tags */}
-                  {(relevantRoleLabel || domains.length > 0) && isVolTab && (
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {relevantRoleLabel && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/15 border border-indigo-500/25 text-indigo-300 uppercase tracking-wide">
-                          {relevantRoleLabel}
-                        </span>
-                      )}
-                      {domains.map(d => (
-                        <span key={d} className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 border border-white/8 text-slate-500">
-                          {d}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                  {(() => {
+                    const uInfo = allVolunteers.find(v => v.user_id === c.user_id);
+                    const tagRoles = uInfo?.volunteer_roles || [];
+                    const tagDom = (uInfo?.volunteer_domains || []).slice(0, 2);
+                    const isCandidateForTeam = teamTypeId && tagRoles.includes(teamTypeId);
+
+                    if (!isCandidateForTeam && tagDom.length === 0) return null;
+
+                    return (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {isCandidateForTeam && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/15 border border-indigo-500/25 text-indigo-300 uppercase tracking-wide">
+                            {VOLUNTEER_ROLE_LABELS[teamTypeId]}
+                          </span>
+                        )}
+                        {tagDom.map(d => (
+                          <span key={d} className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-slate-500">{d}</span>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Right side */}
@@ -354,7 +445,7 @@ const VolunteerCandidatePanel = ({
                     </span>
                   )}
                   <span className="text-[9px] text-slate-600 group-hover:text-indigo-400 transition-colors font-semibold">
-                    {isAdding ? '…' : isVolTab && !isAlreadyMember ? '+ Invite & Add' : '+ Add'}
+                    {isAdding ? '…' : '+ Add'}
                   </span>
                 </div>
               </div>
@@ -366,11 +457,107 @@ const VolunteerCandidatePanel = ({
   );
 };
 
+
+const UserPickerPanel = ({ confId, members, onSelect }) => {
+  const [search, setSearch] = useState('');
+  const [allUsers, setAllUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('users')
+        .select('user_id, user_name, user_email')
+        .order('user_name', { ascending: true });
+      if (!error) setAllUsers(data || []);
+      setLoading(false);
+    };
+    fetchUsers();
+  }, []);
+
+  const existingUserIds = new Set(members.map(m => m.user_id));
+
+  const filtered = allUsers
+    .filter(u => !existingUserIds.has(u.user_id))
+    .filter(u => {
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return (
+        u.user_name?.toLowerCase().includes(q) ||
+        u.user_email?.toLowerCase().includes(q)
+      );
+    });
+
+  return (
+    <div className="mt-1">
+      {/* Search */}
+      <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 mb-3">
+        <Search size={12} className="text-slate-600 shrink-0" />
+        <input
+          className="bg-transparent outline-none text-xs text-white placeholder-slate-600 flex-1"
+          style={{ fontFamily: "'DM Sans', sans-serif" }}
+          placeholder="Search by name or email…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+        {search && (
+          <button onClick={() => setSearch('')} className="text-slate-600 hover:text-slate-400">
+            <X size={11} />
+          </button>
+        )}
+      </div>
+
+      {/* List */}
+      {loading ? (
+        <div className="space-y-2">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-12 bg-white/5 rounded-xl animate-pulse" />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="py-6 text-center border border-dashed border-white/10 rounded-xl">
+          <p className="text-slate-600 text-xs">
+            {search ? 'No users match your search.' : 'All registered users are already members.'}
+          </p>
+        </div>
+      ) : (
+        <div className="max-h-64 overflow-y-auto space-y-1.5 pr-0.5">
+          {filtered.map(u => (
+            <div
+              key={u.user_id}
+              onClick={() => onSelect(u)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl border bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 cursor-pointer transition-all group"
+            >
+              {/* Avatar */}
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                {(u.user_name || u.user_email)?.[0]?.toUpperCase()}
+              </div>
+
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-semibold text-slate-200 truncate">
+                  {u.user_name || '(no name)'}
+                </div>
+                <div className="text-[10px] text-slate-600 truncate">{u.user_email}</div>
+              </div>
+
+              <span className="text-[9px] text-slate-600 group-hover:text-indigo-400 transition-colors font-semibold shrink-0">
+                + Select
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 /* ═══════════════════════════════════════════════════════════════════════════
    MAIN ORGANIZER DASHBOARD
 ═══════════════════════════════════════════════════════════════════════════ */
 const OrganizerDashboard = ({ conf, onBack }) => {
-  useApp(); // context kept for potential future use
+  const { user } = useApp();
   const confId = conf.conference_id || conf.id;
 
   const [section, setSection] = useState('overview');
@@ -391,9 +578,16 @@ const OrganizerDashboard = ({ conf, onBack }) => {
   /* All platform users who have set volunteer preferences */
   const [allVolunteers, setAllVolunteers] = useState([]);
 
+  /* ── rating state ─────────────────────────────────────── */
+  // My ratings for this conference: Map<rated_user_id, { id, rating, comment }>
+  const [myRatings, setMyRatings] = useState({});
+  // Global avg ratings across all conferences: Map<user_id, { avg, count }>
+  const [globalRatings, setGlobalRatings] = useState({});
+  // Which member is being rated right now
+  const [ratingMember, setRatingMember] = useState(null);
+
   /* forms */
   const [mForm, setMForm] = useState({ email: '', role: 'reviewer' });
-  // type: volunteer role id | 'custom'
   const [tmForm, setTmForm] = useState({ name: '', type: '', description: '', color: '#6366f1', head_id: '' });
   const [tkForm, setTkForm] = useState({ title: '', description: '', team_id: '', assignee_id: '', priority: 'medium', due_date: '' });
   const [nForm, setNForm] = useState({ title: '', message: '', target_role: 'all', target_team_id: '' });
@@ -588,6 +782,57 @@ const OrganizerDashboard = ({ conf, onBack }) => {
       .limit(20);
     setNotifs(data || []);
   }, [confId]);
+
+  /* ── Ratings fetch ─────────────────────────────────────── */
+
+  /* My ratings for THIS conference (so organizer can see/edit their own ratings) */
+  const fetchMyRatings = useCallback(async (orgUserId) => {
+    if (!orgUserId) return;
+    const { data, error } = await supabase
+      .from('member_ratings')
+      .select('id, rated_user_id, rating, comment')
+      .eq('conference_id', confId)
+      .eq('rater_user_id', orgUserId);
+
+    if (error) { console.error('fetchMyRatings error:', error); return; }
+    const map = {};
+    (data || []).forEach(r => { map[r.rated_user_id] = r; });
+    setMyRatings(map);
+  }, [confId]);
+
+  /* Global average ratings across ALL conferences for ALL users */
+  const fetchGlobalRatings = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('member_ratings')
+      .select('rated_user_id, rating');
+
+    if (error) { console.error('fetchGlobalRatings error:', error); return; }
+
+    // Aggregate client-side: { user_id => { sum, count } }
+    const agg = {};
+    (data || []).forEach(r => {
+      if (!agg[r.rated_user_id]) agg[r.rated_user_id] = { sum: 0, count: 0 };
+      agg[r.rated_user_id].sum += r.rating;
+      agg[r.rated_user_id].count += 1;
+    });
+
+    const result = {};
+    Object.entries(agg).forEach(([uid, { sum, count }]) => {
+      result[uid] = { avg: sum / count, count };
+    });
+    setGlobalRatings(result);
+  }, []);
+
+  /* Resolve current organizer's user_id from Supabase auth */
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const uid = data?.user?.id;
+      if (uid) {
+        setOrganizerUserId(uid);
+        fetchMyRatings(uid);
+      }
+    });
+  }, [fetchMyRatings]);
 
   useEffect(() => {
     fetchMembers();
@@ -840,19 +1085,29 @@ const OrganizerDashboard = ({ conf, onBack }) => {
     setSpLoading(false);
   };
 
-  /* ── ui helpers ──────────────────────────────────────────────────────── */
+  /* ── ui helpers ──────────────────────────────────────────── */
   const mName = (m) => m?.full_name || m?.email || m?.user_id?.substring(0, 8) || '?';
   const teamName = (id) => teams.find(t => t.id === id)?.name || '—';
-  const assigneeName = (id) => {
-    const m = members.find(m => m.id === id || m.user_id === id);
-    return m ? mName(m) : '—';
-  };
+  const assigneeName = (id) => { const m = members.find(m => m.id === id || m.user_id === id); return m ? mName(m) : '—'; };
+
   const filteredMembers = members.filter(m =>
+    m.role !== 'attendee' && (
+      !memberSearch ||
+      mName(m).toLowerCase().includes(memberSearch.toLowerCase()) ||
+      m.email?.toLowerCase().includes(memberSearch.toLowerCase())
+    )
+  );
+
+  // Add this right below:
+  const attendees = members.filter(m => m.role === 'attendee');
+  const filteredAttendees = attendees.filter(m =>
     !memberSearch ||
     mName(m).toLowerCase().includes(memberSearch.toLowerCase()) ||
     m.email?.toLowerCase().includes(memberSearch.toLowerCase())
   );
-  const filteredPapers = confPapers.filter(p => paperFilter === 'all' || p.status === paperFilter);
+
+  const volunteerMap = Object.fromEntries(allVolunteers.map(u => [u.user_id, { volunteer_roles: u.volunteer_roles || [], volunteer_domains: u.volunteer_domains || [] }]));
+  const volunteersCount = allVolunteers.length;
 
   const openEditTeam = (t) => {
     setModalData(t);
@@ -885,6 +1140,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
     { id: 'overview', label: 'Overview', icon: BarChart2, badge: null },
     { id: 'papers', label: 'Papers', icon: FileText, badge: pendingCount || null },
     { id: 'members', label: 'Members', icon: Users, badge: null },
+    { id: 'attendees', label: 'Attendees', icon: Users, badge: null },   // ← add this
     { id: 'teams', label: 'Teams', icon: Layers, badge: null },
     { id: 'tasks', label: 'Tasks', icon: CheckSquare, badge: tasks.filter(t => t.status !== 'done').length || null },
     { id: 'notifications', label: 'Notifications', icon: Bell, badge: null },
@@ -892,7 +1148,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
     { id: 'speakers', label: 'Find Speakers', icon: Users, badge: null },
     { id: 'allocation', label: 'Paper Allocation', icon: FileText, badge: null },
     { id: 'feedback', label: 'Feedback', icon: Star, badge: null },
-
+    { id: 'chat', label: 'Leader Chat', icon: MessageSquare, badge: null },
   ];
 
   /* ══════════════════════════════════════════════════════════════════════
@@ -955,16 +1211,25 @@ const OrganizerDashboard = ({ conf, onBack }) => {
           {/* ═══ OVERVIEW ═══ */}
           {section === 'overview' && (
             <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold text-white">Event Overview</h2>
-                <p className="text-slate-500 text-sm mt-0.5">Real-time conference metrics</p>
+              <div className="flex items-between justify-between">  {/* change from just <div> */}
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Event Overview</h2>
+                  <p className="text-slate-500 text-sm mt-0.5">Real-time conference metrics</p>
+                </div>
+                <Btn
+                  variant="danger"
+                  onClick={() => setModal('deleteConference')}
+                >
+                  <Trash2 size={14} /> Delete Conference
+                </Btn>
               </div>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                 {[
-                  { label: 'Members', value: members.length, color: 'text-indigo-400', bg: 'bg-indigo-500/8' },
-                  { label: 'Teams', value: teams.length, color: 'text-purple-400', bg: 'bg-purple-500/8' },
-                  { label: 'Papers', value: confPapers.length, color: 'text-blue-400', bg: 'bg-blue-500/8' },
-                  { label: 'Open Tasks', value: tasks.filter(t => t.status !== 'done').length, color: 'text-amber-400', bg: 'bg-amber-500/8' },
+                  { label: 'Members', value: members.filter(m => m.role !== 'attendee').length, color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
+                  { label: 'Attendees', value: members.filter(m => m.role === 'attendee').length, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+                  { label: 'Teams', value: teams.length, color: 'text-purple-400', bg: 'bg-purple-500/10' },
+                  { label: 'Papers', value: confPapers.length, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+                  { label: 'Open Tasks', value: tasks.filter(t => t.status !== 'done').length, color: 'text-amber-400', bg: 'bg-amber-500/10' },
                 ].map(({ label, value, color, bg }) => (
                   <div key={label} className={cls('rounded-xl p-5 border border-white/6', bg)}>
                     <div className={cls('text-3xl font-bold mb-1', color)}>{value}</div>
@@ -1012,9 +1277,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                   </div>
                   <div className="flex gap-5 mt-3 text-xs text-slate-500">
                     {[['bg-emerald-500', 'Accepted', accepted], ['bg-red-500', 'Rejected', rejected], ['bg-amber-500', 'Pending', pendingCount]].map(([c, l, v]) => (
-                      <span key={l} className="flex items-center gap-1.5">
-                        <span className={cls('w-2 h-2 rounded-full inline-block', c)} />{l} {v}
-                      </span>
+                      <span key={l} className="flex items-center gap-1.5"><span className={cls('w-2 h-2 rounded-full inline-block', c)} />{l} {v}</span>
                     ))}
                   </div>
                 </div>
@@ -1072,23 +1335,9 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                   <h2 className="text-2xl font-bold text-white">Paper Submissions</h2>
                   <p className="text-slate-500 text-sm mt-0.5">{confPapers.length} total · {pendingCount} pending review</p>
                 </div>
-
-                {/* Filter tabs */}
-                <div className="flex gap-1 bg-white/4 p-1 rounded-xl w-fit border border-white/6">
-                  {[
-                    ['all', `All (${confPapers.length})`],
-                    ['pending', `Pending (${pendingCount})`],
-                    ['accepted', `Accepted (${accepted})`],
-                    ['rejected', `Rejected (${rejected})`],
-                  ].map(([k, l]) => (
-                    <button
-                      key={k}
-                      onClick={() => setPaperFilter(k)}
-                      className={cls('px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all',
-                        paperFilter === k ? 'bg-white text-black' : 'text-slate-500 hover:text-slate-200')}
-                    >
-                      {l}
-                    </button>
+                <div className="flex gap-1 bg-white/5 p-1 rounded-xl w-fit border border-white/10">
+                  {[['all', `All (${confPapers.length})`], ['pending', `Pending (${pendingCount})`], ['accepted', `Accepted (${accepted})`], ['rejected', `Rejected (${rejected})`]].map(([k, l]) => (
+                    <button key={k} onClick={() => setPaperFilter(k)} className={cls('px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all', paperFilter === k ? 'bg-white text-black' : 'text-slate-500 hover:text-slate-200')}>{l}</button>
                   ))}
                 </div>
 
@@ -1169,8 +1418,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                               'px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider border',
                               paper.status === 'accepted' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
                                 paper.status === 'rejected' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                                  'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                            )}>
+                                  'bg-amber-500/10 text-amber-400 border-amber-500/20')}>
                               {paper.status === 'accepted' || paper.status === 'rejected' ? paper.status : 'Pending'}
                             </span>
 
@@ -1244,6 +1492,9 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                     {filteredMembers.map(m => {
                       const prefs = volunteerMap[m.user_id];
                       const hasVol = prefs?.volunteer_roles?.length > 0;
+                      const myRating = myRatings[m.user_id];
+                      const gRating = globalRatings[m.user_id];
+
                       return (
                         <div key={m.id} className="bg-[#0d1117] border border-white/6 rounded-xl px-5 py-3.5 flex items-center gap-4 hover:border-white/10 transition-all">
                           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
@@ -1271,27 +1522,185 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                               </div>
                             )}
                           </div>
-                          <select
-                            value={m.role}
-                            onChange={e => updateRole(m.id, e.target.value)}
-                            className={cls('text-xs font-bold px-2.5 py-1 rounded-md border uppercase tracking-wider bg-transparent cursor-pointer outline-none', ROLE_STYLE[m.role] || ROLE_STYLE.member)}
-                          >
-                            {['organizer', 'reviewer', 'presenter', 'member'].map(r => (
-                              <option key={r} value={r} className="bg-[#0d1117] text-white normal-case">{r}</option>
-                            ))}
-                          </select>
-                          <button
-                            onClick={() => { setModalData(m); setModal('confirmDelete'); }}
-                            className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
-                          >
-                            <Trash2 size={15} />
-                          </button>
+
+                          {/* Right actions */}
+                          <div className="flex items-center gap-2 shrink-0">
+                            {/* Rate button — amber star with tooltip */}
+                            <button
+                              onClick={() => setRatingMember(m)}
+                              title={myRating ? `Your rating: ${myRating.rating}/5 — click to update` : 'Rate this member'}
+                              className={cls(
+                                'p-1.5 rounded-lg transition-all flex items-center gap-1',
+                                myRating
+                                  ? 'text-amber-400 bg-amber-500/10 hover:bg-amber-500/20'
+                                  : 'text-slate-600 hover:text-amber-400 hover:bg-amber-500/10',
+                              )}
+                            >
+                              <Star size={15} className={myRating ? 'fill-amber-400' : ''} />
+                              {myRating && <span className="text-[10px] font-bold">{myRating.rating}</span>}
+                            </button>
+
+                            <select
+                              value={m.role}
+                              onChange={e => updateRole(m.id, e.target.value)}
+                              className={cls('text-xs font-bold px-2.5 py-1 rounded-md border uppercase tracking-wider bg-transparent cursor-pointer outline-none', ROLE_STYLE[m.role] || ROLE_STYLE.member)}
+                            >
+                              {['organizer', 'reviewer', 'presenter', 'member'].map(r => (
+                                <option key={r} value={r} className="bg-[#0d1117] text-white normal-case">{r}</option>
+                              ))}
+                            </select>
+                            <button
+                              onClick={() => { setModalData(m); setModal('confirmDelete'); }}
+                              className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
                         </div>
                       );
                     })}
                   </div>
                 )
               }
+            </div>
+          )}
+
+          {/* ═══ ATTENDEES ═══ */}
+          {section === 'attendees' && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Attendees</h2>
+                  <p className="text-slate-500 text-sm mt-0.5">
+                    {attendees.length} registered attendee{attendees.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              </div>
+
+              {/* Search */}
+              <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5">
+                <Search size={14} className="text-slate-500 shrink-0" />
+                <input
+                  className="bg-transparent outline-none text-sm text-white placeholder-slate-600 flex-1"
+                  style={{ fontFamily: "'DM Sans', sans-serif" }}
+                  placeholder="Search by name or email…"
+                  value={memberSearch}
+                  onChange={e => setMemberSearch(e.target.value)}
+                />
+                {memberSearch && (
+                  <button onClick={() => setMemberSearch('')} className="text-slate-600 hover:text-slate-400">
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+
+              {/* Export CSV button */}
+              {attendees.length > 0 && (
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => {
+                      const headers = ['Name', 'Email', 'Joined'];
+                      const rows = attendees.map(a => [
+                        mName(a),
+                        a.email || '',
+                        a.joined_at ? new Date(a.joined_at).toLocaleDateString() : '',
+                      ]);
+                      const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+                      const blob = new Blob([csv], { type: 'text/csv' });
+                      const url = URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = `attendees-${confId}.csv`;
+                      link.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+                  >
+                    <FileText size={13} /> Export CSV
+                  </button>
+                </div>
+              )}
+
+              {loadingMembers ? (
+                <LoadingRows />
+              ) : filteredAttendees.length === 0 ? (
+                <Empty
+                  icon={Users}
+                  msg={attendees.length === 0 ? 'No attendees have registered yet.' : 'No attendees match your search.'}
+                />
+              ) : (
+                <div className="space-y-2">
+                  {filteredAttendees.map((a, idx) => (
+                    <div
+                      key={a.id}
+                      className="bg-[#0d1117] border border-white/10 rounded-xl px-5 py-3.5 flex items-center gap-4 hover:border-white/20 transition-all"
+                    >
+                      {/* Index */}
+                      <span className="text-xs text-slate-700 font-bold w-5 shrink-0 text-right">{idx + 1}</span>
+
+                      {/* Avatar */}
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
+                        {mName(a)[0]?.toUpperCase()}
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold text-white truncate">{mName(a)}</div>
+                        <div className="text-xs text-slate-500 truncate">{a.email || a.user_id}</div>
+                        {a.joined_at && (
+                          <div className="text-[10px] text-slate-700 mt-0.5">
+                            Registered {new Date(a.joined_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Accommodation badge */}
+                      {a.accommodation_required && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-amber-500/10 text-amber-400 border-amber-500/20 shrink-0">
+                          Accommodation
+                        </span>
+                      )}
+
+                      {/* Remove button */}
+                      <button
+                        onClick={() => { setModalData(a); setModal('confirmDelete'); }}
+                        className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all shrink-0"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Accommodation summary */}
+              {attendees.length > 0 && (
+                <div className="bg-[#0d1117] border border-white/10 rounded-xl p-5">
+                  <div className="text-[11px] text-slate-600 uppercase tracking-wider font-bold mb-3">
+                    Accommodation Requests
+                  </div>
+                  {attendees.filter(a => a.accommodation_required).length === 0 ? (
+                    <p className="text-xs text-slate-600 italic">No accommodation requests yet.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {attendees.filter(a => a.accommodation_required).map(a => (
+                        <div key={a.id} className="flex items-start gap-3 bg-amber-500/5 border border-amber-500/15 rounded-lg px-3 py-2.5">
+                          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                            {mName(a)[0]?.toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-xs font-semibold text-white">{mName(a)}</div>
+                            <div className="text-[10px] text-slate-500 truncate">{a.email}</div>
+                            {a.accommodation_notes && (
+                              <div className="text-[10px] text-amber-400/80 mt-1 leading-relaxed">{a.accommodation_notes}</div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -1303,7 +1712,6 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                   <h2 className="text-2xl font-bold text-white">Teams</h2>
                   <p className="text-slate-500 text-sm mt-0.5">{teams.length} teams</p>
                 </div>
-
                 <Btn onClick={() => { setTmForm({ name: '', type: '', description: '', color: '#6366f1', head_id: '' }); setModal('createTeam'); }}>
                   <Plus size={15} />Create Team
                 </Btn>
@@ -1314,9 +1722,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                   <div className="space-y-3">
                     {teams.map(team => {
                       const isOpen = expandedTeam === team.id;
-                      const teamMembers = team.memberList
-                        .map(tm => members.find(m => m.id === tm.conference_user_id || m.user_id === tm.user_id))
-                        .filter(Boolean);
+                      const teamMembers = team.memberList.map(tm => members.find(m => m.id === tm.conference_user_id || m.user_id === tm.user_id)).filter(Boolean);
                       const nonMembers = members.filter(m => !team.memberList.some(tm => tm.conference_user_id === m.id));
                       const teamTasks = tasks.filter(t => t.team_id === team.id);
 
@@ -1400,9 +1806,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                                     allVolunteers={allVolunteers}
                                     members={members}
                                     teamMembers={teamMembers}
-                                    teamTypeId={
-                                      Object.entries(VOLUNTEER_ROLE_LABELS).find(([, label]) => label === team.name)?.[0] ?? null
-                                    }
+                                    teamTypeId={Object.entries(VOLUNTEER_ROLE_LABELS).find(([, label]) => label === team.name)?.[0] ?? null}
                                     confId={confId}
                                     onAdd={(confUserId) => addToTeam(team.id, confUserId)}
                                     onAddVolunteer={addVolunteerToConference}
@@ -1414,12 +1818,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                               <div>
                                 <div className="flex justify-between items-center mb-2">
                                   <div className="text-[11px] text-slate-600 uppercase tracking-wider font-bold">Tasks ({teamTasks.length})</div>
-                                  <button
-                                    onClick={() => { setTkForm({ title: '', description: '', team_id: team.id, assignee_id: '', priority: 'medium', due_date: '' }); setModal('addTask'); }}
-                                    className="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold"
-                                  >
-                                    + Add Task
-                                  </button>
+                                  <button onClick={() => { setTkForm({ title: '', description: '', team_id: team.id, assignee_id: '', priority: 'medium', due_date: '' }); setModal('addTask'); }} className="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold">+ Add Task</button>
                                 </div>
                                 {teamTasks.length === 0
                                   ? <p className="text-xs text-slate-600 italic">No tasks for this team</p>
@@ -1514,8 +1913,8 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                         <div className="flex justify-between items-start mb-2">
                           <div className="font-semibold text-white text-sm">{n.title}</div>
                           <div className="flex items-center gap-2 shrink-0">
-                            {n.target_role && <span className="text-[10px] text-slate-500 bg-white/5 border border-white/8 px-2 py-0.5 rounded-md uppercase font-bold">{n.target_role}</span>}
-                            {n.target_team_id && <span className="text-[10px] text-indigo-400 bg-indigo-500/8 border border-indigo-500/15 px-2 py-0.5 rounded-md font-bold">{teamName(n.target_team_id)}</span>}
+                            {n.target_role && <span className="text-[10px] text-slate-500 bg-white/5 border border-white/10 px-2 py-0.5 rounded-md uppercase font-bold">{n.target_role}</span>}
+                            {n.target_team_id && <span className="text-[10px] text-indigo-400 bg-indigo-500/10 border border-indigo-500/15 px-2 py-0.5 rounded-md font-bold">{teamName(n.target_team_id)}</span>}
                             <span className="text-xs text-slate-600">{new Date(n.created_at).toLocaleDateString()}</span>
                           </div>
                         </div>
@@ -1528,22 +1927,25 @@ const OrganizerDashboard = ({ conf, onBack }) => {
             </div>
           )}
 
-
-
           {section === 'feedback' && <FeedbackManager conf={conf} />}
 
-          {section === 'emails' && (
-            <EmailComposer
-              conf={conf}
-              senderRole="organizer"
-              onOpenEmailSettings={() => setSection('emailSettings')}
-            />
+          {section === 'chat' && (
+            <div className="h-[calc(100vh-160px)] flex flex-col">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-white">Leader Coordination Chat</h2>
+                <p className="text-slate-500 text-sm mt-0.5">Communicate with all Team Leaders of {conf.title}</p>
+              </div>
+              <div className="flex-1">
+                <ChatInterface
+                  conferenceId={confId}
+                  chatType="organizer_leader"
+                  title="Organizer & Team Leaders Chat"
+                />
+              </div>
+            </div>
           )}
-          {section === 'emailSettings' && (
-            <EmailSettings conf={conf} />
-          )}
-
-          {/* ═══ PAPER ALLOCATION ═══ */}
+          {section === 'emails' && <EmailComposer conf={conf} senderRole="organizer" onOpenEmailSettings={() => setSection('emailSettings')} />}
+          {section === 'emailSettings' && <EmailSettings conf={conf} />}
           {section === 'allocation' && <PaperAllocation conf={conf} />}
 
           {/* ═══ SPEAKERS ═══ */}
@@ -1573,21 +1975,8 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                 </div>
                 <Field label="Speaker Source">
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                    {[
-                      { key: 1, label: '🇮🇳 Indian' },
-                      { key: 2, label: '🌍 Foreign' },
-                      { key: 3, label: '💼 LinkedIn' },
-                      { key: 4, label: '🎓 IIT / NIT' },
-                      { key: 5, label: '⭐ All Sources' },
-                    ].map(({ key, label }) => (
-                      <button
-                        key={key}
-                        onClick={() => setSpSource(key)}
-                        className={cls('py-2.5 px-3 rounded-xl text-xs font-bold border transition-all',
-                          spSource === key ? 'bg-indigo-600 border-indigo-500 text-white' : 'border-white/8 text-slate-500 hover:text-white hover:border-white/20')}
-                      >
-                        {label}
-                      </button>
+                    {[{ key: 1, label: '🇮🇳 Indian' }, { key: 2, label: '🌍 Foreign' }, { key: 3, label: '💼 LinkedIn' }, { key: 4, label: '🎓 IIT / NIT' }, { key: 5, label: '⭐ All Sources' }].map(({ key, label }) => (
+                      <button key={key} onClick={() => setSpSource(key)} className={cls('py-2.5 px-3 rounded-xl text-xs font-bold border transition-all', spSource === key ? 'bg-indigo-600 border-indigo-500 text-white' : 'border-white/10 text-slate-500 hover:text-white hover:border-white/20')}>{label}</button>
                     ))}
                   </div>
                 </Field>
@@ -1655,10 +2044,9 @@ const OrganizerDashboard = ({ conf, onBack }) => {
       {/* ══════════════════════════ MODALS ══════════════════════════ */}
 
       {modal === 'addMember' && (
-        <Modal title="Add Member" onClose={() => setModal(null)}>
+        <Modal title="Add Member" onClose={() => setModal(null)} width="max-w-lg">
           <div className="space-y-4">
-            <Field label="Email Address"><Input type="email" placeholder="member@example.com" value={mForm.email} onChange={e => setMForm({ ...mForm, email: e.target.value })} /></Field>
-            <Field label="Role">
+            <Field label="Role for New Member">
               <Sel value={mForm.role} onChange={e => setMForm({ ...mForm, role: e.target.value })}>
                 <option value="reviewer">Reviewer</option>
                 <option value="presenter">Presenter</option>
@@ -1666,10 +2054,41 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                 <option value="member">Member</option>
               </Sel>
             </Field>
+
+            <Field label="Select User">
+              <UserPickerPanel
+                confId={confId}
+                members={members}
+                onSelect={async (user) => {
+                  // Check not already a member
+                  const already = members.find(m => m.user_id === user.user_id);
+                  if (already) { alert('Already a member.'); return; }
+
+                  setSaving(true);
+                  const { error } = await supabase.from('conference_user').insert([{
+                    conference_id: confId,
+                    user_id: user.user_id,
+                    email: user.user_email || '',
+                    full_name: user.user_name || '',
+                    role: mForm.role,
+                    joined_at: new Date().toISOString(),
+                  }]);
+                  setSaving(false);
+
+                  if (error) { alert(error.message); return; }
+                  setModal(null);
+                  setMForm({ email: '', role: 'reviewer' });
+                  fetchMembers();
+                  fetchAllVolunteers();
+                }}
+              />
+            </Field>
           </div>
+
           <div className="flex gap-3 mt-6">
-            <Btn variant="secondary" className="flex-1" onClick={() => setModal(null)}>Cancel</Btn>
-            <Btn className="flex-1" onClick={addMember} disabled={saving || !mForm.email.trim()}>{saving ? 'Adding…' : 'Add Member'}</Btn>
+            <Btn variant="secondary" className="flex-1" onClick={() => setModal(null)}>
+              Cancel
+            </Btn>
           </div>
         </Modal>
       )}
@@ -1742,9 +2161,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
             <Field label="Team Head (optional)">
               <Sel value={tmForm.head_id} onChange={e => setTmForm({ ...tmForm, head_id: e.target.value })}>
                 <option value="">— No team head —</option>
-                {members.map(m => (
-                  <option key={m.id} value={m.id} className="bg-[#0d1117]">{mName(m)} ({m.role})</option>
-                ))}
+                {members.filter(m => m.role === 'member').map(m => <option key={m.id} value={m.id} className="bg-[#0d1117]">{mName(m)} ({m.role})</option>)}
               </Sel>
             </Field>
             <Field label="Team Color">
@@ -1759,27 +2176,54 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                 ))}
               </div>
             </Field>
+            {modal === 'editTeam' && (
+              <div className="space-y-3">
+                <div className="text-[11px] text-slate-600 uppercase tracking-wider font-bold">Current Members</div>
+                {(() => {
+                  const currT = teams.find(t => t.id === modalData?.id);
+                  const tMembs = (currT?.memberList || []).map(tm => members.find(m => m.id === tm.conference_user_id || m.user_id === tm.user_id)).filter(Boolean);
+                  return tMembs.length === 0 ? (
+                    <p className="text-xs text-slate-600 italic">No members yet.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {tMembs.map(m => (
+                        <div key={m.id} className="flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-lg px-2.5 py-1.5 animate-in zoom-in duration-300">
+                          <div className="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center text-[10px] font-bold text-white shadow-sm">{mName(m)[0]?.toUpperCase()}</div>
+                          <span className="text-xs text-indigo-100 font-medium">{mName(m)}</span>
+                          <button onClick={() => removeFromTeam(currT.id, m.id)} className="text-indigo-400 hover:text-red-400 transition-colors ml-1"><X size={12} /></button>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
 
-            {/* ── Volunteer candidates preview inside modal ── */}
             {(tmForm.type && tmForm.type !== 'custom' || (tmForm.type === 'custom' && tmForm.name.trim().length >= 3)) && (
               <div className="border-t border-white/6 pt-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Sparkles size={13} className="text-indigo-400" />
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Suggested Volunteers</span>
-                  <span className="text-[10px] text-slate-600">based on team name</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    {modal === 'editTeam' ? 'Add Members to Team' : 'Suggested Volunteers'}
+                  </span>
                 </div>
                 <VolunteerCandidatePanel
                   allVolunteers={allVolunteers}
                   members={members}
-                  teamMembers={[]}
+                  teamMembers={modal === 'editTeam' ? (teams.find(t => t.id === modalData?.id)?.memberList || []) : []}
                   teamTypeId={tmForm.type !== 'custom' ? tmForm.type : null}
                   confId={confId}
-                  onAdd={() => { }}
-                  onAddVolunteer={() => Promise.resolve(null)}
+                  onAdd={(confUserId) => {
+                    if (modal === 'editTeam' && modalData?.id) {
+                      addToTeam(modalData.id, confUserId);
+                    }
+                  }}
+                  onAddVolunteer={addVolunteerToConference}
+                  globalRatings={globalRatings}
                 />
-                <p className="text-[10px] text-slate-600 mt-2">
-                  You can add members after the team is created.
-                </p>
+                {modal === 'createTeam' && (
+                  <p className="text-[10px] text-slate-600 mt-2">You can add members after the team is created.</p>
+                )}
               </div>
             )}
           </div>
@@ -1855,6 +2299,75 @@ const OrganizerDashboard = ({ conf, onBack }) => {
             <Btn variant="secondary" className="flex-1" onClick={() => setModal(null)}>Cancel</Btn>
             <Btn className="flex-1" onClick={sendNotif} disabled={saving || !nForm.title.trim() || !nForm.message.trim()}>
               <Send size={14} />{saving ? 'Sending…' : 'Send'}
+            </Btn>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Rate Member Modal ── */}
+      {ratingMember && (
+        <RateMemberModal
+          member={ratingMember}
+          confId={confId}
+          organizerId={organizerUserId}
+          existingRating={myRatings[ratingMember.user_id]}
+          onSave={() => {
+            setRatingMember(null);
+            fetchMyRatings(organizerUserId);
+            fetchGlobalRatings();
+          }}
+          onClose={() => setRatingMember(null)}
+        />
+      )}
+
+      {modal === 'deleteConference' && (
+        <Modal title="Delete Conference" onClose={() => setModal(null)} width="max-w-sm">
+          <div className="mb-6 space-y-3">
+            <p className="text-slate-400 text-sm">
+              Are you sure you want to delete{' '}
+              <span className="text-white font-semibold">"{conf.title}"</span>?
+            </p>
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+              <p className="text-red-400 text-xs leading-relaxed">
+                This will permanently delete the conference and all associated data —
+                members, teams, tasks, papers, and notifications. This cannot be undone.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Btn variant="secondary" className="flex-1" onClick={() => setModal(null)}>
+              Cancel
+            </Btn>
+            <Btn
+              variant="danger"
+              className="flex-1"
+              disabled={saving}
+              onClick={async () => {
+                setSaving(true);
+                // Delete in dependency order
+                await supabase.from('notifications').delete().eq('conference_id', confId);
+                await supabase.from('conference_tasks').delete().eq('conference_id', confId);
+                await supabase.from('team_members').delete().eq('conference_id', confId);
+                await supabase.from('conference_teams').delete().eq('conference_id', confId);
+                await supabase.from('paper_assignments').delete().eq('conference_id', confId);
+                await supabase.from('paper_review').delete().in(
+                  'paper_id',
+                  (await supabase.from('paper').select('paper_id').eq('conference_id', confId)).data?.map(p => p.paper_id) || []
+                );
+                await supabase.from('assignment').delete().eq('conference_id', confId);
+                await supabase.from('paper').delete().eq('conference_id', confId);
+                await supabase.from('conference_user').delete().eq('conference_id', confId);
+                await supabase.from('feedback_questions').delete().in(
+                  'form_id',
+                  (await supabase.from('feedback_forms').select('id').eq('conference_id', confId)).data?.map(f => f.id) || []
+                );
+                await supabase.from('feedback_forms').delete().eq('conference_id', confId);
+                await supabase.from('conference').delete().eq('conference_id', confId);
+                setSaving(false);
+                onBack(); // go back to hub
+              }}
+            >
+              {saving ? 'Deleting…' : 'Delete Permanently'}
             </Btn>
           </div>
         </Modal>
