@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   BarChart2, FileText, Users, CheckSquare, Bell,
-  ChevronDown, CheckCircle, MapPin, Layers, Clock, Star
+  ChevronDown, CheckCircle, MapPin, Layers, Clock, Star, MessageSquare
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '../../Supabase/supabaseclient';
@@ -19,6 +19,7 @@ import TeamsSection from './Organizer/components/sections/TeamsSection';
 import TasksSection from './Organizer/components/sections/TasksSection';
 import NotificationsSection from './Organizer/components/sections/NotificationsSection';
 import SpeakersSection from './Organizer/components/sections/SpeakersSection';
+import ChatSection from './Organizer/components/sections/ChatSection';
 
 /* ─── helpers ─────────────────────────────────────────────── */
 const cls = (...c) => c.filter(Boolean).join(' ');
@@ -79,6 +80,7 @@ const MemberDashboard = ({ conf, onBack }) => {
   const [loadingTasks, setLTasks] = useState(true);
   const [expandedTeam, setExpandedTeam] = useState(null);
   const [globalRatings, setGlobalRatings] = useState({});
+  const [activeChatTeamId, setActiveChatTeamId] = useState(null);
 
   const [confPapers, setConfPapers] = useState([]);
   const [loadingPapers, setLP] = useState(false);
@@ -171,6 +173,7 @@ const MemberDashboard = ({ conf, onBack }) => {
     { id: 'my_tasks', label: 'My Tasks', icon: CheckSquare },
     ...(can('view_papers') ? [{ id: 'papers', label: 'Papers', icon: FileText }] : []),
     ...(can('view_speakers') ? [{ id: 'speakers', label: 'Speakers', icon: Users }] : []),
+    { id: 'chat', label: 'Team Chat', icon: MessageSquare },
     { id: 'notifications', label: 'Notifications', icon: Bell },
   ];
 
@@ -184,6 +187,7 @@ const MemberDashboard = ({ conf, onBack }) => {
   };
 
   const myTasks = tasks.filter(t => t.assignee_id === myMemberId || myTeams.some(mt => mt.id === t.team_id));
+  const myTeamIds = myTeams.map(t => t.id);
 
   const renderContent = () => {
     if (section === 'overview') {
@@ -204,6 +208,19 @@ const MemberDashboard = ({ conf, onBack }) => {
     if (section === 'attendees') return <AttendeesSection confId={confId} members={members} loading={loadingMembers} isOrganizer={false} />;
     if (section === 'speakers') return <SpeakersSection confId={confId} isOrganizer={false} />;
     if (section === 'notifications') return <MemberNotifications conf={conf} />;
+    if (section === 'chat') {
+      return (
+        <ChatSection
+          confId={confId}
+          teams={teams}
+          isOrganizer={false}
+          myTeamIds={myTeamIds}
+          activeChatTeamId={activeChatTeamId}
+          setActiveChatTeamId={setActiveChatTeamId}
+          showLeaderHub={false}
+        />
+      );
+    }
 
     if (section === 'my_teams') {
       return (

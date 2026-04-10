@@ -605,6 +605,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
             <ChatSection
               confId={confId} teams={teams} isOrganizer={isOrganizer} myTeamIds={myTeamIds}
               activeChatTeamId={activeChatTeamId} setActiveChatTeamId={setActiveChatTeamId}
+              showLeaderHub={true}
             />
           )}
 
