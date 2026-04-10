@@ -67,7 +67,7 @@ const SlideUploadPanel = ({ paper, onSlideUploaded }) => {
 
     try {
       const ext = selectedFile.name.split('.').pop();
-      const newPath = `${paper.conference_id}/${user.id}_${paper.paper_id}.${ext}`;
+      const newPath = `${paper.conference_id}/${user?.id || 'unknown'}_${paper.paper_id}.${ext}`;
       const newFullUrl = supabase.storage.from('slides').getPublicUrl(newPath).data.publicUrl;
 
       // 1. Delete old file ONLY if the path has changed (e.g. extension changed)
