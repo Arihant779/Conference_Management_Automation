@@ -70,7 +70,7 @@ const MemberDashboard = ({ conf, onBack }) => {
   const isDark = theme === 'dark';
   const confId = conf.conference_id || conf.id;
 
-  const [section, setSection]         = useState('overview');
+  const [section, setSection]         = useState('my_teams');
   const [members, setMembers]         = useState([]);
   const [loadingMembers, setLM]       = useState(true);
   const [teams, setTeams]             = useState([]);
@@ -167,11 +167,9 @@ const MemberDashboard = ({ conf, onBack }) => {
   };
 
   const nav = [
-    { id: 'overview',  label: 'Overview',   icon: BarChart2 },
     { id: 'my_teams',  label: 'My Teams',   icon: Users },
     { id: 'my_tasks',  label: 'My Tasks',   icon: CheckSquare },
     ...(can('view_papers') ? [{ id: 'papers', label: 'Papers', icon: FileText }] : []),
-    ...(can('view_attendees') ? [{ id: 'attendees', label: 'Attendees', icon: MapPin }] : []),
     ...(can('view_speakers') ? [{ id: 'speakers', label: 'Speakers', icon: Users }] : []),
     { id: 'notifications', label: 'Notifications', icon: Bell },
   ];
@@ -195,7 +193,10 @@ const MemberDashboard = ({ conf, onBack }) => {
           pendingCount={confPapers.filter(p => p.status === 'pending').length}
           accepted={confPapers.filter(p => p.status === 'accepted').length}
           rejected={confPapers.filter(p => p.status === 'rejected').length}
-          isOrganizer={false}
+          volunteersCount={0} volunteerMap={{}}
+          isGlobalHead={false}
+          can={can}
+          setSection={setSection}
         />
       );
     }
@@ -316,7 +317,7 @@ const MemberDashboard = ({ conf, onBack }) => {
       <AmbientBackground />
 
       <div className="w-full h-screen flex relative z-10 overflow-hidden">
-        <Sidebar nav={nav} section={section} setSection={setSection} isOrganizer={false} onBack={onBack} />
+        <Sidebar nav={nav} section={section} setSection={setSection} isOrganizer={false} roleLabel={myMember?.role || 'Member'} onBack={onBack} />
 
         <main className="flex-1 overflow-y-auto p-8 custom-scrollbar">
           <div className="max-w-6xl mx-auto">
