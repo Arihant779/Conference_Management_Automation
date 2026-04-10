@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
+import { CinematicBackground } from './Organizer/components/common/Effects';
 
 /* ─── helpers ──────────────────────────────────────────────────────────── */
 const cls = (...c) => c.filter(Boolean).join(' ');
@@ -551,38 +552,11 @@ const PresenterDashboard = ({ conf, onBack }) => {
   const withSlides = papers.filter(p => p.slide_url).length;
 
   return (
-    <div className="min-h-screen bg-[#080b11] text-slate-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <div className="relative min-h-screen text-slate-200 selection:bg-amber-500/30" style={{ background: '#04070D', fontFamily: "'Space Grotesk', 'Inter', system-ui, sans-serif" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+      <CinematicBackground />
 
-      {/* ── Header ── */}
-      <header className="sticky top-0 z-40 bg-[#080b11]/90 backdrop-blur-xl border-b border-white/6 px-6 py-3">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onBack}
-              className="text-slate-500 hover:text-white text-xs font-semibold transition-colors"
-            >
-              ← Back
-            </button>
-            <div className="h-4 w-px bg-white/10" />
-            <span className="text-sm font-semibold text-white truncate max-w-[260px]">{conf.title}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={fetchPapers}
-              disabled={loading}
-              className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/8 text-slate-500 hover:text-white hover:border-white/16 transition-all"
-            >
-              <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-            </button>
-            <span className="text-xs font-bold text-blue-300 bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 rounded-md uppercase tracking-wider">
-              Presenter
-            </span>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-5xl mx-auto p-8 space-y-8">
+      <div className="max-w-5xl mx-auto p-8 space-y-8 relative z-10">
 
         {/* ── Page title ── */}
         <div>

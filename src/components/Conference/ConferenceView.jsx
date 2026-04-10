@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowRight, Share2, Check, LogIn } from 'lucide-react';
+import { ArrowRight, Share2, Check, LogIn, Star } from 'lucide-react';
 import ModernTemplate from './Templates/ModernTemplate';
 import ClassicTemplate from './Templates/ClassicTemplate';
 import RoleBasedDashboard from '../Dashboard/RoleBasedDashboard';
@@ -11,9 +11,9 @@ const ROLE_LABELS = {
   organizer: 'Organizer',
   logistics_head: 'Logistics Team Lead',
   outreach_head: 'Outreach Team Lead',
-  technical_head: 'Technical Team Lead',
-  registration_head: 'Registration Team Lead',
-  sponsorship_head: 'Sponsorship Team Lead',
+  technical_head: 'Reviewing Team Head',
+  registration_head: 'Registration Team Head',
+  sponsorship_head: 'Sponsorship Team Head',
   hospitality_head: 'Hospitality Team Lead',
   publication_head: 'Publications Team Lead',
   finance_head: 'Finance Team Lead',
@@ -23,7 +23,7 @@ const ROLE_LABELS = {
   design_lead: 'Design Lead',
   web_lead: 'Website Lead',
   security_coord: 'Security Coordinator',
-  member: 'Member',
+  member: 'Team Member',
   reviewer: 'Reviewer',
   presenter: 'Presenter',
 };
@@ -74,7 +74,7 @@ const ConferenceView = ({
 
   useEffect(() => {
     if (onPendingConsumed) onPendingConsumed();
-  }, []);
+  }, [onPendingConsumed]);
 
   /* ── Resolve role ── */
   useEffect(() => {
@@ -116,7 +116,7 @@ const ConferenceView = ({
       .eq('conference_id', confId).eq('head_id', cuData.id);
     if (teamData?.length > 0) {
       setIsTeamLeader(true);
-      setTeamLeaderPosition(`${teamData[0].name} Lead`);
+      setTeamLeaderPosition(teamData[0].name.includes('Head') ? teamData[0].name : `${teamData[0].name} Lead`);
     }
   }, [user, confId, isGuest]);
 
@@ -165,6 +165,7 @@ const ConferenceView = ({
       capacity: pageData.capacity, registration_fee_general: pageData.registration_fee_general,
       registration_fee_student: pageData.registration_fee_student,
       registration_fee_early: pageData.registration_fee_early, about_extra: pageData.about_extra,
+      map_url: pageData.map_url,
     }).eq('conference_id', confId);
     if (error) throw new Error(error.message);
   };
@@ -195,73 +196,82 @@ const ConferenceView = ({
   };
 
   return (
-    <div className="flex flex-col min-h-screen font-sans bg-[#0f1117] text-slate-200">
-      <nav className="bg-[#0f1117]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
-        <div className="flex items-center gap-6">
-          {!isGuest && (
-            <>
-              <button
-                onClick={onBack}
-                className="group flex items-center gap-3 text-sm font-medium text-slate-400 hover:text-white transition-colors"
-              >
-                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white/10 border border-white/5">
-                  <ArrowRight className="rotate-180" size={14} />
-                </div>
-                Back to Hub
-              </button>
-              <div className="h-6 w-px bg-white/10" />
-            </>
-          )}
-          <span className="font-bold text-white truncate max-w-xs tracking-wide">{displayTitle}</span>
-
-          {!isGuest && (
-            <button
-              onClick={handleShare}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                copied
-                  ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
-                  : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:border-white/20'
-              }`}
-            >
-              {copied ? <Check size={12} /> : <Share2 size={12} />}
-              {copied ? 'Link copied!' : 'Share'}
-            </button>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3">
-          {isGuest && (
-            <button
-              onClick={() => onRequireAuth && onRequireAuth('home')}
-              className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:border-white/20 transition-all"
-            >
-              <LogIn size={13} /> Sign in
-            </button>
-          )}
-
-          <div className="flex bg-black/40 p-1.5 rounded-full border border-white/5">
-            <NavTab active={viewMode === 'home'} onClick={() => handleTabClick('home')} activeClass="bg-white text-black shadow-lg">
-              Site Preview
-            </NavTab>
-            {hasRole && !isGuest && (
-              <NavTab active={viewMode === 'dashboard'} onClick={() => handleTabClick('dashboard')} activeClass="bg-indigo-600 text-white shadow-lg shadow-indigo-500/40">
-                Dashboard
-              </NavTab>
+    <div className="flex flex-col h-screen overflow-hidden font-sans bg-[#0f1117] text-slate-200">
+      <nav className="bg-[#0f1117] border-b border-white/5 px-6 py-4 flex justify-between items-center z-50 shrink-0">
+          <div className="flex items-center gap-6">
+            {!isGuest && (
+              <>
+                <button
+                  onClick={onBack}
+                  className="group flex items-center gap-3 text-sm font-medium text-slate-400 hover:text-white transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white/10 border border-white/5">
+                    <ArrowRight className="rotate-180" size={14} />
+                  </div>
+                  Back to Hub
+                </button>
+                <div className="h-6 w-px bg-white/10" />
+              </>
             )}
-            <NavTab active={viewMode === 'submitPaper'} onClick={() => handleTabClick('submitPaper')} activeClass="bg-green-600 text-white shadow-lg shadow-green-500/40">
-              Submit Paper{isGuest && <span className="ml-1.5 text-[9px] opacity-60 font-normal normal-case tracking-normal">(login)</span>}
-            </NavTab>
-          </div>
-        </div>
-      </nav>
+            <div className="flex items-center gap-3">
+              <span className="font-bold text-white truncate max-w-xs tracking-wide">{displayTitle}</span>
+              {(isOrganizer || isTeamLeader) && (
+                <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                  isOrganizer ? 'text-violet-300 bg-violet-500/10 border-violet-500/20' : 'text-indigo-300 bg-indigo-500/10 border-indigo-500/20'
+                }`}>
+                  <Star size={11} className="fill-current" />
+                  {editorPosition}
+                </div>
+              )}
+            </div>
 
-      <div className="flex-1 bg-black overflow-y-auto relative">
+            {!isGuest && (
+              <button
+                onClick={handleShare}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                  copied
+                    ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:border-white/20'
+                }`}
+              >
+                {copied ? <Check size={12} /> : <Share2 size={12} />}
+                {copied ? 'Link copied!' : 'Share'}
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            {isGuest && (
+              <button
+                onClick={() => onRequireAuth && onRequireAuth('home')}
+                className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:border-white/20 transition-all"
+              >
+                <LogIn size={13} /> Sign in
+              </button>
+            )}
+
+            <div className="flex bg-black/40 p-1.5 rounded-full border border-white/5">
+              <NavTab active={viewMode === 'home'} onClick={() => handleTabClick('home')} activeClass="bg-white text-black shadow-lg">
+                Site Preview
+              </NavTab>
+              {hasRole && !isGuest && (
+                <NavTab active={viewMode === 'dashboard'} onClick={() => handleTabClick('dashboard')} activeClass="bg-indigo-600 text-white shadow-lg shadow-indigo-500/40">
+                  Dashboard
+                </NavTab>
+              )}
+              <NavTab active={viewMode === 'submitPaper'} onClick={() => handleTabClick('submitPaper')} activeClass="bg-green-600 text-white shadow-lg shadow-green-500/40">
+                Submit Paper{isGuest && <span className="ml-1.5 text-[9px] opacity-60 font-normal normal-case tracking-normal">(login)</span>}
+              </NavTab>
+            </div>
+          </div>
+        </nav>
+      <div className="flex-1 bg-black overflow-y-auto relative no-scrollbar" id="conf-scroll-area">
         {viewMode === 'home' ? (
           conf.template === 'classic'
             ? <ClassicTemplate {...templateProps} />
             : <ModernTemplate {...templateProps} />
         ) : viewMode === 'dashboard' ? (
-          <RoleBasedDashboard conf={conf} role={resolvedRole} onBack={onBack} />
+          <RoleBasedDashboard conf={conf} role={resolvedRole} onBack={onBack} onSwitchView={handleTabClick} />
         ) : viewMode === 'submitPaper' ? (
           <PaperSubmission conf={conf} />
         ) : null}
