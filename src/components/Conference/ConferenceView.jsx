@@ -165,7 +165,7 @@ const ConferenceView = ({
       capacity: pageData.capacity, registration_fee_general: pageData.registration_fee_general,
       registration_fee_student: pageData.registration_fee_student,
       registration_fee_early: pageData.registration_fee_early, about_extra: pageData.about_extra,
-      map_url: pageData.map_url,
+      map_url: pageData.map_url, banner_url: pageData.banner_url,
     }).eq('conference_id', confId);
     if (error) throw new Error(error.message);
   };

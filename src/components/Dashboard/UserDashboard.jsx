@@ -277,26 +277,76 @@ const VolunteerPreferencesModal = ({ userId, onClose, onSaved, theme = 'dark' })
 // NOTIFICATIONS PANEL
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const NotificationsPanel = ({ onClose, theme = 'dark' }) => {
+const NotificationsPanel = ({ onClose, theme = 'dark', notifs = [], conferences = [] }) => {
   const isDark = theme === 'dark';
+  
+  const timeAgo = (dateStr) => {
+    const seconds = Math.floor((new Date() - new Date(dateStr)) / 1000);
+    if (seconds < 60) return 'Just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
   return (
     <div className="fixed inset-0 z-40" onClick={onClose}>
       <motion.div
         initial={{ opacity: 0, y: -10, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
-        className={`absolute right-6 top-16 w-80 backdrop-blur-2xl border rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 ${isDark ? 'bg-[#141416]/95 border-white/[0.06] shadow-black/60' : 'bg-white border-zinc-900/[0.08] shadow-zinc-900/10'}`}
+        className={`absolute right-6 top-16 w-80 max-h-[480px] backdrop-blur-2xl border rounded-2xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ${isDark ? 'bg-[#141416]/95 border-white/[0.06] shadow-black/60' : 'bg-white border-zinc-900/[0.08] shadow-zinc-900/10'}`}
         onClick={(e) => e.stopPropagation()}>
+        
         <div className={`px-5 py-4 border-b flex items-center justify-between transition-colors duration-300 ${isDark ? 'border-white/[0.05]' : 'border-zinc-900/[0.05]'}`}>
-          <span className={`font-semibold text-sm transition-colors duration-300 ${isDark ? 'text-white' : 'text-zinc-900'}`}>Notifications</span>
-          <button onClick={onClose} className="text-zinc-600 hover:text-zinc-300 transition-colors"><X size={15} /></button>
-        </div>
-        <div className="py-10 text-center">
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 transition-colors duration-300 ${isDark ? 'bg-zinc-800/50' : 'bg-zinc-100'}`}>
-            <Bell size={20} className="text-zinc-600" />
+          <div className="flex items-center gap-2">
+            <span className={`font-semibold text-sm transition-colors duration-300 ${isDark ? 'text-white' : 'text-zinc-900'}`}>Notifications</span>
+            {notifs.length > 0 && <span className="px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 text-[10px] font-bold">{notifs.length}</span>}
           </div>
-          <p className="text-zinc-500 text-sm">No new notifications</p>
+          <button onClick={onClose} className="text-zinc-600 hover:text-zinc-300 transition-colors p-1 hover:bg-white/5 rounded-lg"><X size={15} /></button>
         </div>
+
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
+          {notifs.length === 0 ? (
+            <div className="py-16 text-center">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 transition-colors duration-300 ${isDark ? 'bg-zinc-800/50' : 'bg-zinc-100'}`}>
+                <Bell size={20} className="text-zinc-500" />
+              </div>
+              <p className="text-zinc-500 text-sm font-medium tracking-tight">No new notifications</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-white/[0.03]">
+              {notifs.map((n, idx) => {
+                const conf = conferences.find(c => c.conference_id === n.conference_id);
+                return (
+                  <motion.div 
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    key={n.id} 
+                    className={`p-4 transition-all duration-200 cursor-default ${isDark ? 'hover:bg-white/[0.03]' : 'hover:bg-zinc-900/[0.02]'}`}
+                  >
+                    <div className="flex justify-between items-start mb-1.5">
+                      <div className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-amber-500/80' : 'text-amber-600'}`}>
+                        {conf?.title || 'Announcement'}
+                      </div>
+                      <span className="text-[10px] text-zinc-500 font-medium">{timeAgo(n.created_at)}</span>
+                    </div>
+                    <div className={`text-[13px] font-semibold mb-1 transition-colors duration-300 ${isDark ? 'text-white' : 'text-zinc-900'}`}>{n.title}</div>
+                    <p className="text-[12px] text-zinc-500 leading-relaxed line-clamp-2">{n.message}</p>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+        
+        {notifs.length > 0 && (
+          <div className={`p-3 text-center border-t transition-colors duration-300 ${isDark ? 'border-white/[0.05]' : 'border-zinc-900/[0.05] bg-zinc-50'}`}>
+            <button className="text-[11px] font-semibold text-zinc-500 hover:text-amber-500 transition-colors">Clear all notifications</button>
+          </div>
+        )}
       </motion.div>
     </div>
   );
@@ -757,6 +807,8 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [volunteerPrefs, setVolunteerPrefs] = useState(null);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [notifs, setNotifs] = useState([]);
+  const [lastReadAt, setLastReadAt] = useState(() => localStorage.getItem('conf_manager_notif_last_read') || new Date(0).toISOString());
 
   const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const firstName = displayName.split(' ')[0];
@@ -791,6 +843,34 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
       if (data) setVolunteerPrefs(data);
     })();
   }, [user]);
+
+  useEffect(() => {
+    if (!user || loadingRoles) return;
+    const confIds = Object.keys(roleMap);
+    if (confIds.length === 0) { setNotifs([]); return; }
+
+    const fetchGlobalNotifs = async () => {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .in('conference_id', confIds)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (!error && data) {
+        // Simple client-side filter for targeted notifications
+        const filtered = data.filter(n => {
+          if (!n.target_role) return true;
+          const myRole = roleMap[n.conference_id];
+          return n.target_role === myRole;
+        });
+        setNotifs(filtered);
+      }
+    };
+    fetchGlobalNotifs();
+  }, [user, roleMap, loadingRoles]);
+
+  const unreadCount = notifs.filter(n => new Date(n.created_at) > new Date(lastReadAt)).length;
 
   // ── Derived ─────────────────────────────────────────────────────────
   const myConfs = conferences.filter((c) => roleMap[c.conference_id]);
@@ -891,13 +971,22 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
 
             {/* Notifications */}
             <button 
-              onClick={() => setShowNotifications((v) => !v)} 
+              onClick={() => {
+                setShowNotifications((v) => !v);
+                if (!showNotifications) {
+                  const now = new Date().toISOString();
+                  setLastReadAt(now);
+                  localStorage.setItem('conf_manager_notif_last_read', now);
+                }
+              }} 
               className={`relative p-2.5 rounded-xl transition-all duration-300 ${isDark 
                 ? 'text-zinc-500 hover:text-amber-400 hover:bg-amber-500/10' 
                 : 'text-zinc-400 hover:text-amber-600 hover:bg-amber-600/10'}`}
             >
               <Bell size={17} />
-              <span className={`absolute top-2 right-2 w-1.5 h-1.5 bg-amber-400 rounded-full ring-2 ${isDark ? 'ring-[#09090b]' : 'ring-white'}`} />
+              {unreadCount > 0 && (
+                <span className={`absolute top-2 right-2 w-1.5 h-1.5 bg-amber-400 rounded-full ring-2 ${isDark ? 'ring-[#09090b]' : 'ring-white'}`} />
+              )}
             </button>
 
             {/* Divider */}
@@ -929,7 +1018,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
       </motion.nav>
 
       {/* ═══ NOTIFICATIONS ═══ */}
-      <AnimatePresence>{showNotifications && <NotificationsPanel onClose={() => setShowNotifications(false)} theme={theme} />}</AnimatePresence>
+      <AnimatePresence>{showNotifications && <NotificationsPanel onClose={() => setShowNotifications(false)} theme={theme} notifs={notifs} conferences={conferences} />}</AnimatePresence>
 
       {/* ═══ MAIN CONTENT ═══ */}
       {currentSection === 'conferences' ? (

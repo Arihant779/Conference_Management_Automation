@@ -431,6 +431,7 @@ const ModernTemplate = ({
 
   const [pageData, setPageData] = useState({
     tagline: initialConf.tagline || 'Where Innovation Meets Excellence',
+    banner_url: initialConf.banner_url || '',
     contact_email: initialConf.contact_email || 'contact@conference.org',
     contact_phone: initialConf.contact_phone || '+1 (555) 000-0000',
     website: initialConf.website || 'https://yourconference.org',
@@ -595,11 +596,12 @@ const ModernTemplate = ({
 
       {/* ══════════════════ HERO ══════════════════ */}
       <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden">
-        {conf.banner_url && (
+        {(pageData.banner_url || conf.banner_url) && (
           <div className="absolute inset-0 z-0 overflow-hidden">
             <motion.img 
               initial={{ scale: 1.1 }} animate={{ scale: 1 }} transition={{ duration: 2, ease: 'easeOut' }}
-              src={conf.banner_url} alt="Banner" 
+              key={pageData.banner_url || conf.banner_url}
+              src={pageData.banner_url || conf.banner_url} alt="Banner" 
               className="w-full h-full object-cover opacity-[0.55] mix-blend-luminosity" 
             />
             <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, rgba(4,7,13,0.2) 0%, #04070D 100%)' }} />
@@ -611,6 +613,14 @@ const ModernTemplate = ({
           className="relative z-10 flex flex-col items-center justify-center text-center px-6 w-full max-w-5xl">
 
           <motion.div variants={stagger} initial="hidden" animate="visible" className="flex flex-col items-center">
+            {/* Background URL Editor */}
+            {isEditing && (
+              <motion.div variants={fadeUp} className="mb-4 w-full max-w-lg">
+                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-500 mb-2 ml-1 text-center">Change Background Image URL</div>
+                <EditableText value={pageData.banner_url} onChange={v => update('banner_url', v)} className="text-center w-full" isEditing={isEditing} placeholder="Image URL (Unsplash or direct link)…" />
+              </motion.div>
+            )}
+
             {/* Badge */}
             <motion.div variants={fadeUp}
               className="flex items-center gap-2 px-5 py-2 rounded-full text-xs font-black uppercase tracking-[0.2em] mb-8"
