@@ -5,7 +5,7 @@ import {
   MapPin, Bell, ChevronRight, ChevronLeft, Check,
   X, Sparkles, Settings, User, Mail, Shield,
   Award, FileText, Lock, Eye, EyeOff, Compass,
-  Zap, TrendingUp, Star, Globe
+  Zap, TrendingUp, Star, Globe, Sun, Moon
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
@@ -14,54 +14,60 @@ import { useApp } from '../../context/AppContext';
 // DESIGN SYSTEM — Premium Ambient Background
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const AmbientBackground = () => (
-  <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-    {/* Base - Midnight Blue */}
-    <div className="absolute inset-0 bg-[#04070D]" />
+const AmbientBackground = ({ theme = 'dark' }) => {
+  const isDark = theme === 'dark';
+  return (
+    <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none transition-colors duration-700">
+      {/* Base Layer */}
+      <div className={`absolute inset-0 transition-colors duration-700 ${isDark ? 'bg-[#04070D]' : 'bg-[#F8FAFC]'}`} />
 
-    {/* Top-left soft glow */}
-    <div className="absolute -top-40 -left-40 w-[700px] h-[700px] rounded-full opacity-20"
-      style={{ background: 'radial-gradient(circle, rgba(251,191,36,0.05) 0%, transparent 70%)' }} />
+      {/* Top-left soft glow */}
+      <div className="absolute -top-40 -left-40 w-[700px] h-[700px] rounded-full opacity-20 transition-all duration-700"
+        style={{ background: isDark ? 'radial-gradient(circle, rgba(251,191,36,0.05) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(251,191,36,0.15) 0%, transparent 70%)' }} />
 
-    {/* Bottom-right cool glow */}
-    <div className="absolute -bottom-60 -right-40 w-[800px] h-[800px] rounded-full opacity-15"
-      style={{ background: 'radial-gradient(circle, rgba(148,163,184,0.04) 0%, transparent 70%)' }} />
+      {/* Bottom-right cool glow */}
+      <div className="absolute -bottom-60 -right-40 w-[800px] h-[800px] rounded-full opacity-15 transition-all duration-700"
+        style={{ background: isDark ? 'radial-gradient(circle, rgba(148,163,184,0.04) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%)' }} />
 
-    {/* Center soft wash */}
-    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[600px] rounded-full opacity-[0.06]"
-      style={{ background: 'radial-gradient(ellipse, rgba(251,191,36,0.06) 0%, transparent 70%)' }} />
+      {/* Center soft wash */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[600px] rounded-full opacity-[0.06] transition-all duration-700"
+        style={{ background: isDark ? 'radial-gradient(ellipse, rgba(251,191,36,0.06) 0%, transparent 70%)' : 'radial-gradient(ellipse, rgba(251,191,36,0.12) 0%, transparent 70%)' }} />
 
-    {/* Subtle animated floating orb */}
-    <motion.div
-      animate={{ y: [0, -20, 0], x: [0, 15, 0] }}
-      transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-      className="absolute top-[20%] right-[30%] w-[400px] h-[400px] rounded-full opacity-[0.04]"
-      style={{ background: 'radial-gradient(circle, rgba(148,163,184,0.15) 0%, transparent 60%)' }}
-    />
+      {/* Subtle animated floating orb */}
+      <motion.div
+        animate={{ y: [0, -20, 0], x: [0, 15, 0] }}
+        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-[20%] right-[30%] w-[400px] h-[400px] rounded-full opacity-[0.04] transition-all duration-700"
+        style={{ background: isDark ? 'radial-gradient(circle, rgba(148,163,184,0.15) 0%, transparent 60%)' : 'radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 60%)' }}
+      />
 
-    {/* Noise texture for premium grain */}
-    <div className="absolute inset-0 opacity-[0.025]"
-      style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 256 256%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E")' }} />
+      {/* Noise texture for premium grain */}
+      <div className={`absolute inset-0 transition-opacity duration-700 ${isDark ? 'opacity-[0.025]' : 'opacity-[0.015]'}`}
+        style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 256 256%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E")' }} />
 
-    {/* Very subtle grid */}
-    <div className="absolute inset-0 opacity-[0.02]"
-      style={{
-        backgroundImage: 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)',
-        backgroundSize: '64px 64px',
-        maskImage: 'radial-gradient(ellipse at center, black 30%, transparent 70%)',
-        WebkitMaskImage: 'radial-gradient(ellipse at center, black 30%, transparent 70%)',
-      }} />
-  </div>
-);
+      {/* Very subtle grid */}
+      <div className={`absolute inset-0 transition-all duration-700 ${isDark ? 'opacity-[0.02]' : 'opacity-[0.04]'}`}
+        style={{
+          backgroundImage: isDark 
+            ? 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)'
+            : 'linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px)',
+          backgroundSize: '64px 64px',
+          maskImage: 'radial-gradient(ellipse at center, black 30%, transparent 70%)',
+          WebkitMaskImage: 'radial-gradient(ellipse at center, black 30%, transparent 70%)',
+        }} />
+    </div>
+  );
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // DESIGN SYSTEM — Glow Card Wrapper (3D tilt + border glow)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const GlowCard = ({ children, className = '', glowColor = 'rgba(251,191,36,0.1)', ...props }) => {
+const GlowCard = ({ children, theme = 'dark', className = '', glowColor = 'rgba(251,191,36,0.1)', ...props }) => {
+  const isDark = theme === 'dark';
   const ref = useRef(null);
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
+  const mouseX = useMotionValue(0.5);
+  const mouseY = useMotionValue(0.5);
 
   const handleMouseMove = useCallback((e) => {
     if (!ref.current) return;
@@ -97,7 +103,7 @@ const GlowCard = ({ children, className = '', glowColor = 'rgba(251,191,36,0.1)'
     >
       {/* Border glow on hover */}
       <motion.div
-        className="pointer-events-none absolute -inset-px rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-0"
+        className={`pointer-events-none absolute -inset-px rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-0 ${isDark ? '' : 'mix-blend-multiply'}`}
         style={{ background: glowBackground }}
       />
       {children}
@@ -203,7 +209,8 @@ const ROLES = [
 // VOLUNTEER PREFERENCES MODAL
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const VolunteerPreferencesModal = ({ userId, onClose, onSaved }) => {
+const VolunteerPreferencesModal = ({ userId, onClose, onSaved, theme = 'dark' }) => {
+  const isDark = theme === 'dark';
   const [step, setStep] = useState(0);
   const [selectedDomains, setSelectedDomains] = useState(new Set());
   const [selectedRoles, setSelectedRoles] = useState(new Set());
@@ -257,9 +264,9 @@ const VolunteerPreferencesModal = ({ userId, onClose, onSaved }) => {
 
   const StepDomains = () => (
     <>
-      <div className="flex items-center gap-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl px-3.5 py-2.5 mb-5 focus-within:border-white/[0.15] transition-colors">
+      <div className={`flex items-center gap-2.5 border rounded-xl px-3.5 py-2.5 mb-5 transition-all duration-300 ${isDark ? 'bg-white/[0.04] border-white/[0.06] focus-within:border-white/[0.15]' : 'bg-zinc-900/[0.03] border-zinc-900/[0.08] focus-within:border-amber-500/50 shadow-sm'}`}>
         <Search size={14} className="text-zinc-500 shrink-0" />
-        <input autoFocus className="bg-transparent border-none outline-none text-sm text-white placeholder-zinc-600 w-full" placeholder="Search domains…" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <input autoFocus className={`bg-transparent border-none outline-none text-sm w-full transition-colors ${isDark ? 'text-white placeholder-zinc-600' : 'text-zinc-900 placeholder-zinc-400'}`} placeholder="Search domains…" value={search} onChange={(e) => setSearch(e.target.value)} />
         {search && <button onClick={() => setSearch('')} className="text-zinc-600 hover:text-zinc-400 transition-colors"><X size={13} /></button>}
       </div>
       <div className="max-h-72 overflow-y-auto pr-1 space-y-5 scroll-smooth custom-scrollbar">
@@ -268,17 +275,20 @@ const VolunteerPreferencesModal = ({ userId, onClose, onSaved }) => {
         ) : (
           Object.entries(filteredDomains).map(([cat, items]) => (
             <div key={cat}>
-              <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-500 mb-2.5">{cat}</p>
+              <p className={`text-[10px] font-semibold tracking-widest uppercase mb-2.5 transition-colors ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>{cat}</p>
               <div className="flex flex-wrap gap-2">
-                {items.map((item) => (
-                  <button key={item} onClick={() => toggleDomain(item)}
-                    className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all duration-200 ${selectedDomains.has(item)
-                      ? 'bg-white text-zinc-900 border-white shadow-sm'
-                      : 'bg-white/[0.03] border-white/[0.06] text-zinc-400 hover:border-white/[0.15] hover:text-zinc-200 hover:bg-white/[0.06]'
-                    }`}>
-                    {selectedDomains.has(item) && <Check size={10} className="inline mr-1 -mt-0.5" />}{item}
-                  </button>
-                ))}
+                {items.map((item) => {
+                  const sel = selectedDomains.has(item);
+                  return (
+                    <button key={item} onClick={() => toggleDomain(item)}
+                      className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all duration-200 ${sel
+                        ? (isDark ? 'bg-white text-zinc-900 border-white shadow-sm' : 'bg-zinc-900 text-white border-zinc-900 shadow-sm')
+                        : (isDark ? 'bg-white/[0.03] border-white/[0.06] text-zinc-400 hover:border-white/[0.15] hover:text-zinc-200 hover:bg-white/[0.06]' : 'bg-zinc-900/[0.02] border-zinc-900/[0.06] text-zinc-500 hover:border-zinc-900/[0.12] hover:text-zinc-900 hover:bg-zinc-900/[0.04]')
+                      }`}>
+                      {sel && <Check size={10} className="inline mr-1 -mt-0.5" />}{item}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ))
@@ -294,17 +304,17 @@ const VolunteerPreferencesModal = ({ userId, onClose, onSaved }) => {
           const sel = selectedRoles.has(role.id);
           return (
             <button key={role.id} onClick={() => toggleRole(role.id)}
-              className={`text-left p-4 rounded-xl border transition-all duration-200 ${sel
-                ? 'bg-white/[0.08] border-white/[0.15]'
-                : 'bg-white/[0.02] border-white/[0.05] hover:bg-white/[0.04] hover:border-white/[0.12]'
+              className={`text-left p-4 rounded-xl border transition-all duration-300 ${sel
+                ? (isDark ? 'bg-white/[0.08] border-white/[0.15]' : 'bg-amber-500/[0.08] border-amber-500/30 shadow-sm')
+                : (isDark ? 'bg-white/[0.02] border-white/[0.05] hover:bg-white/[0.04] hover:border-white/[0.12]' : 'bg-zinc-50 border-zinc-100 hover:bg-zinc-100/80 hover:border-zinc-200 shadow-sm shadow-black/[0.02]')
               }`}>
               <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm mb-2.5"
-                style={{ background: role.color + '18', border: `1px solid ${role.color}30` }}>{role.emoji}</div>
+                style={{ background: role.color + (isDark ? '18' : '12'), border: `1px solid ${role.color}${isDark ? '30' : '20'}` }}>{role.emoji}</div>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-semibold text-slate-200">{role.name}</span>
-                {sel && <Check size={14} className="text-amber-400 shrink-0" />}
+                <span className={`text-sm font-semibold transition-colors ${isDark ? 'text-slate-200' : 'text-zinc-800'}`}>{role.name}</span>
+                {sel && <Check size={14} className="text-amber-500 shrink-0" />}
               </div>
-              <p className="text-xs text-slate-500 leading-relaxed">{role.desc}</p>
+              <p className={`text-[11px] leading-relaxed transition-colors ${isDark ? 'text-slate-500' : 'text-zinc-500'}`}>{role.desc}</p>
             </button>
           );
         })}
@@ -315,17 +325,21 @@ const VolunteerPreferencesModal = ({ userId, onClose, onSaved }) => {
   const StepReview = () => (
     <div className="space-y-5 max-h-80 overflow-y-auto pr-1 scroll-smooth custom-scrollbar">
       <div>
-        <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-500 mb-3">Selected Domains ({selectedDomains.size})</p>
+        <p className={`text-[10px] font-semibold tracking-widest uppercase mb-3 transition-colors ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Selected Domains ({selectedDomains.size})</p>
         <div className="flex flex-wrap gap-2">
-          {[...selectedDomains].map((d) => (<span key={d} className="px-2.5 py-1 rounded-md bg-white/[0.08] border border-white/[0.1] text-zinc-200 text-xs font-medium">{d}</span>))}
-          {selectedDomains.size === 0 && <span className="text-zinc-600 text-sm">None selected</span>}
+          {[...selectedDomains].map((d) => (
+            <span key={d} className={`px-2.5 py-1 rounded-md border text-xs font-medium transition-all ${isDark ? 'bg-white/[0.08] border-white/[0.1] text-zinc-200' : 'bg-zinc-900/[0.04] border-zinc-900/[0.08] text-zinc-700'}`}>{d}</span>
+          ))}
+          {selectedDomains.size === 0 && <span className="text-zinc-600 text-sm italic">None selected</span>}
         </div>
       </div>
       <div>
-        <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-500 mb-3">Volunteer Roles ({selectedRoles.size})</p>
+        <p className={`text-[10px] font-semibold tracking-widest uppercase mb-3 transition-colors ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Volunteer Roles ({selectedRoles.size})</p>
         <div className="flex flex-wrap gap-2">
-          {ROLES.filter((r) => selectedRoles.has(r.id)).map((r) => (<span key={r.id} className="px-2.5 py-1 rounded-md bg-white/[0.08] border border-white/[0.1] text-zinc-200 text-xs font-medium">{r.emoji} {r.name}</span>))}
-          {selectedRoles.size === 0 && <span className="text-zinc-600 text-sm">None selected</span>}
+          {ROLES.filter((r) => selectedRoles.has(r.id)).map((r) => (
+            <span key={r.id} className={`px-2.5 py-1 rounded-md border text-xs font-medium transition-all ${isDark ? 'bg-white/[0.08] border-white/[0.1] text-zinc-200' : 'bg-zinc-900/[0.04] border-zinc-900/[0.08] text-zinc-700'}`}>{r.emoji} {r.name}</span>
+          ))}
+          {selectedRoles.size === 0 && <span className="text-zinc-600 text-sm italic">None selected</span>}
         </div>
       </div>
     </div>
@@ -342,20 +356,20 @@ const VolunteerPreferencesModal = ({ userId, onClose, onSaved }) => {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xl p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", damping: 25, stiffness: 350 }}
-        className="w-full max-w-2xl bg-[#111113]/95 backdrop-blur-2xl border border-white/[0.06] rounded-2xl overflow-hidden shadow-2xl shadow-black/60">
+        className={`w-full max-w-2xl backdrop-blur-2xl border rounded-2xl overflow-hidden shadow-2xl transition-all duration-500 ${isDark ? 'bg-[#111113]/95 border-white/[0.06] shadow-black/60' : 'bg-white border-zinc-900/[0.08] shadow-zinc-900/10'}`}>
         <div className="px-8 pt-8 pb-0">
           <div className="flex items-center gap-2 mb-5">
             {STEPS.map((_, i) => (
-              <div key={i} className="h-1 rounded-full transition-all duration-300" style={{ width: i === step ? 28 : 6, background: i <= step ? '#e4e4e7' : 'rgba(255,255,255,0.08)' }} />
+              <div key={i} className={`h-1 rounded-full transition-all duration-300 ${i <= step ? (isDark ? 'bg-white' : 'bg-zinc-900') : (isDark ? 'bg-white/[0.08]' : 'bg-zinc-100')}`} style={{ width: i === step ? 28 : 6 }} />
             ))}
             <button onClick={onClose} className="ml-auto p-1.5 text-zinc-600 hover:text-zinc-300 hover:bg-white/[0.05] rounded-lg transition-all"><X size={16} /></button>
           </div>
           <p className="text-[11px] font-semibold tracking-widest uppercase text-zinc-500 mb-1">{current.label}</p>
-          <h2 className="text-2xl font-bold text-white mb-1">{current.title}</h2>
+          <h2 className={`text-2xl font-bold mb-1 transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>{current.title}</h2>
           <p className="text-sm text-zinc-500 mb-6">{current.sub}</p>
         </div>
         <div className="px-8 pb-0">{current.content}</div>
-        <div className="px-8 pt-4 pb-6 mt-5 border-t border-white/[0.05] space-y-3">
+        <div className={`px-8 pt-4 pb-6 mt-5 border-t space-y-3 transition-colors ${isDark ? 'border-white/[0.05]' : 'border-zinc-900/[0.05]'}`}>
           {saveError && (
             <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 flex items-start gap-3">
               <span className="text-red-400 text-xs leading-relaxed flex-1">{saveError}</span>
@@ -363,19 +377,19 @@ const VolunteerPreferencesModal = ({ userId, onClose, onSaved }) => {
             </div>
           )}
           <div className="flex items-center justify-between">
-            <p className="text-xs text-zinc-600">
-              {current.count != null && current.count > 0 ? (<><span className="text-zinc-200 font-semibold">{current.count}</span> {current.noun}{current.count !== 1 ? 's' : ''} selected</>) : step < 2 ? `Select at least one ${current.noun}` : null}
+            <p className="text-xs text-zinc-500">
+              {current.count != null && current.count > 0 ? (<><span className={`font-semibold ${isDark ? 'text-white' : 'text-zinc-900'}`}>{current.count}</span> {current.noun}{current.count !== 1 ? 's' : ''} selected</>) : step < 2 ? `Select at least one ${current.noun}` : null}
             </p>
             <div className="flex items-center gap-3">
               {step > 0 && (
-                <button onClick={() => { setStep((s) => s - 1); setSaveError(''); }} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-white/[0.08] text-zinc-400 hover:text-zinc-200 hover:border-white/[0.15] text-sm font-semibold transition-all">
+                <button onClick={() => { setStep((s) => s - 1); setSaveError(''); }} className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all ${isDark ? 'border-white/[0.08] text-zinc-400 hover:text-zinc-200 hover:border-white/[0.15]' : 'border-zinc-900/[0.08] text-zinc-500 hover:text-zinc-900 hover:border-zinc-900/[0.15]'}`}>
                   <ChevronLeft size={15} /> Back
                 </button>
               )}
               <button disabled={!current.canContinue || saving} onClick={step < 2 ? () => { setStep((s) => s + 1); setSaveError(''); } : handleSave}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${current.canContinue && !saving
-                  ? 'bg-white hover:bg-zinc-100 text-zinc-900 shadow-sm active:scale-95'
-                  : 'bg-white/[0.05] text-zinc-600 cursor-not-allowed'
+                  ? (isDark ? 'bg-white hover:bg-zinc-100 text-zinc-900 shadow-sm active:scale-95' : 'bg-zinc-900 hover:bg-zinc-800 text-white shadow-sm active:scale-95')
+                  : 'bg-zinc-900/[0.05] text-zinc-600 cursor-not-allowed'
                 }`}>
                 {saving ? 'Saving…' : step < 2 ? 'Continue' : 'Save Preferences'}
                 {!saving && <ChevronRight size={15} />}
@@ -392,33 +406,37 @@ const VolunteerPreferencesModal = ({ userId, onClose, onSaved }) => {
 // NOTIFICATIONS PANEL
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const NotificationsPanel = ({ onClose }) => (
-  <div className="fixed inset-0 z-40" onClick={onClose}>
-    <motion.div
-      initial={{ opacity: 0, y: -10, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ type: "spring", stiffness: 400, damping: 25 }}
-      className="absolute right-6 top-16 w-80 bg-[#141416]/95 backdrop-blur-2xl border border-white/[0.06] rounded-2xl shadow-2xl shadow-black/60 overflow-hidden"
-      onClick={(e) => e.stopPropagation()}>
-      <div className="px-5 py-4 border-b border-white/[0.05] flex items-center justify-between">
-        <span className="font-semibold text-white text-sm">Notifications</span>
-        <button onClick={onClose} className="text-zinc-600 hover:text-zinc-300 transition-colors"><X size={15} /></button>
-      </div>
-      <div className="py-10 text-center">
-        <div className="w-12 h-12 rounded-xl bg-zinc-800/50 flex items-center justify-center mx-auto mb-3">
-          <Bell size={20} className="text-zinc-600" />
+const NotificationsPanel = ({ onClose, theme = 'dark' }) => {
+  const isDark = theme === 'dark';
+  return (
+    <div className="fixed inset-0 z-40" onClick={onClose}>
+      <motion.div
+        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+        className={`absolute right-6 top-16 w-80 backdrop-blur-2xl border rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 ${isDark ? 'bg-[#141416]/95 border-white/[0.06] shadow-black/60' : 'bg-white border-zinc-900/[0.08] shadow-zinc-900/10'}`}
+        onClick={(e) => e.stopPropagation()}>
+        <div className={`px-5 py-4 border-b flex items-center justify-between transition-colors duration-300 ${isDark ? 'border-white/[0.05]' : 'border-zinc-900/[0.05]'}`}>
+          <span className={`font-semibold text-sm transition-colors duration-300 ${isDark ? 'text-white' : 'text-zinc-900'}`}>Notifications</span>
+          <button onClick={onClose} className="text-zinc-600 hover:text-zinc-300 transition-colors"><X size={15} /></button>
         </div>
-        <p className="text-zinc-500 text-sm">No new notifications</p>
-      </div>
-    </motion.div>
-  </div>
-);
+        <div className="py-10 text-center">
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 transition-colors duration-300 ${isDark ? 'bg-zinc-800/50' : 'bg-zinc-100'}`}>
+            <Bell size={20} className="text-zinc-600" />
+          </div>
+          <p className="text-zinc-500 text-sm">No new notifications</p>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // PASSWORD UPDATE SECTION
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const PasswordUpdateSection = ({ user }) => {
+const PasswordUpdateSection = ({ user, theme = 'dark' }) => {
+  const isDark = theme === 'dark';
   const [step, setStep] = useState('initial');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -449,25 +467,29 @@ const PasswordUpdateSection = ({ user }) => {
     if (error) { setMessage({ text: error.message, type: 'error' }); } else { setMessage({ text: 'Password updated successfully!', type: 'success' }); setTimeout(() => reset(), 2000); }
   };
 
-  const inputClass = "w-full bg-zinc-900/80 border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm text-white font-medium outline-none focus:border-white/[0.2] focus:ring-1 focus:ring-white/[0.08] transition-all placeholder-zinc-600";
+  const inputClass = `w-full border rounded-xl px-4 py-2.5 text-sm font-medium outline-none transition-all duration-300 ${
+    isDark 
+      ? 'bg-zinc-900/80 border-white/[0.08] text-white focus:border-white/[0.2] placeholder-zinc-600' 
+      : 'bg-zinc-50 border-zinc-900/[0.08] text-zinc-900 focus:border-amber-500 placeholder-zinc-400'
+  }`;
 
   return (
-    <div className="bg-[#141416]/60 backdrop-blur-xl border border-white/[0.05] rounded-2xl p-6">
+    <div className={`backdrop-blur-xl border rounded-2xl p-6 transition-all duration-300 ${isDark ? 'bg-[#141416]/60 border-white/[0.05]' : 'bg-white border-zinc-900/[0.08] shadow-sm'}`}>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center"><Lock size={15} className="text-zinc-400" /></div>
-          <h3 className="text-base font-semibold text-white">Security</h3>
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${isDark ? 'bg-zinc-800' : 'bg-zinc-100'}`}><Lock size={15} className="text-zinc-400" /></div>
+          <h3 className={`text-base font-semibold transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>Security</h3>
         </div>
         {step !== 'initial' && <button onClick={reset} className="text-xs font-semibold text-zinc-500 hover:text-zinc-300 transition-colors">Cancel</button>}
       </div>
       {isOAuth ? (
-        <div className="bg-blue-500/5 border border-blue-500/10 rounded-xl p-4">
-          <p className="text-sm text-zinc-400 leading-relaxed">Your account is managed via <span className="text-zinc-200 font-semibold">{providerName}</span>. Password updates are handled through your {providerName} account settings.</p>
+        <div className={`border rounded-xl p-4 transition-colors duration-300 ${isDark ? 'bg-blue-500/5 border-blue-500/10' : 'bg-blue-50 border-blue-100'}`}>
+          <p className={`text-sm leading-relaxed transition-colors duration-300 ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>Your account is managed via <span className={`font-semibold transition-colors ${isDark ? 'text-zinc-200' : 'text-zinc-900'}`}>{providerName}</span>. Password updates are handled through your {providerName} account settings.</p>
         </div>
       ) : (
         <div className="space-y-4">
           {step === 'initial' && (
-            <button onClick={() => setStep('verify')} className="w-full flex items-center justify-center gap-2 py-3 bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.06] rounded-xl text-sm font-semibold text-zinc-200 transition-all">
+            <button onClick={() => setStep('verify')} className={`w-full flex items-center justify-center gap-2 py-3 border rounded-xl text-sm font-semibold transition-all ${isDark ? 'bg-white/[0.04] hover:bg-white/[0.07] border-white/[0.06] text-zinc-200' : 'bg-zinc-900/[0.03] hover:bg-zinc-900/[0.06] border-zinc-900/[0.08] text-zinc-700'}`}>
               <Lock size={14} className="text-zinc-400" /> Change Password
             </button>
           )}
@@ -475,7 +497,7 @@ const PasswordUpdateSection = ({ user }) => {
             <form onSubmit={handleVerify} className="space-y-4">
               <p className="text-xs text-zinc-500 mb-2">Please enter your current password to continue.</p>
               <div>
-                <label className="text-[10px] font-semibold tracking-widest uppercase text-zinc-500 block mb-2">Current Password</label>
+                <label className={`text-[10px] font-semibold tracking-widest uppercase block mb-2 transition-colors ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Current Password</label>
                 <div className="relative">
                   <input autoFocus type={showPassword ? 'text' : 'password'} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="••••••••" className={inputClass} required />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors">
@@ -484,7 +506,7 @@ const PasswordUpdateSection = ({ user }) => {
                 </div>
               </div>
               {message.text && <p className="text-xs font-semibold text-red-400">{message.text}</p>}
-              <button type="submit" disabled={loading || !currentPassword} className="w-full py-2.5 bg-white hover:bg-zinc-100 disabled:opacity-50 text-zinc-900 text-sm font-semibold rounded-xl transition-all shadow-sm">
+              <button type="submit" disabled={loading || !currentPassword} className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm ${isDark ? 'bg-white hover:bg-zinc-100 text-zinc-900' : 'bg-zinc-900 text-white hover:bg-zinc-800'}`}>
                 {loading ? 'Verifying...' : 'Next Step'}
               </button>
             </form>
@@ -493,7 +515,7 @@ const PasswordUpdateSection = ({ user }) => {
             <form onSubmit={handleUpdate} className="space-y-4">
               <p className="text-xs text-zinc-500 mb-2">Verification successful. Set your new password.</p>
               <div>
-                <label className="text-[10px] font-semibold tracking-widest uppercase text-zinc-500 block mb-2">New Password</label>
+                <label className={`text-[10px] font-semibold tracking-widest uppercase block mb-2 transition-colors ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>New Password</label>
                 <div className="relative">
                   <input autoFocus type={showPassword ? 'text' : 'password'} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" className={inputClass} required />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors">
@@ -502,11 +524,11 @@ const PasswordUpdateSection = ({ user }) => {
                 </div>
               </div>
               <div>
-                <label className="text-[10px] font-semibold tracking-widest uppercase text-zinc-500 block mb-2">Confirm New Password</label>
+                <label className={`text-[10px] font-semibold tracking-widest uppercase block mb-2 transition-colors ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Confirm New Password</label>
                 <input type={showPassword ? 'text' : 'password'} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" className={inputClass} required />
               </div>
               {message.text && <p className={`text-xs font-semibold ${message.type === 'error' ? 'text-red-400' : 'text-emerald-400'}`}>{message.text}</p>}
-              <button type="submit" disabled={loading || !newPassword || !confirmPassword} className="w-full py-2.5 bg-white hover:bg-zinc-100 disabled:opacity-50 text-zinc-900 text-sm font-semibold rounded-xl transition-all shadow-sm">
+              <button type="submit" disabled={loading || !newPassword || !confirmPassword} className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm ${isDark ? 'bg-white hover:bg-zinc-100 text-zinc-900' : 'bg-zinc-900 text-white hover:bg-zinc-800'}`}>
                 {loading ? 'Updating...' : 'Confirm Update'}
               </button>
             </form>
@@ -521,80 +543,95 @@ const PasswordUpdateSection = ({ user }) => {
 // PROFILE VIEW
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const ProfileView = ({ user, volunteerPrefs, ROLES, onEditVolunteer }) => {
+const ProfileView = ({ user, volunteerPrefs, ROLES, onEditVolunteer, theme = 'dark' }) => {
+  const isDark = theme === 'dark';
   const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const avatarLetter = displayName[0]?.toUpperCase();
+
+  const cardClass = `backdrop-blur-xl border rounded-2xl transition-all duration-300 ${isDark ? 'bg-[#141416]/60 border-white/[0.05]' : 'bg-white border-zinc-900/[0.08] shadow-sm'}`;
+  const labelClass = `text-[10px] font-semibold tracking-widest uppercase transition-colors duration-300 ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`;
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Profile Header */}
-      <div className="relative bg-[#141416]/60 backdrop-blur-xl border border-white/[0.05] rounded-2xl overflow-hidden p-8">
-        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-zinc-800/50 via-zinc-700/30 to-zinc-800/50" />
+      <div className={`relative border rounded-2xl overflow-hidden p-8 transition-all duration-300 ${isDark ? 'bg-[#141416]/60 border-white/[0.05]' : 'bg-white border-zinc-900/[0.08] shadow-sm'}`}>
+        <div className={`absolute top-0 left-0 w-full h-32 transition-colors duration-300 ${isDark ? 'bg-gradient-to-r from-zinc-800/50 via-zinc-700/30 to-zinc-800/50' : 'bg-gradient-to-r from-amber-50 to-amber-100/50'}`} />
         <div className="relative flex flex-col md:flex-row items-center md:items-end gap-6">
-          <div className="w-28 h-28 rounded-2xl bg-zinc-700 flex items-center justify-center text-4xl font-bold text-white shadow-2xl border-4 border-[#09090b]">
+          <div className={`w-28 h-28 rounded-2xl flex items-center justify-center text-4xl font-bold shadow-2xl border-4 transition-all duration-300 ${isDark ? 'bg-zinc-700 text-white border-[#09090b]' : 'bg-zinc-100 text-zinc-900 border-white'}`}>
             {avatarLetter}
           </div>
           <div className="flex-1 text-center md:text-left mb-2">
-            <h2 className="text-3xl font-bold text-white mb-1.5">{displayName}</h2>
+            <h2 className={`text-3xl font-bold mb-1.5 transition-colors duration-300 ${isDark ? 'text-white' : 'text-zinc-900'}`}>{displayName}</h2>
             <div className="flex flex-wrap justify-center md:justify-start gap-4 text-zinc-400 text-sm">
               <div className="flex items-center gap-1.5"><Mail size={14} className="text-zinc-400" />{user?.email}</div>
               <div className="flex items-center gap-1.5"><Shield size={14} className="text-emerald-400" />Verified Account</div>
             </div>
           </div>
-          <button onClick={onEditVolunteer} className="px-5 py-2.5 bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] rounded-xl text-sm font-semibold text-zinc-200 transition-all mb-2">Edit Profile</button>
+          <button onClick={onEditVolunteer} className={`px-5 py-2.5 border rounded-xl text-sm font-semibold transition-all mb-2 ${isDark ? 'bg-white/[0.05] hover:bg-white/[0.08] border-white/[0.08] text-zinc-200' : 'bg-zinc-900/[0.04] hover:bg-zinc-900/[0.08] border-zinc-900/[0.08] text-zinc-700'}`}>Edit Profile</button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-6">
-          <div className="bg-[#141416]/60 backdrop-blur-xl border border-white/[0.05] rounded-2xl p-6">
+          <div className={cardClass + " p-6"}>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center"><Sparkles size={15} className="text-zinc-400" /></div>
-                <h3 className="text-base font-semibold text-white">Volunteer Roles & Domains</h3>
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${isDark ? 'bg-zinc-800' : 'bg-zinc-100'}`}><Sparkles size={15} className="text-zinc-400" /></div>
+                <h3 className={`text-base font-semibold transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>Volunteer Roles & Domains</h3>
               </div>
               <button onClick={onEditVolunteer} className="text-xs font-semibold text-zinc-500 hover:text-zinc-300 transition-colors">Update</button>
             </div>
             <div className="space-y-6">
               <div>
-                <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-500 mb-3">Preferred Roles</p>
+                <p className={labelClass + " mb-3"}>Preferred Roles</p>
                 <div className="flex flex-wrap gap-2">
-                  {volunteerPrefs?.volunteer_roles?.map((rId) => { const r = ROLES.find((x) => x.id === rId); return r ? (<span key={rId} className="px-3 py-1.5 rounded-lg bg-white/[0.06] border border-white/[0.08] text-zinc-300 text-xs font-medium">{r.emoji} {r.name}</span>) : null; })}
-                  {(!volunteerPrefs?.volunteer_roles || volunteerPrefs.volunteer_roles.length === 0) && <p className="text-zinc-600 text-sm italic">No roles selected yet</p>}
+                  {volunteerPrefs?.volunteer_roles?.map((rId) => { 
+                    const r = ROLES.find((x) => x.id === rId); 
+                    return r ? (
+                      <span key={rId} className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${isDark ? 'bg-white/[0.06] border-white/[0.08] text-zinc-300' : 'bg-zinc-900/[0.04] border-zinc-900/[0.06] text-zinc-600'}`}>
+                        {r.emoji} {r.name}
+                      </span>
+                    ) : null; 
+                  })}
+                  {(!volunteerPrefs?.volunteer_roles || volunteerPrefs.volunteer_roles.length === 0) && <p className="text-zinc-400 text-sm italic">No roles selected yet</p>}
                 </div>
               </div>
               <div>
-                <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-500 mb-3">Interest Domains</p>
+                <p className={labelClass + " mb-3"}>Interest Domains</p>
                 <div className="flex flex-wrap gap-2">
-                  {volunteerPrefs?.volunteer_domains?.map((domain) => (<span key={domain} className="px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06] text-zinc-300 text-xs font-medium">{domain}</span>))}
-                  {(!volunteerPrefs?.volunteer_domains || volunteerPrefs.volunteer_domains.length === 0) && <p className="text-zinc-600 text-sm italic">No domains selected yet</p>}
+                  {volunteerPrefs?.volunteer_domains?.map((domain) => (
+                    <span key={domain} className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${isDark ? 'bg-white/[0.04] border-white/[0.06] text-zinc-300' : 'bg-zinc-900/[0.03] border-zinc-900/[0.05] text-zinc-600'}`}>
+                      {domain}
+                    </span>
+                  ))}
+                  {(!volunteerPrefs?.volunteer_domains || volunteerPrefs.volunteer_domains.length === 0) && <p className="text-zinc-400 text-sm italic">No domains selected yet</p>}
                 </div>
               </div>
             </div>
           </div>
-          <div className="bg-[#141416]/60 backdrop-blur-xl border border-white/[0.05] rounded-2xl p-6">
+          <div className={cardClass + " p-6"}>
             <div className="flex items-center gap-2.5 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-zinc-800/50 flex items-center justify-center"><FileText size={15} className="text-zinc-400" /></div>
-              <h3 className="text-base font-semibold text-white">Professional Bio</h3>
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${isDark ? 'bg-zinc-800' : 'bg-zinc-100'}`}><FileText size={15} className="text-zinc-400" /></div>
+              <h3 className={`text-base font-semibold transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>Professional Bio</h3>
             </div>
             <p className="text-zinc-500 text-sm leading-relaxed">No bio provided yet. Add a short description of your research interests and professional background.</p>
           </div>
         </div>
         <div className="space-y-6">
-          <PasswordUpdateSection user={user} />
-          <div className="bg-[#141416]/60 backdrop-blur-xl border border-white/[0.05] rounded-2xl p-6">
+          <PasswordUpdateSection user={user} theme={theme} />
+          <div className={cardClass + " p-6"}>
             <div className="flex items-center gap-2.5 mb-6">
               <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center"><Award size={15} className="text-amber-400" /></div>
-              <h3 className="text-base font-semibold text-white">Achievements</h3>
+              <h3 className={`text-base font-semibold transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>Achievements</h3>
             </div>
             <div className="space-y-3">
-              <div className="flex items-center gap-3 p-3 bg-white/[0.03] rounded-xl border border-white/[0.04]">
+              <div className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${isDark ? 'bg-white/[0.03] border-white/[0.04]' : 'bg-zinc-50 border-zinc-100'}`}>
                 <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400"><Award size={16} /></div>
-                <div><p className="text-xs font-semibold text-white">Early Bird</p><p className="text-[10px] text-zinc-500">Joined the platform in 2026</p></div>
+                <div><p className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-zinc-900'}`}>Early Bird</p><p className="text-[10px] text-zinc-500">Joined the platform in 2026</p></div>
               </div>
-              <div className="flex items-center gap-3 p-3 bg-white/[0.03] rounded-xl border border-white/[0.04] opacity-40">
-                <div className="w-9 h-9 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-400"><Users size={16} /></div>
-                <div><p className="text-xs font-semibold text-white">Frequent Attendee</p><p className="text-[10px] text-zinc-500">Join 5 conferences</p></div>
+              <div className={`flex items-center gap-3 p-3 rounded-xl border transition-all opacity-40 ${isDark ? 'bg-white/[0.03] border-white/[0.04]' : 'bg-zinc-50 border-zinc-100'}`}>
+                <div className="w-9 h-9 rounded-lg bg-zinc-200 flex items-center justify-center text-zinc-400"><Users size={16} /></div>
+                <div><p className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-zinc-900'}`}>Frequent Attendee</p><p className="text-[10px] text-zinc-500">Join 5 conferences</p></div>
               </div>
             </div>
           </div>
@@ -608,14 +645,38 @@ const ProfileView = ({ user, volunteerPrefs, ROLES, onEditVolunteer }) => {
 // CONFERENCE CARD — Premium Glassmorphic Design
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const roleBadgeColors = {
-  organizer: { bg: 'bg-amber-500/15', text: 'text-amber-300', border: 'border-amber-500/25', glow: 'shadow-amber-500/5' },
-  presenter: { bg: 'bg-emerald-500/15', text: 'text-emerald-300', border: 'border-emerald-500/25', glow: 'shadow-emerald-500/5' },
-  reviewer: { bg: 'bg-slate-400/15', text: 'text-slate-300', border: 'border-slate-400/25', glow: 'shadow-slate-400/5' },
-  member: { bg: 'bg-blue-500/15', text: 'text-blue-300', border: 'border-blue-500/25', glow: 'shadow-blue-500/5' },
+const getRoleBadgeStyle = (role, isDark) => {
+  const styles = {
+    organizer: { 
+      bg: isDark ? 'bg-amber-500/15' : 'bg-amber-100', 
+      text: isDark ? 'text-amber-300' : 'text-amber-700', 
+      border: isDark ? 'border-amber-500/25' : 'border-amber-200', 
+      glow: isDark ? 'shadow-amber-500/5' : 'shadow-none' 
+    },
+    presenter: { 
+      bg: isDark ? 'bg-emerald-500/15' : 'bg-emerald-100', 
+      text: isDark ? 'text-emerald-300' : 'text-emerald-700', 
+      border: isDark ? 'border-emerald-500/25' : 'border-emerald-200', 
+      glow: isDark ? 'shadow-emerald-500/5' : 'shadow-none' 
+    },
+    reviewer: { 
+      bg: isDark ? 'bg-slate-400/15' : 'bg-slate-100', 
+      text: isDark ? 'text-slate-300' : 'text-slate-600', 
+      border: isDark ? 'border-slate-400/25' : 'border-slate-200', 
+      glow: isDark ? 'shadow-slate-400/5' : 'shadow-none' 
+    },
+    member: { 
+      bg: isDark ? 'bg-blue-500/15' : 'bg-blue-100', 
+      text: isDark ? 'text-blue-300' : 'text-blue-700', 
+      border: isDark ? 'border-blue-500/25' : 'border-blue-200', 
+      glow: isDark ? 'shadow-blue-500/5' : 'shadow-none' 
+    },
+  };
+  return styles[role] || styles.member;
 };
 
-const ConfCard = ({ conf, role, onSelectConf }) => {
+const ConfCard = ({ conf, role, onSelectConf, theme = 'dark' }) => {
+  const isDark = theme === 'dark';
   const dateLabel = conf.start_date
     ? new Date(conf.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
     : 'Date TBD';
@@ -635,10 +696,10 @@ const ConfCard = ({ conf, role, onSelectConf }) => {
   const rotateY = useSpring(useTransform(mouseX, [0, 1], [-4, 4]), { stiffness: 300, damping: 25 });
 
   const glowBg = useMotionTemplate`
-    radial-gradient(500px circle at ${useTransform(mouseX, v => v * 100)}% ${useTransform(mouseY, v => v * 100)}%, rgba(148,163,184,0.06), transparent 60%)
+    radial-gradient(500px circle at ${useTransform(mouseX, v => v * 100)}% ${useTransform(mouseY, v => v * 100)}%, ${isDark ? 'rgba(148,163,184,0.06)' : 'rgba(251,191,36,0.12)'}, transparent 60%)
   `;
 
-  const badgeStyle = roleBadgeColors[role] || roleBadgeColors.member;
+  const badgeStyle = getRoleBadgeStyle(role, isDark);
 
   return (
     <motion.div
@@ -657,7 +718,11 @@ const ConfCard = ({ conf, role, onSelectConf }) => {
       />
 
       {/* Main card body */}
-      <div className="relative bg-[#141416]/80 backdrop-blur-xl border border-white/[0.06] rounded-2xl overflow-hidden flex flex-col h-full z-10 group-hover:border-white/[0.12] transition-colors duration-500">
+      <div className={`relative backdrop-blur-xl border rounded-2xl overflow-hidden flex flex-col h-full z-10 transition-all duration-500 ${
+        isDark 
+          ? 'bg-[#141416]/80 border-white/[0.06] group-hover:border-white/[0.12]' 
+          : 'bg-white border-zinc-900/[0.08] group-hover:border-zinc-900/[0.15] shadow-sm group-hover:shadow-md'
+      }`}>
         {/* Banner */}
         <div className="h-44 relative overflow-hidden">
           <div
@@ -665,16 +730,16 @@ const ConfCard = ({ conf, role, onSelectConf }) => {
             style={
               conf.banner_url
                 ? { backgroundImage: `url(${conf.banner_url})` }
-                : { background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)' }
+                : { background: isDark ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)' : 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)' }
             }
           />
           {/* Gradient overlay for readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/30 to-transparent" />
+          <div className={`absolute inset-0 bg-gradient-to-t via-transparent to-transparent ${isDark ? 'from-[#141416] via-[#141416]/30' : 'from-white via-white/20'}`} />
           {/* Subtle tint on hover */}
-          <div className="absolute inset-0 bg-amber-600/0 group-hover:bg-amber-600/[0.05] transition-colors duration-500" />
+          <div className={`absolute inset-0 transition-colors duration-500 ${isDark ? 'bg-amber-600/0 group-hover:bg-amber-600/[0.05]' : 'bg-amber-600/0 group-hover:bg-amber-600/[0.02]'}`} />
 
           {role && (
-            <div className={`absolute top-4 right-4 text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-widest border backdrop-blur-xl shadow-lg ${badgeStyle.bg} ${badgeStyle.text} ${badgeStyle.border} ${badgeStyle.glow}`}>
+            <div className={`absolute top-4 right-4 text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-widest border backdrop-blur-xl shadow-lg transition-all duration-300 ${badgeStyle.bg} ${badgeStyle.text} ${badgeStyle.border} ${badgeStyle.glow}`}>
               {role === 'member' ? 'Team Member' : role}
             </div>
           )}
@@ -684,23 +749,23 @@ const ConfCard = ({ conf, role, onSelectConf }) => {
         <div className="p-6 flex-1 flex flex-col">
           {/* Metadata row */}
           <div className="flex items-center gap-4 mb-3">
-            <div className="flex items-center gap-1.5 text-zinc-500 text-[11px] font-medium">
-              <MapPin size={11} className="text-zinc-400" />
+            <div className={`flex items-center gap-1.5 text-[11px] font-medium transition-colors duration-300 ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
+              <MapPin size={11} className={isDark ? 'text-zinc-400' : 'text-zinc-300'} />
               <span>{conf.location ?? 'Location TBD'}</span>
             </div>
-            <div className="flex items-center gap-1.5 text-zinc-500 text-[11px] font-medium">
-              <Calendar size={11} className="text-zinc-400" />
+            <div className={`flex items-center gap-1.5 text-[11px] font-medium transition-colors duration-300 ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
+              <Calendar size={11} className={isDark ? 'text-zinc-400' : 'text-zinc-300'} />
               <span>{dateLabel}</span>
             </div>
           </div>
 
           {/* Title */}
-          <h3 className="font-bold text-xl text-white mb-2 leading-snug tracking-tight line-clamp-2 transition-colors duration-300">
+          <h3 className={`font-bold text-xl mb-2 leading-snug tracking-tight line-clamp-2 transition-colors duration-300 ${isDark ? 'text-white' : 'text-zinc-900 group-hover:text-amber-600'}`}>
             {conf.title}
           </h3>
 
           {/* Description */}
-          <p className="text-zinc-500 text-sm line-clamp-2 mb-6 flex-1 leading-relaxed">
+          <p className={`text-sm line-clamp-2 mb-6 flex-1 leading-relaxed transition-colors duration-300 ${isDark ? 'text-zinc-500' : 'text-zinc-600'}`}>
             {conf.description ?? 'No description provided.'}
           </p>
 
@@ -708,12 +773,12 @@ const ConfCard = ({ conf, role, onSelectConf }) => {
           <MagneticButton
             onClick={() => onSelectConf(conf, role)}
             className={`w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-300 ${role
-              ? 'bg-white text-zinc-900 hover:bg-zinc-100 shadow-sm'
-              : 'bg-white/[0.05] text-zinc-300 hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/[0.12] hover:text-white'
+              ? (isDark ? 'bg-white text-zinc-900 hover:bg-zinc-100 shadow-sm' : 'bg-amber-500 text-white hover:bg-amber-600 shadow-sm shadow-amber-500/20 active:scale-95')
+              : (isDark ? 'bg-white/[0.05] text-zinc-300 hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/[0.12] hover:text-white' : 'bg-zinc-900/[0.04] text-zinc-600 hover:bg-zinc-900/[0.06] border border-zinc-900/[0.08] hover:border-zinc-900/[0.12] hover:text-amber-600')
             }`}
           >
             {role ? 'Open Dashboard' : 'View Conference'}
-            <ChevronRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
+            <ChevronRight size={15} className="group-hover:translate-x-1 transition-transform" />
           </MagneticButton>
         </div>
       </div>
@@ -725,69 +790,84 @@ const ConfCard = ({ conf, role, onSelectConf }) => {
 // SKELETON & EMPTY STATE
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const CardSkeleton = () => (
-  <div className="bg-[#141416]/60 border border-white/[0.04] rounded-2xl overflow-hidden animate-pulse">
-    <div className="h-44 bg-zinc-800/30" />
-    <div className="p-6 space-y-3">
-      <div className="h-3 bg-zinc-800/40 rounded-full w-2/3" />
-      <div className="h-5 bg-zinc-800/40 rounded-full w-full" />
-      <div className="h-3 bg-zinc-800/40 rounded-full w-4/5" />
-      <div className="h-10 bg-zinc-800/30 rounded-xl w-full mt-4" />
+const CardSkeleton = ({ theme = 'dark' }) => {
+  const isDark = theme === 'dark';
+  return (
+    <div className={`border rounded-2xl overflow-hidden animate-pulse transition-colors duration-300 ${isDark ? 'bg-[#141416]/60 border-white/[0.04]' : 'bg-zinc-100 border-zinc-200 shadow-sm'}`}>
+      <div className={`h-44 transition-colors ${isDark ? 'bg-zinc-800/30' : 'bg-zinc-200'}`} />
+      <div className="p-6 space-y-3">
+        <div className={`h-3 rounded-full w-2/3 transition-colors ${isDark ? 'bg-zinc-800/40' : 'bg-zinc-200'}`} />
+        <div className={`h-5 rounded-full w-full transition-colors ${isDark ? 'bg-zinc-800/40' : 'bg-zinc-200'}`} />
+        <div className={`h-3 rounded-full w-4/5 transition-colors ${isDark ? 'bg-zinc-800/40' : 'bg-zinc-200'}`} />
+        <div className={`h-10 rounded-xl w-full mt-4 transition-colors ${isDark ? 'bg-zinc-800/30' : 'bg-zinc-200'}`} />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
-const EmptyState = ({ activeTab, onCreateConf }) => (
-  <div className="col-span-full py-24 text-center">
-    <div className="w-16 h-16 rounded-2xl bg-zinc-800/40 flex items-center justify-center mx-auto mb-5 border border-white/[0.05]">
-      <Layout size={28} className="text-zinc-600" />
+const EmptyState = ({ activeTab, onCreateConf, theme = 'dark' }) => {
+  const isDark = theme === 'dark';
+  return (
+    <div className="col-span-full py-24 text-center">
+      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5 border transition-all duration-300 ${isDark ? 'bg-zinc-800/40 border-white/[0.05]' : 'bg-zinc-100 border-zinc-200 shadow-sm'}`}>
+        <Layout size={28} className="text-zinc-600" />
+      </div>
+      <p className={`text-base font-medium mb-2 transition-colors ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
+        {activeTab === 'my' ? "You haven't joined any conferences yet" : 'No events found matching your search'}
+      </p>
+      <p className="text-zinc-500 text-sm mb-6">{activeTab === 'my' ? 'Create your first one or explore existing events.' : 'Try adjusting your search terms.'}</p>
+      {activeTab === 'my' && (
+        <button onClick={onCreateConf} className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm ${isDark ? 'bg-white hover:bg-zinc-100 text-zinc-900' : 'bg-zinc-900 hover:bg-zinc-800 text-white'}`}>
+          <Plus size={16} /> Create Conference
+        </button>
+      )}
     </div>
-    <p className="text-zinc-400 text-base font-medium mb-2">
-      {activeTab === 'my' ? "You haven't joined any conferences yet" : 'No events found matching your search'}
-    </p>
-    <p className="text-zinc-600 text-sm mb-6">{activeTab === 'my' ? 'Create your first one or explore existing events.' : 'Try adjusting your search terms.'}</p>
-    {activeTab === 'my' && (
-      <button onClick={onCreateConf} className="inline-flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-zinc-100 text-zinc-900 text-sm font-semibold rounded-xl transition-all shadow-sm">
-        <Plus size={16} /> Create Conference
-      </button>
-    )}
-  </div>
-);
+  );
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // STAT CARD — Animated + Rich
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const StatCard = ({ icon: Icon, label, value, color, delay = 0 }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ type: "spring", stiffness: 300, damping: 24, delay }}
-  >
-    <GlowCard
-      glowColor={color.replace('1)', '0.12)')}
-      className="bg-[#141416]/60 backdrop-blur-xl border border-white/[0.05] rounded-2xl p-5 hover:border-white/[0.1] transition-all duration-300 cursor-default"
+const StatCard = ({ icon: Icon, label, value, color, delay = 0, theme = 'dark' }) => {
+  const isDark = theme === 'dark';
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 300, damping: 24, delay }}
     >
-      <div className="relative z-10 flex items-start justify-between">
-        <div>
-          <motion.div
-            className="text-3xl font-bold tracking-tight mb-1"
-            style={{ color: color.replace('0.12)', '1)') }}
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 400, damping: 15, delay: delay + 0.2 }}
-          >
-            {value}
-          </motion.div>
-          <div className="text-[11px] text-zinc-500 font-medium tracking-wide">{label}</div>
+      <GlowCard
+        theme={theme}
+        glowColor={color.replace('1)', '0.12)')}
+        className={`backdrop-blur-xl border rounded-2xl p-5 transition-all duration-300 cursor-default ${
+          isDark 
+            ? 'bg-[#141416]/60 border-white/[0.05] hover:border-white/[0.1]' 
+            : 'bg-white border-zinc-900/[0.05] hover:border-zinc-900/[0.1] shadow-sm'
+        }`}
+      >
+        <div className="relative z-10 flex items-start justify-between">
+          <div>
+            <motion.div
+              className="text-3xl font-bold tracking-tight mb-1"
+              style={{ color: isDark ? color.replace('0.12)', '1)') : color.replace('1)', '0.8)') }}
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 400, damping: 15, delay: delay + 0.2 }}
+            >
+              {value}
+            </motion.div>
+            <div className={`text-[11px] font-medium tracking-wide transition-colors duration-300 ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>{label}</div>
+          </div>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300" 
+            style={{ backgroundColor: color.replace('1)', isDark ? '0.1)' : '0.08)') }}>
+            <Icon size={16} style={{ color: color.replace('0.12)', isDark ? '0.7)' : '0.9)') }} />
+          </div>
         </div>
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: color.replace('1)', '0.1)') }}>
-          <Icon size={16} style={{ color: color.replace('0.12)', '0.7)') }} />
-        </div>
-      </div>
-    </GlowCard>
-  </motion.div>
-);
+      </GlowCard>
+    </motion.div>
+  );
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // MAIN DASHBOARD
@@ -795,6 +875,15 @@ const StatCard = ({ icon: Icon, label, value, color, delay = 0 }) => (
 
 const UserDashboard = ({ onSelectConf, onCreateConf }) => {
   const { user, conferences, logout, fetchConferences } = useApp();
+
+  const [theme, setTheme] = useState(() => localStorage.getItem('confhub-theme') || 'dark');
+  const isDark = theme === 'dark';
+
+  const toggleTheme = () => {
+    const next = isDark ? 'light' : 'dark';
+    setTheme(next);
+    localStorage.setItem('confhub-theme', next);
+  };
 
   const [activeTab, setActiveTab] = useState('my');
   const [currentSection, setCurrentSection] = useState('conferences');
@@ -858,8 +947,14 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
 
   // ── Scroll ──────────────────────────────────────────────────────────
   const { scrollY } = useScroll();
-  const navBg = useTransform(scrollY, [0, 60], ['rgba(9,9,11,0)', 'rgba(9,9,11,0.8)']);
-  const navBorderColor = useTransform(scrollY, [0, 60], ['rgba(255,255,255,0)', 'rgba(255,255,255,0.04)']);
+  const navBg = useTransform(scrollY, [0, 60], [
+    isDark ? 'rgba(9,9,11,0)' : 'rgba(248,250,252,0)',
+    isDark ? 'rgba(9,9,11,0.8)' : 'rgba(248,250,252,0.9)'
+  ]);
+  const navBorderColor = useTransform(scrollY, [0, 60], [
+    isDark ? 'rgba(255,255,255,0)' : 'rgba(15,23,42,0)',
+    isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.12)'
+  ]);
   const navBlur = useTransform(scrollY, [0, 60], ['blur(0px)', 'blur(20px)']);
 
   const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.15 } } };
@@ -869,23 +964,22 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
   // RENDER
   // ══════════════════════════════════════════════════════════════════════
   return (
-    <div className="min-h-screen bg-[#04070D] text-slate-100 relative selection:bg-amber-500/20 overflow-x-hidden" style={{ fontFamily: "'Space Grotesk', 'Inter', sans-serif" }}>
-      <AmbientBackground />
+    <div className={`min-h-screen transition-colors duration-700 ${isDark ? 'bg-[#04070D] text-slate-100' : 'bg-[#F8FAFC] text-slate-800'} relative selection:bg-amber-500/20 overflow-x-hidden`} style={{ fontFamily: "'Space Grotesk', 'Inter', sans-serif" }}>
+      <AmbientBackground theme={theme} />
 
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 
       {/* ═══ NAVBAR ═══ */}
       <motion.nav
         style={{ backgroundColor: navBg, borderBottomColor: navBorderColor, backdropFilter: navBlur, WebkitBackdropFilter: navBlur }}
-        className="sticky top-0 z-40 px-6 py-3 border-b border-white/[0.02]"
+        className={`sticky top-0 z-40 px-6 py-3 border-b transition-colors duration-500 ${isDark ? 'border-white/[0.04]' : 'border-zinc-900/[0.08]'}`}
       >
         <div className="max-w-[90rem] mx-auto flex justify-between items-center">
-          {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-sm">
-              <Layout size={17} className="text-zinc-900" />
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-sm transition-colors duration-200 ${isDark ? 'bg-white' : 'bg-zinc-900'}`}>
+              <Layout size={17} className={isDark ? 'text-zinc-900' : 'text-white'} />
             </div>
-            <span className="font-bold text-white text-lg tracking-tight">ConfHub</span>
+            <span className={`font-bold text-lg tracking-tight transition-colors duration-200 ${isDark ? 'text-white' : 'text-zinc-900'}`}>ConfHub</span>
           </div>
 
           {/* Center nav items */}
@@ -898,8 +992,8 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
                 key={key}
                 onClick={() => setCurrentSection(key)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${currentSection === key
-                  ? 'text-white bg-white/[0.06]'
-                  : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.03]'
+                  ? (isDark ? 'text-white bg-white/[0.06]' : 'text-zinc-900 bg-zinc-900/[0.04]')
+                  : (isDark ? 'text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.03]' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-900/[0.02]')
                 }`}
               >
                 <NavIcon size={15} />
@@ -913,11 +1007,13 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
             {/* Search */}
             <motion.div
               animate={{ width: searchFocused ? 280 : 200 }}
-              className="hidden md:flex items-center bg-white/[0.04] rounded-xl px-3.5 py-2 gap-2 border border-white/[0.06] focus-within:border-white/[0.15] transition-colors"
+              className={`hidden md:flex items-center rounded-xl px-3.5 py-2 gap-2 border transition-all duration-300 ${isDark 
+                ? 'bg-white/[0.04] border-white/[0.06] focus-within:border-white/[0.15]' 
+                : 'bg-zinc-900/[0.03] border-zinc-900/[0.08] focus-within:border-zinc-900/[0.15]'}`}
             >
               <Search size={14} className="text-zinc-500 shrink-0" />
               <input
-                className="bg-transparent border-none outline-none text-sm w-full text-white placeholder-zinc-600"
+                className={`bg-transparent border-none outline-none text-sm w-full transition-colors duration-300 ${isDark ? 'text-white placeholder-zinc-600' : 'text-zinc-900 placeholder-zinc-400'}`}
                 placeholder="Search events…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -927,25 +1023,55 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
               {search && <button onClick={() => setSearch('')} className="text-zinc-600 hover:text-zinc-400 transition-colors"><X size={13} /></button>}
             </motion.div>
 
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className={`p-2.5 rounded-xl transition-all duration-300 ${isDark 
+                ? 'text-zinc-500 hover:text-amber-400 hover:bg-amber-500/10' 
+                : 'text-zinc-400 hover:text-amber-600 hover:bg-amber-600/10'}`}
+              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={theme}
+                  initial={{ opacity: 0, rotate: -90, scale: 0.8 }}
+                  animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                  exit={{ opacity: 0, rotate: 90, scale: 0.8 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {isDark ? <Sun size={17} /> : <Moon size={17} />}
+                </motion.div>
+              </AnimatePresence>
+            </button>
+
             {/* Notifications */}
-            <button onClick={() => setShowNotifications((v) => !v)} className="relative p-2.5 text-slate-500 hover:text-amber-400 hover:bg-amber-500/10 rounded-xl transition-all">
+            <button 
+              onClick={() => setShowNotifications((v) => !v)} 
+              className={`relative p-2.5 rounded-xl transition-all duration-300 ${isDark 
+                ? 'text-zinc-500 hover:text-amber-400 hover:bg-amber-500/10' 
+                : 'text-zinc-400 hover:text-amber-600 hover:bg-amber-600/10'}`}
+            >
               <Bell size={17} />
-              <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-amber-400 rounded-full ring-2 ring-[#04070D]" />
+              <span className={`absolute top-2 right-2 w-1.5 h-1.5 bg-amber-400 rounded-full ring-2 ${isDark ? 'ring-[#09090b]' : 'ring-white'}`} />
             </button>
 
             {/* Divider */}
-            <div className="w-px h-6 bg-white/[0.06] mx-1" />
+            <div className={`w-px h-6 mx-1 transition-colors duration-700 ${isDark ? 'bg-white/[0.06]' : 'bg-zinc-900/[0.08]'}`} />
 
             {/* User */}
             <button
               onClick={() => setCurrentSection('profile')}
-              className={`flex items-center gap-2.5 p-1.5 rounded-xl transition-all ${currentSection === 'profile' ? 'bg-amber-500/10 ring-1 ring-amber-500/20' : 'hover:bg-white/[0.04]'}`}
+              className={`flex items-center gap-2.5 p-1.5 rounded-xl transition-all duration-300 ${
+                currentSection === 'profile' 
+                  ? (isDark ? 'bg-amber-500/10 ring-1 ring-amber-500/20' : 'bg-amber-600/10 ring-1 ring-amber-600/20') 
+                  : (isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-zinc-900/[0.03]')
+              }`}
             >
-              <div className="w-8 h-8 bg-zinc-700 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm transition-colors duration-200 ${isDark ? 'bg-zinc-800 text-white' : 'bg-zinc-200 text-zinc-900'}`}>
                 {firstName[0]?.toUpperCase()}
               </div>
               <div className="hidden md:block text-left">
-                <div className="text-sm font-semibold text-white leading-none">{firstName}</div>
+                <div className={`text-sm font-semibold leading-none transition-all duration-300 ${isDark ? 'text-white' : 'text-zinc-900'}`}>{firstName}</div>
                 <div className="text-[11px] text-zinc-600 mt-0.5">Dashboard</div>
               </div>
             </button>
@@ -958,7 +1084,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
       </motion.nav>
 
       {/* ═══ NOTIFICATIONS ═══ */}
-      <AnimatePresence>{showNotifications && <NotificationsPanel onClose={() => setShowNotifications(false)} />}</AnimatePresence>
+      <AnimatePresence>{showNotifications && <NotificationsPanel onClose={() => setShowNotifications(false)} theme={theme} />}</AnimatePresence>
 
       {/* ═══ MAIN CONTENT ═══ */}
       {currentSection === 'conferences' ? (
@@ -976,7 +1102,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
                 >
                   Welcome back
                 </motion.p>
-                <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-white mb-3 leading-[1.1]">
+                <h1 className={`text-4xl lg:text-5xl font-bold tracking-tight mb-3 leading-[1.1] transition-colors duration-300 ${isDark ? 'text-white' : 'text-zinc-900'}`}>
                   {firstName}'s Dashboard
                 </h1>
                 <p className="text-zinc-500 text-base max-w-lg">
@@ -996,7 +1122,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
           {/* ── STATS ROW ── */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
             {statItems.map((s, i) => (
-              <StatCard key={s.label} {...s} delay={i * 0.08} />
+              <StatCard key={s.label} {...s} delay={i * 0.08} theme={theme} />
             ))}
           </div>
 
@@ -1007,16 +1133,19 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
             <motion.div variants={itemVariants} className="w-full lg:w-[300px] xl:w-[320px] shrink-0 space-y-5">
 
               {/* Volunteer Preferences */}
-              <GlowCard className="bg-[#141416]/60 backdrop-blur-xl border border-white/[0.05] rounded-2xl p-5 hover:border-white/[0.08] transition-all duration-300">
+              <GlowCard 
+                theme={theme}
+                className={`backdrop-blur-xl border rounded-2xl p-5 transition-all duration-300 ${isDark ? 'bg-[#141416]/60 border-white/[0.05] hover:border-white/[0.08]' : 'bg-white border-zinc-900/[0.08] hover:border-zinc-900/[0.12] shadow-sm'}`}
+              >
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${isDark ? 'bg-zinc-800' : 'bg-zinc-100'}`}>
                         <Sparkles size={14} className="text-zinc-400" />
                       </div>
-                      <h3 className="text-sm font-semibold text-white">Volunteer Prefs</h3>
+                      <h3 className={`text-sm font-semibold transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>Volunteer Prefs</h3>
                     </div>
-                    <button onClick={() => setShowVolunteerModal(true)} className="text-zinc-600 hover:text-white transition-colors p-1.5 hover:bg-white/[0.05] rounded-lg">
+                    <button onClick={() => setShowVolunteerModal(true)} className={`transition-colors p-1.5 rounded-lg ${isDark ? 'text-zinc-600 hover:text-white hover:bg-white/[0.05]' : 'text-zinc-400 hover:text-zinc-900 hover:bg-zinc-900/[0.04]'}`}>
                       <Settings size={14} />
                     </button>
                   </div>
@@ -1025,54 +1154,64 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
                       <div className="flex flex-wrap gap-1.5">
                         {volunteerPrefs?.volunteer_roles?.slice(0, 3).map((rId) => {
                           const r = ROLES.find((x) => x.id === rId);
-                          return r ? <span key={rId} className="px-2 py-0.5 rounded-md bg-white/[0.06] border border-white/[0.08] text-zinc-300 text-[10px] font-medium">{r.emoji} {r.name}</span> : null;
+                          return r ? (
+                            <span key={rId} className={`px-2 py-0.5 rounded-md border text-[10px] font-medium transition-all ${isDark ? 'bg-white/[0.06] border-white/[0.08] text-zinc-300' : 'bg-zinc-900/[0.04] border-zinc-900/[0.06] text-zinc-600'}`}>
+                              {r.emoji} {r.name}
+                            </span>
+                          ) : null;
                         })}
                         {(volunteerPrefs?.volunteer_roles?.length ?? 0) > 3 && <span className="px-2 py-0.5 text-[10px] text-zinc-500 bg-white/[0.04] rounded-md">+{volunteerPrefs.volunteer_roles.length - 3}</span>}
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {volunteerPrefs?.volunteer_domains?.slice(0, 2).map((d) => (
-                          <span key={d} className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-zinc-500 text-[10px] font-medium">{d}</span>
+                          <span key={d} className={`px-2 py-0.5 rounded-md border text-[10px] font-medium transition-all ${isDark ? 'bg-white/[0.04] border-white/[0.06] text-zinc-500' : 'bg-zinc-900/[0.03] border-zinc-900/[0.05] text-zinc-400'}`}>
+                            {d}
+                          </span>
                         ))}
                       </div>
                     </div>
                   ) : (
                     <div>
                       <p className="text-xs text-zinc-500 mb-3 leading-relaxed">Set your preferences to get matched with relevant roles.</p>
-                      <button onClick={() => setShowVolunteerModal(true)} className="text-xs font-semibold text-zinc-300 hover:text-white transition-colors">Set up preferences →</button>
+                      <button onClick={() => setShowVolunteerModal(true)} className={`text-xs font-semibold transition-colors ${isDark ? 'text-zinc-300 hover:text-white' : 'text-zinc-600 hover:text-zinc-900'}`}>Set up preferences →</button>
                     </div>
                   )}
                 </div>
               </GlowCard>
 
               {/* Quick actions */}
-              <GlowCard className="bg-[#141416]/60 backdrop-blur-xl border border-white/[0.05] rounded-2xl p-5 hover:border-white/[0.08] transition-all duration-300">
+              {/* Quick actions */}
+              <GlowCard 
+                theme={theme}
+                className={`backdrop-blur-xl border rounded-2xl p-5 transition-all duration-300 ${isDark ? 'bg-[#141416]/60 border-white/[0.05] hover:border-white/[0.08]' : 'bg-white border-zinc-900/[0.08] hover:border-zinc-900/[0.12] shadow-sm'}`}
+              >
                 <div className="relative z-10">
-                  <h3 className="text-sm font-semibold text-white mb-4">Quick Actions</h3>
+                  <h3 className={`text-sm font-semibold mb-4 transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>Quick Actions</h3>
                   <div className="space-y-2">
-                    <button onClick={onCreateConf} className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.05] hover:border-white/[0.08] transition-all text-left group">
-                      <div className="w-9 h-9 rounded-lg bg-zinc-800 flex items-center justify-center flex-shrink-0 group-hover:bg-zinc-700 transition-colors">
+                    <button onClick={onCreateConf} className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left group ${isDark ? 'bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.05] hover:border-white/[0.08]' : 'bg-zinc-900/[0.02] border-zinc-900/[0.04] hover:bg-zinc-900/[0.05] hover:border-zinc-900/[0.08]'}`}>
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${isDark ? 'bg-zinc-800 group-hover:bg-zinc-700' : 'bg-zinc-100 group-hover:bg-zinc-200'}`}>
                         <Plus size={16} className="text-zinc-400" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-zinc-200">New Conference</p>
+                        <p className={`text-sm font-medium transition-colors ${isDark ? 'text-zinc-200' : 'text-zinc-900'}`}>New Conference</p>
                         <p className="text-[11px] text-zinc-600">Create and organize</p>
                       </div>
                     </button>
-                    <button onClick={() => setActiveTab('all')} className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.05] hover:border-white/[0.08] transition-all text-left group">
-                      <div className="w-9 h-9 rounded-lg bg-zinc-800 flex items-center justify-center flex-shrink-0 group-hover:bg-zinc-700 transition-colors">
+                    <button onClick={() => setActiveTab('all')} className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left group ${isDark ? 'bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.05] hover:border-white/[0.08]' : 'bg-zinc-900/[0.02] border-zinc-900/[0.04] hover:bg-zinc-900/[0.05] hover:border-zinc-900/[0.08]'}`}>
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${isDark ? 'bg-zinc-800 group-hover:bg-zinc-700' : 'bg-zinc-100 group-hover:bg-zinc-200'}`}>
                         <Compass size={16} className="text-zinc-400" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-zinc-200">Explore Events</p>
+                        <p className={`text-sm font-medium transition-colors ${isDark ? 'text-zinc-200' : 'text-zinc-900'}`}>Explore Events</p>
                         <p className="text-[11px] text-zinc-600">Discover conferences</p>
                       </div>
                     </button>
-                    <button onClick={() => setShowVolunteerModal(true)} className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.05] hover:border-white/[0.08] transition-all text-left group">
-                      <div className="w-9 h-9 rounded-lg bg-zinc-800 flex items-center justify-center flex-shrink-0 group-hover:bg-zinc-700 transition-colors">
+                    <button onClick={() => setShowVolunteerModal(true)} className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left group ${isDark ? 'bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.05] hover:border-white/[0.08]' : 'bg-zinc-900/[0.02] border-zinc-900/[0.04] hover:bg-zinc-900/[0.05] hover:border-zinc-900/[0.08]'}`}>
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${isDark ? 'bg-zinc-800 group-hover:bg-zinc-700' : 'bg-zinc-100 group-hover:bg-zinc-200'}`}>
                         <Zap size={16} className="text-zinc-400" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-zinc-200">Volunteer</p>
+                        <p className={`text-sm font-medium transition-colors ${isDark ? 'text-zinc-200' : 'text-zinc-900'}`}>Volunteer</p>
                         <p className="text-[11px] text-zinc-600">Set preferences</p>
                       </div>
                     </button>
@@ -1086,7 +1225,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
 
               {/* Tab Bar */}
               <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="relative flex p-1 bg-[#141416]/60 backdrop-blur-xl rounded-xl border border-white/[0.05]">
+                <div className={`relative flex p-1 backdrop-blur-xl rounded-xl border transition-all duration-300 ${isDark ? 'bg-[#141416]/60 border-white/[0.05]' : 'bg-white border-zinc-900/[0.08] shadow-sm'}`}>
                   {[
                     { key: 'my', label: `My Conferences`, count: myConfs.length },
                     { key: 'all', label: `Explore`, count: otherConfs.length },
@@ -1094,21 +1233,23 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
                     <button
                       key={key}
                       onClick={() => setActiveTab(key)}
-                      className={`relative px-5 py-2 rounded-lg text-sm font-medium transition-all z-10 ${activeTab === key ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                      className={`relative px-5 py-2 rounded-lg text-sm font-medium transition-all z-10 ${activeTab === key 
+                        ? (isDark ? 'text-white' : 'text-zinc-900') 
+                        : (isDark ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}
                     >
                       {activeTab === key && (
-                        <motion.div layoutId="activeTab" className="absolute inset-0 bg-white/[0.08] rounded-lg -z-10" transition={{ type: "spring", stiffness: 500, damping: 35 }} />
+                        <motion.div layoutId="activeTab" className={`absolute inset-0 rounded-lg -z-10 ${isDark ? 'bg-white/[0.08]' : 'bg-zinc-900/[0.04]'}`} transition={{ type: "spring", stiffness: 500, damping: 35 }} />
                       )}
                       {label}
-                      <span className={`ml-2 text-xs ${activeTab === key ? 'text-zinc-300' : 'text-zinc-600'}`}>{count}</span>
+                      <span className={`ml-2 text-xs transition-colors duration-300 ${activeTab === key ? (isDark ? 'text-zinc-300' : 'text-zinc-500') : (isDark ? 'text-zinc-600' : 'text-zinc-400')}`}>{count}</span>
                     </button>
                   ))}
                 </div>
 
                 {/* Mobile search */}
-                <div className="md:hidden flex items-center bg-white/[0.04] rounded-xl px-3.5 py-2 gap-2 border border-white/[0.06]">
+                <div className={`md:hidden flex items-center rounded-xl px-3.5 py-2 gap-2 border transition-all duration-300 ${isDark ? 'bg-white/[0.04] border-white/[0.06]' : 'bg-zinc-900/[0.03] border-zinc-900/[0.08]'}`}>
                   <Search size={14} className="text-zinc-500" />
-                  <input className="bg-transparent border-none outline-none text-sm w-full text-white placeholder-zinc-600" placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
+                  <input className={`bg-transparent border-none outline-none text-sm w-full transition-colors duration-300 ${isDark ? 'text-white placeholder-zinc-600' : 'text-zinc-900 placeholder-zinc-400'}`} placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
                 </div>
               </motion.div>
 
@@ -1118,7 +1259,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
                   {loadingRoles ? (
                     [...Array(4)].map((_, i) => (
                       <motion.div key={`skel-${i}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                        <CardSkeleton />
+                        <CardSkeleton theme={theme} />
                       </motion.div>
                     ))
                   ) : visibleConfs.length > 0 ? (
@@ -1131,12 +1272,12 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
                         exit={{ opacity: 0, scale: 0.95, filter: "blur(8px)" }}
                         transition={{ type: "spring", stiffness: 300, damping: 25, delay: i * 0.05 }}
                       >
-                        <ConfCard conf={c} role={roleMap[c.conference_id] ?? null} onSelectConf={onSelectConf} />
+                        <ConfCard conf={c} role={roleMap[c.conference_id] ?? null} onSelectConf={onSelectConf} theme={theme} />
                       </motion.div>
                     ))
                   ) : (
                     <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="col-span-full">
-                      <EmptyState activeTab={activeTab} onCreateConf={onCreateConf} />
+                      <EmptyState activeTab={activeTab} onCreateConf={onCreateConf} theme={theme} />
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -1153,12 +1294,12 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
           className="max-w-7xl mx-auto px-6 pt-12 pb-16 relative z-10"
         >
           <div className="flex items-center gap-3 mb-8">
-            <button onClick={() => setCurrentSection('conferences')} className="p-2 text-zinc-500 hover:text-white hover:bg-white/[0.05] rounded-xl transition-all">
+            <button onClick={() => setCurrentSection('conferences')} className={`p-2 rounded-xl transition-all ${isDark ? 'text-zinc-500 hover:text-white hover:bg-white/[0.05]' : 'text-zinc-400 hover:text-zinc-900 hover:bg-zinc-900/[0.04]'}`}>
               <ChevronLeft size={20} />
             </button>
-            <h1 className="text-3xl font-bold text-white tracking-tight">Your Profile</h1>
+            <h1 className={`text-3xl font-bold tracking-tight transition-colors duration-300 ${isDark ? 'text-white' : 'text-zinc-900'}`}>Your Profile</h1>
           </div>
-          <ProfileView user={user} volunteerPrefs={volunteerPrefs} ROLES={ROLES} onEditVolunteer={() => setShowVolunteerModal(true)} />
+          <ProfileView user={user} volunteerPrefs={volunteerPrefs} ROLES={ROLES} onEditVolunteer={() => setShowVolunteerModal(true)} theme={theme} />
         </motion.div>
       )}
 
@@ -1169,6 +1310,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
             userId={user.id}
             onClose={() => setShowVolunteerModal(false)}
             onSaved={(prefs) => { setVolunteerPrefs({ volunteer_domains: prefs.domains, volunteer_roles: prefs.roles }); }}
+            theme={theme}
           />
         )}
       </AnimatePresence>

@@ -12,61 +12,102 @@ const GROQ_API_KEY   = process.env.GROQ_API_KEY || "";
 const GROQ_MODEL     = "llama-3.3-70b-versatile";
 const GROQ_URL       = "https://api.groq.com/openai/v1/chat/completions";
 
-const CURRENT_YEAR   = new Date().getFullYear();
-const RECENT_YEARS   = 3; // papers within last N years are "recent"
+const CURRENT_YEAR = new Date().getFullYear();
+const RECENT_YEARS = 4;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/* ================================================================
+INDIAN INSTITUTIONS CONFIG
+
+CRITICAL FIX: ArXiv's affil: field requires the FULL institution
+name as it appears in papers. "all:IIT" only finds papers that
+literally type "IIT" in their abstract — highly unreliable.
+affil:"Indian Institute of Technology Bombay" matches author
+affiliation metadata — far more accurate and complete.
+================================================================ */
+const IIT_AFFIL_TERMS = [
+  "Indian Institute of Technology Bombay",
+  "Indian Institute of Technology Delhi",
+  "Indian Institute of Technology Madras",
+  "Indian Institute of Technology Kharagpur",
+  "Indian Institute of Technology Kanpur",
+  "Indian Institute of Technology Roorkee",
+  "Indian Institute of Technology Hyderabad",
+  "Indian Institute of Technology Guwahati",
+  "Indian Institute of Technology BHU",
+  "Indian Institute of Technology Gandhinagar",
+  "Indian Institute of Technology Jodhpur",
+  "Indian Institute of Technology Patna",
+  "Indian Institute of Technology Ropar",
+  "Indian Institute of Technology Indore",
+  "Indian Institute of Technology Mandi",
+  "Indian Institute of Technology Tirupati",
+  "Indian Institute of Science",
+  "National Institute of Technology",
+  "IIIT Hyderabad",
+  "IIIT Delhi",
+  "IIIT Bangalore",
+];
+
+const INDIA_AFFIL_TERMS = [
+  "India",
+  "Indian Institute",
+  "University of Delhi",
+  "University of Mumbai",
+  "Anna University",
+  "Jadavpur University",
+  "Tata Institute",
+  "TIFR",
+  "IISER",
+];
+
+// OpenAlex stable institution IDs for major IITs/IISc (no API key needed)
+const OPENALEX_IIT_IDS = [
+  "I28986697",   // IIT Bombay
+  "I111671476",  // IIT Delhi
+  "I28566421",   // IIT Madras
+  "I14399945",   // IIT Kharagpur
+  "I4210146548", // IIT Kanpur
+  "I19279682",   // IIT Roorkee
+  "I133437841",  // IISc Bangalore
+  "I4210088629", // IIT Hyderabad
+  "I158756709",  // IIT Guwahati
+  "I4210102197", // IIT BHU
+  "I4210087662", // IIIT Hyderabad
+  "I4210104086", // NIT Trichy
+  "I4210087999", // NIT Warangal
+];
 
 /* ======================
 GROQ LLM CALL
 ====================== */
 async function localLLM(prompt, temperature = 0.3, maxTokens = 512) {
-  if (!GROQ_API_KEY) {
-    throw new Error("GROQ_API_KEY is not set. Get a free key at https://console.groq.com");
-  }
+  if (!GROQ_API_KEY) throw new Error("GROQ_API_KEY not set. Get a free key: https://console.groq.com");
 
   const res = await axios.post(
     GROQ_URL,
-    {
-      model:      GROQ_MODEL,
-      messages:   [{ role: "user", content: prompt }],
-      temperature,
-      max_tokens: maxTokens,
-    },
-    {
-      headers: {
-        Authorization:  `Bearer ${GROQ_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      timeout: 30000,
-    }
+    { model: GROQ_MODEL, messages: [{ role: "user", content: prompt }], temperature, max_tokens: maxTokens },
+    { headers: { Authorization: `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" }, timeout: 30000 }
   );
 
   const text = res.data?.choices?.[0]?.message?.content;
-  if (!text) {
-    console.error("Bad Groq response:", res.data);
-    throw new Error("Invalid Groq output");
-  }
-
+  if (!text) throw new Error("Invalid Groq output");
   return text;
 }
 
-/* ======================
-RETRY WRAPPER
-====================== */
 async function localLLMWithRetry(prompt, retries = 2, maxTokens = 512) {
   for (let i = 0; i <= retries; i++) {
     try {
       return await localLLM(prompt, 0.3, maxTokens);
     } catch (e) {
       if (e.response?.status === 429) {
-        const wait = (i + 1) * 10000;
-        console.log(`Groq rate limit — waiting ${wait / 1000}s (retry ${i + 1})...`);
+        const wait = (i + 1) * 12000;
+        console.log(`  Groq rate limit — waiting ${wait / 1000}s...`);
         await sleep(wait);
       } else if (i === retries) {
         throw e;
       } else {
-        console.log(`Retrying Groq (attempt ${i + 1})...`);
         await sleep(2000 * (i + 1));
       }
     }
@@ -75,185 +116,312 @@ async function localLLMWithRetry(prompt, retries = 2, maxTokens = 512) {
 
 /* ======================
 TOPIC EXPANSION
-Generates domain-specific, varied keywords instead of generic ones.
+Returns domain-specific search keywords.
 ====================== */
 async function expandTopic(topic) {
-  const prompt = `You are a research librarian. Given the topic below, generate exactly 5 distinct search keywords or short phrases for finding academic papers on ArXiv.
+  const prompt = `You are a research librarian. Generate exactly 4 specific academic search keywords for ArXiv about: "${topic}"
 
 Rules:
-- Be specific and technical, not generic
-- Cover different sub-angles of the topic (methods, applications, theory, benchmarks, datasets)
-- Each keyword should be 1-4 words
-- Output ONLY a JSON array of strings. No explanation, no markdown.
+- Be technical and specific (sub-topics, methods, applications)
+- Each keyword: 2-5 words
+- Output ONLY a JSON array of strings, no markdown, no explanation.
 
-Topic: "${topic}"
-
-Example output for "transformer models":
-["attention mechanisms", "self-supervised pretraining", "vision transformers", "language model fine-tuning", "BERT GPT benchmarks"]
+Example for "vision transformers medical imaging":
+["ViT medical segmentation", "transformer pathology classification", "self-supervised histology", "attention radiology detection"]
 
 Output:`;
 
   try {
-    const text = await localLLMWithRetry(prompt, 2, 256);
-    // Strip markdown fences if present
-    const clean = text.replace(/```json|```/g, "").trim();
+    const raw   = await localLLMWithRetry(prompt, 2, 150);
+    const clean = raw.replace(/```json|```/g, "").trim();
     const parsed = JSON.parse(clean);
     if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed.slice(0, 5).map(k => String(k).trim()).filter(Boolean);
+      return parsed.slice(0, 4).map((k) => String(k).trim()).filter(Boolean);
     }
-  } catch (e) {
-    console.warn("Topic expansion failed, using fallback:", e.message);
+  } catch {
+    console.warn("  Topic expansion failed, using fallback");
   }
-
-  // Fallback: simple splits
-  return [topic, `${topic} survey`, `${topic} deep learning`];
+  return [topic, `${topic} survey`, `${topic} applications`];
 }
 
-/* ======================
-ARXIV SEARCH — Base
-Filters to recent papers (CURRENT_YEAR - RECENT_YEARS onwards).
-Returns richer paper objects including abstract snippet.
-====================== */
-async function searchArxivBase(query, extraFilter = "") {
-  const fullQuery = extraFilter ? `${query} AND (${extraFilter})` : query;
-  // Sort by submission date descending for recency
-  const url = `http://export.arxiv.org/api/query?search_query=all:${encodeURIComponent(fullQuery)}&max_results=10&sortBy=submittedDate&sortOrder=descending`;
+/* ================================================================
+ARXIV SEARCH
+
+Uses proper affil: field syntax for institution filtering.
+This is the key fix — the old code used `all:IIT` which matches
+any paper mentioning "IIT" anywhere in its text, not just affiliated
+authors. `affil:"Indian Institute of Technology Bombay"` is precise.
+================================================================ */
+async function searchArxivBase(query, affilTerms = null) {
+  let searchQuery;
+
+  if (affilTerms && affilTerms.length > 0) {
+    // Build affil: OR chain — proper ArXiv affiliation field syntax
+    const affilParts = affilTerms
+      .slice(0, 10) // ArXiv has URL length limits
+      .map((a) => `affil:"${a}"`)
+      .join(" OR ");
+    searchQuery = `all:${query} AND (${affilParts})`;
+  } else {
+    searchQuery = `all:${query}`;
+  }
+
+  const encoded = encodeURIComponent(searchQuery);
+  const url = `http://export.arxiv.org/api/query?search_query=${encoded}&max_results=12&sortBy=submittedDate&sortOrder=descending`;
 
   try {
-    const res    = await axios.get(url, { timeout: 20000 });
+    const res    = await axios.get(url, { timeout: 20000, headers: { "User-Agent": "SpeakerFinderBot/2.0" } });
     const parsed = await xml2js.parseStringPromise(res.data);
     const entries = parsed.feed.entry || [];
 
     return entries
-      .map((p) => {
-        const year = parseInt(p.published[0].substring(0, 4), 10);
-        return {
-          title:    p.title[0].trim().replace(/\s+/g, " "),
-          link:     p.id[0],
-          abstract: (p.summary?.[0] || "").trim().substring(0, 300),
-          authors:  (p.author || []).map((a) => a.name[0].trim()),
-          year,
-          source:   extraFilter ? "arXiv-India" : "arXiv",
-        };
-      })
-      // Only keep papers from last N years
+      .map((p) => ({
+        title:   p.title[0].trim().replace(/\s+/g, " "),
+        link:    p.id[0],
+        abstract:(p.summary?.[0] || "").trim().substring(0, 400),
+        authors: (p.author || []).map((a) => a.name[0].trim()),
+        year:    parseInt(p.published[0].substring(0, 4), 10),
+        source:  affilTerms ? "arXiv-India" : "arXiv",
+      }))
       .filter((p) => p.year >= CURRENT_YEAR - RECENT_YEARS);
   } catch (e) {
-    console.warn(`ArXiv search failed for "${query}":`, e.message);
+    console.warn(`  ArXiv failed for "${query}": ${e.message}`);
     return [];
   }
 }
 
-const searchArxiv       = (q) => searchArxivBase(q);
-const searchArxivIndian = (q) => searchArxivBase(q, "India OR IIT OR IISc OR NIT OR IIIT OR TIFR OR IISER");
-const searchArxivIIT    = (q) => searchArxivBase(q, "IIT OR IISc OR NIT OR IIIT");
+/* ================================================================
+OPENALEX SEARCH — Primary source for Indian researchers
+
+OpenAlex is free, requires no API key, and has excellent affiliation
+data. It supports filtering by country code (IN) and by specific
+institution IDs, making it far more reliable than ArXiv text-matching
+for finding Indian researchers.
+
+Docs: https://docs.openalex.org
+================================================================ */
+async function searchOpenAlex(query, { countryCode = null, institutionIds = null } = {}) {
+  const filters = [`publication_year:${CURRENT_YEAR - RECENT_YEARS}-${CURRENT_YEAR}`];
+
+  if (countryCode) {
+    filters.push(`institutions.country_code:${countryCode}`);
+  }
+  if (institutionIds && institutionIds.length > 0) {
+    // OpenAlex uses pipe-separated OR within a single filter
+    const idFilter = institutionIds
+      .map((id) => `https://openalex.org/${id}`)
+      .join("|");
+    filters.push(`institutions.id:${idFilter}`);
+  }
+
+  const params = new URLSearchParams({
+    search:    query,
+    filter:    filters.join(","),
+    "per-page": "15",
+    select:    "id,title,publication_year,authorships,open_access,primary_location",
+    mailto:    "conference-speaker-tool@example.com", // polite pool access
+  });
+
+  try {
+    const res   = await axios.get(`https://api.openalex.org/works?${params}`, { timeout: 20000 });
+    const works = res.data.results || [];
+
+    return works.map((w) => ({
+      title:   (w.title || "").trim(),
+      link:    w.open_access?.oa_url || w.primary_location?.landing_page_url || w.id,
+      authors: (w.authorships || []).map((a) => ({
+        name:         a.author?.display_name || "",
+        openAlexId:   a.author?.id || "",
+        affiliations: (a.institutions || []).map((i) => i.display_name).filter(Boolean),
+        countryCode:  (a.institutions?.[0]?.country_code || "").toUpperCase(),
+      })),
+      year:   w.publication_year || 0,
+      source: institutionIds ? "OpenAlex-IIT" : (countryCode === "IN" ? "OpenAlex-India" : "OpenAlex"),
+    }));
+  } catch (e) {
+    console.warn(`  OpenAlex failed for "${query}": ${e.message}`);
+    return [];
+  }
+}
+
+/* ================================================================
+OPENALEX AUTHOR METRICS
+
+OpenAlex has better coverage of Indian researchers than
+Semantic Scholar, especially for journal publications (IEEE, Springer,
+Elsevier) which are more common than ArXiv for many IIT faculty.
+================================================================ */
+async function getOpenAlexAuthorMetrics(openAlexId) {
+  if (!openAlexId) return null;
+  const id = openAlexId.replace("https://openalex.org/", "");
+
+  try {
+    const res = await axios.get(
+      `https://api.openalex.org/authors/${id}?select=id,display_name,h_index,cited_by_count,works_count,last_known_institutions,topics`,
+      { timeout: 12000 }
+    );
+    const a = res.data;
+    return {
+      name:         a.display_name || "",
+      h_index:      a.h_index       || 0,
+      citations:    a.cited_by_count || 0,
+      papers:       a.works_count   || 0,
+      affiliations: (a.last_known_institutions || []).map((i) => i.display_name).join(", "),
+      topics:       (a.topics || []).slice(0, 4).map((t) => t.display_name).join(", "),
+      scholar_url:  `https://openalex.org/${id}`,
+      source:       "OpenAlex",
+    };
+  } catch {
+    return null;
+  }
+}
 
 /* ======================
-SEMANTIC SCHOLAR — AUTHOR LOOKUP
-Falls back gracefully; retries on 429.
+SEMANTIC SCHOLAR — Fallback metrics source
 ====================== */
-async function getAuthorMetrics(name) {
-  for (let attempt = 0; attempt < 3; attempt++) {
+async function getSemanticScholarMetrics(name) {
+  for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const res = await axios.get(
-        "https://api.semanticscholar.org/graph/v1/author/search",
-        {
-          params: {
-            query:  name,
-            fields: "name,hIndex,citationCount,paperCount,affiliations,url",
-            limit:  3,
-          },
-          timeout: 10000,
-        }
-      );
-
+      const res = await axios.get("https://api.semanticscholar.org/graph/v1/author/search", {
+        params: { query: name, fields: "name,hIndex,citationCount,paperCount,affiliations,url", limit: 3 },
+        timeout: 10000,
+      });
       const candidates = res.data.data || [];
-      if (candidates.length === 0) return null;
+      if (!candidates.length) return null;
 
-      // Pick best match: prefer exact name match, then highest h-index
-      const exactMatch = candidates.find(
-        (a) => a.name.toLowerCase() === name.toLowerCase()
-      );
-      const best = exactMatch || candidates.sort((a, b) => (b.hIndex || 0) - (a.hIndex || 0))[0];
+      const exact = candidates.find((a) => a.name.toLowerCase() === name.toLowerCase());
+      const best  = exact || candidates.sort((a, b) => (b.hIndex || 0) - (a.hIndex || 0))[0];
 
       return {
         name:         best.name,
-        h_index:      best.hIndex       || 0,
-        citations:    best.citationCount || 0,
-        papers:       best.paperCount   || 0,
+        h_index:      best.hIndex        || 0,
+        citations:    best.citationCount  || 0,
+        papers:       best.paperCount     || 0,
         affiliations: (best.affiliations || []).map((a) => a.name).join(", "),
-        scholar_url:  best.url          || "",
+        scholar_url:  best.url            || "",
+        source:       "SemanticScholar",
       };
     } catch (e) {
-      if (e.response?.status === 429) {
-        console.log(`Semantic Scholar rate limit — waiting ${(attempt + 1) * 5}s...`);
-        await sleep((attempt + 1) * 5000);
-      } else if (e.response?.status === 404) {
-        return null;
-      } else {
-        console.warn(`Semantic Scholar failed for "${name}":`, e.message);
-        return null;
-      }
+      if (e.response?.status === 429) await sleep((attempt + 1) * 6000);
+      else return null;
     }
   }
   return null;
 }
 
-/* ======================
-LINKEDIN SEARCH (optional, requires Serper)
-====================== */
-async function searchLinkedInExperts(topic) {
+/* ================================================================
+SERPER — Google Scholar + Web Profile Search for Indian Researchers
+
+When Serper is available this dramatically improves results for
+Indian researchers because:
+1. Many IIT/IISc faculty have strong journal/conference publication
+   records that don't appear on ArXiv at all
+2. Faculty pages on *.ac.in have direct researcher info
+3. Google Scholar profiles have h-index right in the snippet
+================================================================ */
+async function searchIndianResearcherProfiles(topic, institutionHint = "") {
   if (!SERPER_API_KEY) return [];
 
-  try {
-    const res = await axios.post(
-      "https://google.serper.dev/search",
-      { q: `site:linkedin.com/in "${topic}" researcher professor`, num: 5 },
-      {
-        headers: { "X-API-KEY": SERPER_API_KEY },
-        timeout: 10000,
-      }
-    );
+  const institution = institutionHint || "IIT OR IISc OR NIT OR IIIT";
 
-    return (res.data.organic || []).map((r) => {
-      const parts = r.title.split(" - ");
-      return {
-        name:         parts[0]?.trim() || "Unknown",
-        role:         parts[1]?.trim() || "",
-        organization: parts[2]?.trim() || "",
-        linkedin:     r.link,
-        source:       "LinkedIn",
-      };
-    });
-  } catch (e) {
-    console.warn("LinkedIn search failed:", e.message);
+  // Multiple targeted queries to find different researcher types
+  const queries = [
+    // Faculty pages on Indian academic domains
+    `"${topic}" professor researcher (${institution}) site:*.ac.in`,
+    // Google Scholar profiles for Indian researchers
+    `site:scholar.google.com "${topic}" (${institution})`,
+    // Conference/workshop program committees
+    `"${topic}" (${institution}) "h-index" OR "citations" researcher`,
+  ];
+
+  const rawResults = [];
+
+  for (const q of queries) {
+    try {
+      const res = await axios.post(
+        "https://google.serper.dev/search",
+        { q, num: 6, gl: "in" },
+        { headers: { "X-API-KEY": SERPER_API_KEY }, timeout: 12000 }
+      );
+      rawResults.push(...(res.data.organic || []).map((r) => ({ ...r, queryUsed: q })));
+      await sleep(300);
+    } catch (e) {
+      console.warn(`  Serper query failed: ${e.message}`);
+    }
+  }
+
+  if (rawResults.length === 0) return [];
+
+  // Use Groq to batch-extract names from all snippets at once (fewer API calls)
+  const extractPrompt = `Extract researcher names from these web search results about "${topic}".
+
+${rawResults
+  .slice(0, 12)
+  .map((r, i) => `[${i}] Title: ${r.title}\n    Snippet: ${(r.snippet || "").substring(0, 150)}`)
+  .join("\n\n")}
+
+For each result, output the researcher's full name if clearly present, or null if no individual researcher name is found.
+Output ONLY a JSON array of ${Math.min(rawResults.length, 12)} items, each either a name string or null.
+Example: ["Sunita Sarawagi", null, "Pushpak Bhattacharyya", null]
+
+Output:`;
+
+  let names = [];
+  try {
+    const raw   = await localLLMWithRetry(extractPrompt, 2, 300);
+    const clean = raw.replace(/```json|```/g, "").trim();
+    names = JSON.parse(clean);
+  } catch {
     return [];
   }
+
+  const results = [];
+  for (let i = 0; i < names.length; i++) {
+    const name = names[i];
+    if (!name || typeof name !== "string" || name.length < 4) continue;
+
+    const cleanName = name.replace(/^(Prof\.|Dr\.|Professor|Dr)\s*/i, "").trim();
+    if (cleanName.length < 4) continue;
+
+    results.push({
+      name:    cleanName,
+      snippet: rawResults[i]?.snippet || "",
+      link:    rawResults[i]?.link    || "",
+      source:  "SerperIndia",
+      papers:  [],
+    });
+  }
+
+  // Deduplicate by name
+  return [...new Map(results.map((r) => [r.name.toLowerCase(), r])).values()];
 }
 
 /* ======================
-AUTHOR EXTRACTION
-Groups papers by author, tracks recency and paper count.
-Filters out single-letter names and obvious noise.
+EXTRACT AUTHORS from OpenAlex works
 ====================== */
-function extractAuthors(papers) {
-  const authorMap = new Map(); // name_lower -> { name, papers[] }
+function extractOpenAlexAuthors(works) {
+  const authorMap = new Map();
 
-  for (const paper of papers) {
-    for (const author of paper.authors) {
-      const key = author.toLowerCase().trim();
+  for (const work of works) {
+    for (const authorship of work.authors || []) {
+      const name = authorship.name?.trim();
+      if (!name || name.length < 5 || /\d/.test(name)) continue;
 
-      // Skip clearly bad names: too short, initials only, numbers
-      if (
-        key.length < 5 ||
-        /^\w\.\s*\w\./.test(author) || // "A. B." style
-        /\d/.test(author)              // contains digits
-      ) continue;
-
+      const key = name.toLowerCase();
       if (!authorMap.has(key)) {
-        authorMap.set(key, { name: author, papers: [] });
+        authorMap.set(key, {
+          name,
+          openAlexId:   authorship.openAlexId,
+          affiliations: authorship.affiliations || [],
+          countryCode:  authorship.countryCode  || "",
+          papers:       [],
+        });
       }
-      authorMap.get(key).papers.push(paper);
+      const c = authorMap.get(key);
+      // Prefer the most complete openAlexId
+      if (!c.openAlexId && authorship.openAlexId) c.openAlexId = authorship.openAlexId;
+      if (!c.affiliations.length && authorship.affiliations?.length) c.affiliations = authorship.affiliations;
+      c.papers.push({ title: work.title, year: work.year, link: work.link, source: work.source });
     }
   }
 
@@ -261,59 +429,95 @@ function extractAuthors(papers) {
 }
 
 /* ======================
-AUTHOR QUALITY FILTER
-Multi-tier: accepts strong established OR promising emerging researchers.
+EXTRACT AUTHORS from ArXiv papers (string author names only)
+====================== */
+function extractArxivAuthors(papers) {
+  const authorMap = new Map();
+
+  for (const paper of papers) {
+    for (const name of paper.authors || []) {
+      const trimmed = name.trim();
+      // Filter noise: too short, initials-only, digits
+      if (trimmed.length < 5 || /^\w\.\s*\w\./i.test(trimmed) || /\d/.test(trimmed)) continue;
+
+      const key = trimmed.toLowerCase();
+      if (!authorMap.has(key)) {
+        authorMap.set(key, { name: trimmed, openAlexId: null, affiliations: [], papers: [] });
+      }
+      authorMap.get(key).papers.push({ title: paper.title, year: paper.year, link: paper.link, source: paper.source });
+    }
+  }
+
+  return [...authorMap.values()];
+}
+
+/* ======================
+MERGE candidates from multiple sources, dedup by name
+====================== */
+function mergeCandidates(...lists) {
+  const merged = new Map();
+
+  for (const list of lists) {
+    for (const c of list) {
+      const key = c.name.toLowerCase().trim();
+      if (!key || key.length < 4) continue;
+
+      if (merged.has(key)) {
+        const existing = merged.get(key);
+        existing.papers.push(...(c.papers || []));
+        if (!existing.openAlexId && c.openAlexId) existing.openAlexId = c.openAlexId;
+        if (!existing.affiliations?.length && c.affiliations?.length) existing.affiliations = c.affiliations;
+      } else {
+        merged.set(key, { ...c, papers: [...(c.papers || [])] });
+      }
+    }
+  }
+
+  // Dedup papers within each candidate by link
+  for (const c of merged.values()) {
+    const seen = new Set();
+    c.papers = c.papers.filter((p) => {
+      if (!p.link || seen.has(p.link)) return false;
+      seen.add(p.link);
+      return true;
+    });
+  }
+
+  return [...merged.values()];
+}
+
+/* ======================
+QUALITY CLASSIFICATION
 ====================== */
 function classifyAuthor(metrics) {
   if (!metrics) return { tier: "unknown", pass: false };
-
-  const { h_index, citations, papers } = metrics;
-
-  if (h_index >= 20 || citations >= 2000) {
-    return { tier: "established", pass: true };
-  }
-  if (h_index >= 10 || citations >= 500) {
-    return { tier: "strong", pass: true };
-  }
-  if (h_index >= 5 || citations >= 100) {
-    return { tier: "emerging", pass: true };
-  }
-  if (papers >= 5 && h_index >= 3) {
-    return { tier: "promising", pass: true };
-  }
+  const h = metrics.h_index  || 0;
+  const c = metrics.citations || 0;
+  if (h >= 20 || c >= 2000) return { tier: "established", pass: true };
+  if (h >= 10 || c >= 500)  return { tier: "strong",      pass: true };
+  if (h >= 5  || c >= 100)  return { tier: "emerging",    pass: true };
+  if (h >= 3  || c >= 30)   return { tier: "promising",   pass: true };
   return { tier: "weak", pass: false };
 }
 
 /* ======================
-RELEVANCE SCORING
-Weighted score using metrics + paper recency + paper count on topic.
+SCORING
 ====================== */
 function scoreAuthor(metrics, candidatePapers = []) {
   if (!metrics) return 0;
-
-  const { h_index, citations, papers } = metrics;
-
-  // Base academic score
   let score = 0;
-  score += h_index * 3;
-  score += Math.min(citations / 50, 100);  // cap at 100 pts
-  score += Math.min(papers * 0.5, 30);     // cap at 30 pts
-
-  // Recency bonus: papers published in last 2 years
-  const recentCount = candidatePapers.filter(
-    (p) => p.year >= CURRENT_YEAR - 2
-  ).length;
-  score += recentCount * 10;
-
-  // Prolific on this specific topic bonus
+  score += (metrics.h_index  || 0) * 3;
+  score += Math.min((metrics.citations || 0) / 50, 100);
+  score += Math.min((metrics.papers    || 0) * 0.5, 30);
+  // Recency bonus
+  score += candidatePapers.filter((p) => p.year >= CURRENT_YEAR - 2).length * 10;
+  // Topic relevance bonus
   score += candidatePapers.length * 5;
-
   return Math.round(score);
 }
 
 /* ======================
 PROFILE BUILDER
-Uses actual paper titles + affiliation to ground the LLM and reduce hallucination.
 ====================== */
 async function buildProfile(candidate, topic, metrics, classification) {
   const recentPapers = candidate.papers
@@ -322,50 +526,48 @@ async function buildProfile(candidate, topic, metrics, classification) {
     .map((p) => `- "${p.title}" (${p.year})`)
     .join("\n");
 
-  const affiliation = metrics.affiliations
-    ? `Affiliation: ${metrics.affiliations}`
-    : "Affiliation: Unknown";
+  const prompt = `Write a factual conference speaker profile for "${topic}".
 
-  const prompt = `You are writing a speaker recommendation for a conference on "${topic}".
-
-Researcher: ${metrics.name || candidate.name}
-${affiliation}
-Academic profile: h-index ${metrics.h_index}, ${metrics.citations} citations, ${metrics.papers} publications
+Name: ${metrics.name || candidate.name}
+Affiliation: ${metrics.affiliations || candidate.affiliations?.join(", ") || "Unknown"}
+h-index: ${metrics.h_index} | Citations: ${metrics.citations} | Total papers: ${metrics.papers}
+Research areas: ${metrics.topics || "(not available)"}
 Tier: ${classification.tier}
 
-Recent papers on topic:
-${recentPapers || "Not available"}
+Recent relevant papers:
+${recentPapers || "(not available)"}
 
-Write a factual, professional speaker profile of 80–100 words. Include:
-1. Their research focus
-2. Why they are relevant to "${topic}"
-3. A brief mention of their academic standing
-4. One sentence on what attendees would gain
-
-Do NOT invent facts. Only use the information provided above.`;
+Write 80-100 words. Cover: research focus, relevance to "${topic}", academic standing, value to attendees.
+ONLY use facts given above. Do not invent institution names or paper titles.`;
 
   try {
-    const text = await localLLMWithRetry(prompt, 2, 200);
-    return text.trim();
+    return (await localLLMWithRetry(prompt, 2, 200)).trim();
   } catch {
-    // Graceful fallback: template-based profile
-    return `${metrics.name || candidate.name} is a researcher in ${topic} with an h-index of ${metrics.h_index} and ${metrics.citations} citations. They have published ${metrics.papers} papers and bring deep expertise to the field. Their recent work includes contributions directly related to ${topic}, making them a valuable speaker for practitioners and researchers alike.`;
+    return `${metrics.name || candidate.name} is a ${classification.tier} researcher in ${topic} (h-index: ${metrics.h_index}, citations: ${metrics.citations}). Their work spans ${metrics.topics || topic}, with recent publications directly relevant to this area. Attendees will benefit from their hands-on research perspective and academic depth.`;
   }
 }
 
 /* ======================
-PARALLEL AUTHOR METRIC FETCHER
-Batches Semantic Scholar calls with concurrency limit to avoid hammering the API.
+PARALLEL METRIC FETCHER
+Tries OpenAlex first (better Indian coverage), falls back to Semantic Scholar.
 ====================== */
-async function batchGetMetrics(authors, concurrency = 3) {
-  const results = new Array(authors.length).fill(null);
-  const queue   = [...authors.keys()]; // index queue
+async function batchGetMetrics(candidates, concurrency = 3) {
+  const results = new Array(candidates.length).fill(null);
+  const queue   = [...candidates.keys()];
 
   async function worker() {
     while (queue.length > 0) {
       const i = queue.shift();
-      results[i] = await getAuthorMetrics(authors[i].name);
-      await sleep(300); // be polite to the free API
+      const c = candidates[i];
+
+      if (c.openAlexId) {
+        results[i] = await getOpenAlexAuthorMetrics(c.openAlexId);
+      }
+      if (!results[i]) {
+        results[i] = await getSemanticScholarMetrics(c.name);
+      }
+
+      await sleep(200);
     }
   }
 
@@ -373,86 +575,128 @@ async function batchGetMetrics(authors, concurrency = 3) {
   return results;
 }
 
-/* ======================
+/* ================================================================
 MAIN PIPELINE
 
 source:
-  1 = Indian institutions only
-  2 = Global (no India filter)
-  3 = LinkedIn (requires Serper key)
-  4 = IIT/IISc/NIT only
-  5 = All (global + India)
-====================== */
+  1 = Indian institutions     (OpenAlex country:IN + ArXiv affil:India terms)
+  2 = Global / Foreign        (OpenAlex global + ArXiv global)
+  3 = Web profiles            (Serper, requires SERPER_API_KEY)
+  4 = IIT/NIT/IISc only       (OpenAlex institution IDs + ArXiv affil:IIT* terms)
+  5 = All combined            (default, best results)
+================================================================ */
 async function findConferenceSpeakers(topic, limit = 10, source = 5) {
-  console.log(`\n🔍 Finding speakers for: "${topic}" (source=${source}, limit=${limit})`);
+  console.log(`\n🔍 "${topic}" | source=${source} | limit=${limit}`);
 
-  // Step 1: Expand topic into specific keywords
   console.log("📚 Expanding topic keywords...");
   const keywords = await expandTopic(topic);
-  console.log("  Keywords:", keywords.join(", "));
+  console.log("  →", keywords.join(" | "));
 
-  // Step 2: Fetch papers from ArXiv in parallel
-  console.log("📄 Fetching papers from ArXiv...");
-  const paperFetchTasks = keywords.map((k) => {
-    if (source === 1) return searchArxivIndian(k);
-    if (source === 2) return searchArxiv(k);
-    if (source === 4) return searchArxivIIT(k);
-    // source 5: both global and Indian
-    return Promise.all([searchArxiv(k), searchArxivIndian(k)]).then(([g, i]) => [...g, ...i]);
+  /* ---- Parallel paper fetch ---- */
+  console.log("📄 Fetching papers...");
+
+  const paperTasks = keywords.map(async (kw) => {
+    const tasks = [];
+
+    if (source === 1 || source === 5) {
+      // OpenAlex filtered by country (best for Indian researcher discovery)
+      tasks.push(searchOpenAlex(kw, { countryCode: "IN" }));
+      // ArXiv with proper affil: syntax for Indian institutions
+      tasks.push(searchArxivBase(kw, INDIA_AFFIL_TERMS));
+    }
+
+    if (source === 4 || source === 5) {
+      // OpenAlex filtered by IIT/IISc institution IDs (most precise)
+      tasks.push(searchOpenAlex(kw, { institutionIds: OPENALEX_IIT_IDS }));
+      // ArXiv with proper affil: syntax using full IIT names
+      tasks.push(searchArxivBase(kw, IIT_AFFIL_TERMS.slice(0, 8))); // 8 terms to stay within URL limits
+    }
+
+    if (source === 2 || source === 5) {
+      tasks.push(searchOpenAlex(kw));
+      tasks.push(searchArxivBase(kw));
+    }
+
+    const allResults = await Promise.all(tasks);
+    return allResults.flat();
   });
 
-  const paperBatches = await Promise.all(paperFetchTasks);
+  const allPapersBatched = await Promise.all(paperTasks);
+  const allPapers = allPapersBatched.flat();
 
-  // Deduplicate papers by ArXiv link
-  const paperMap = new Map();
-  for (const batch of paperBatches) {
-    for (const p of batch) {
-      if (!paperMap.has(p.link)) paperMap.set(p.link, p);
+  // Separate OpenAlex (rich author objects) from ArXiv (string author names)
+  const oaWorks    = [];
+  const arxivPapers = [];
+
+  for (const p of allPapers) {
+    if (p.source?.startsWith("OpenAlex") && Array.isArray(p.authors) && typeof p.authors[0] === "object") {
+      oaWorks.push(p);
+    } else {
+      arxivPapers.push(p);
     }
   }
-  const allPapers = [...paperMap.values()];
-  console.log(`  Found ${allPapers.length} unique recent papers`);
 
-  if (allPapers.length === 0) {
-    console.warn("  ⚠️  No recent papers found. Try a broader topic or different source.");
+  // Dedup by link
+  const dedup = (arr) => [...new Map(arr.map((p) => [p.link || p.title, p])).values()];
+  const uniqueOA    = dedup(oaWorks);
+  const uniqueArxiv = dedup(arxivPapers);
+
+  console.log(`  OpenAlex: ${uniqueOA.length} papers | ArXiv: ${uniqueArxiv.length} papers`);
+
+  /* ---- Extract candidates ---- */
+  const oaAuthors    = extractOpenAlexAuthors(uniqueOA);
+  const arxivAuthors = extractArxivAuthors(uniqueArxiv);
+
+  /* ---- Serper web search for researcher profiles ---- */
+  let serperCandidates = [];
+  if (SERPER_API_KEY && (source === 1 || source === 4 || source === 5)) {
+    console.log("🔎 Searching researcher profiles via Serper...");
+    const hint = source === 4 ? "IIT OR IISc" : "IIT OR IISc OR India";
+    const found = await searchIndianResearcherProfiles(topic, hint);
+    console.log(`  → ${found.length} profiles via web`);
+    serperCandidates = found.map((p) => ({
+      name: p.name, openAlexId: null, affiliations: [], papers: [], source: p.source,
+    }));
+  }
+
+  /* ---- Merge and deduplicate all candidates ---- */
+  let candidates = mergeCandidates(oaAuthors, arxivAuthors, serperCandidates);
+  console.log(`  Total unique candidates: ${candidates.length}`);
+
+  if (candidates.length === 0) {
+    console.warn("  ⚠️  No candidates found. Try a broader topic or source=5.");
     return [];
   }
 
-  // Step 3: Extract candidate authors
-  let candidates = extractAuthors(allPapers);
-  console.log(`  Extracted ${candidates.length} candidate authors`);
-
-  // Step 4: Fetch metrics in parallel (with concurrency limit)
-  console.log("📊 Fetching author metrics from Semantic Scholar...");
+  /* ---- Fetch metrics (OpenAlex preferred, SS fallback) ---- */
+  console.log("📊 Fetching author metrics...");
   const metricsArr = await batchGetMetrics(candidates, 3);
 
-  // Step 5: Filter, score, and rank
-  const scoredCandidates = candidates
+  /* ---- Filter, score, rank ---- */
+  const scored = candidates
     .map((c, i) => {
       const metrics        = metricsArr[i];
       const classification = classifyAuthor(metrics);
       if (!classification.pass) return null;
-
-      const score = scoreAuthor(metrics, c.papers);
-      return { candidate: c, metrics, classification, score };
+      return { candidate: c, metrics, classification, score: scoreAuthor(metrics, c.papers) };
     })
     .filter(Boolean)
     .sort((a, b) => b.score - a.score);
 
-  console.log(`  ${scoredCandidates.length} authors passed quality filter`);
+  console.log(`  ${scored.length} passed quality filter`);
 
-  // Step 6: Build profiles for top N
-  console.log("✍️  Building speaker profiles...");
+  /* ---- Build profiles ---- */
+  console.log("✍️  Building profiles...");
   const profiles = [];
 
-  for (const { candidate, metrics, classification, score } of scoredCandidates) {
+  for (const { candidate, metrics, classification, score } of scored) {
     if (profiles.length >= limit) break;
 
     const profileText = await buildProfile(candidate, topic, metrics, classification);
 
     profiles.push({
       name:            metrics.name || candidate.name,
-      affiliations:    metrics.affiliations || "Unknown",
+      affiliations:    metrics.affiliations || candidate.affiliations?.join(", ") || "Unknown",
       tier:            classification.tier,
       relevance_score: score,
       h_index:         metrics.h_index,
@@ -462,20 +706,22 @@ async function findConferenceSpeakers(topic, limit = 10, source = 5) {
         .sort((a, b) => b.year - a.year)
         .slice(0, 3)
         .map((p) => ({ title: p.title, year: p.year, link: p.link })),
-      scholar_url:     metrics.scholar_url,
-      profile:         profileText,
-      source:          candidate.papers[0]?.source || "arXiv",
+      scholar_url: metrics.scholar_url,
+      profile:     profileText,
+      data_sources: [...new Set([
+        ...candidate.papers.map((p) => p.source),
+        metrics.source,
+      ].filter(Boolean))].join(", "),
     });
 
-    // Small delay between LLM calls
-    await sleep(500);
+    await sleep(400);
   }
 
-  console.log(`✅ Done! Returning ${profiles.length} speakers.\n`);
+  console.log(`✅ Done — ${profiles.length} speakers found.\n`);
   return profiles;
 }
 
 /* ======================
 EXPORTS
 ====================== */
-export { findConferenceSpeakers, searchLinkedInExperts, expandTopic };
+export { findConferenceSpeakers, expandTopic };
