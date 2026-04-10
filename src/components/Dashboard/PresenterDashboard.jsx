@@ -11,9 +11,9 @@ import { useApp } from '../../context/AppContext';
 const cls = (...c) => c.filter(Boolean).join(' ');
 
 const statusConfig = {
-  pending:  { label: 'Under Review', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20',   dot: 'bg-amber-500'  },
-  accepted: { label: 'Accepted',     color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', dot: 'bg-emerald-500' },
-  rejected: { label: 'Not Accepted', color: 'bg-red-500/10 text-red-400 border-red-500/20',         dot: 'bg-red-500'    },
+  pending: { label: 'Under Review', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20', dot: 'bg-amber-500' },
+  accepted: { label: 'Accepted', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', dot: 'bg-emerald-500' },
+  rejected: { label: 'Not Accepted', color: 'bg-red-500/10 text-red-400 border-red-500/20', dot: 'bg-red-500' },
 };
 
 const StatusBadge = ({ status }) => {
@@ -84,9 +84,9 @@ const SlideUploadPanel = ({ paper, onSlideUploaded }) => {
       // 2. Upload new file (using upsert: true with fixed path)
       const { error: upErr } = await supabase.storage
         .from('slides')
-        .upload(newPath, selectedFile, { 
+        .upload(newPath, selectedFile, {
           cacheControl: '0', // disable cache so changes show immediately
-          upsert: true 
+          upsert: true
         });
 
       if (upErr) throw new Error(upErr.message);
@@ -170,14 +170,14 @@ const SlideUploadPanel = ({ paper, onSlideUploaded }) => {
               <p className="text-xs font-semibold text-slate-200 truncate">{selectedFile.name}</p>
               <p className="text-[10px] text-slate-500">{(selectedFile.size / 1024).toFixed(0)} KB · Ready to upload</p>
             </div>
-            <button 
+            <button
               onClick={() => setSelectedFile(null)}
               className="p-1 rounded-lg hover:bg-white/5 text-slate-500 hover:text-white transition-all"
             >
               <X size={14} />
             </button>
           </div>
-          
+
           <button
             onClick={handleUpload}
             disabled={uploading}
@@ -211,12 +211,12 @@ const TimePreferencePanel = ({ paper, onSaved }) => {
   };
 
   const [selected, setSelected] = useState(initSlots);
-  const [note,     setNote]     = useState(paper.preferred_note || '');
-  const [saving,   setSaving]   = useState(false);
-  const [saved,    setSaved]    = useState(
+  const [note, setNote] = useState(paper.preferred_note || '');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(
     Array.isArray(paper.preferred_slots) && paper.preferred_slots.length > 0
   );
-  const [err,      setErr]      = useState('');
+  const [err, setErr] = useState('');
 
   const toggle = (slot) => {
     setSelected(prev => {
@@ -249,7 +249,7 @@ const TimePreferencePanel = ({ paper, onSaved }) => {
       .from('paper')
       .update({
         preferred_slots: slotsArray,
-        preferred_note:  note || null,
+        preferred_note: note || null,
       })
       .eq('paper_id', paper.paper_id);
 
@@ -450,7 +450,7 @@ const PaperCard = ({ paper, onSlideUploaded, onTimeSaved }) => {
                 <div className="flex items-start gap-2">
                   <Info size={12} className="text-purple-400 shrink-0 mt-0.5" />
                   <p className="text-[11px] text-purple-300/70 leading-relaxed">
-                    Your paper has been <strong className="text-purple-300">accepted</strong>. 
+                    Your paper has been <strong className="text-purple-300">accepted</strong>.
                     Please share your preferred date and time slot — the organiser will finalise the schedule accordingly.
                   </p>
                 </div>
@@ -495,9 +495,9 @@ const PresenterDashboard = ({ conf, onBack }) => {
   const { user } = useApp();
   const confId = conf?.conference_id ?? conf?.id;
 
-  const [papers,  setPapers]  = useState([]);
+  const [papers, setPapers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState('');
+  const [error, setError] = useState('');
 
   /* ── fetch this presenter's papers for this conference ─────────────── */
   const fetchPapers = useCallback(async () => {
@@ -547,40 +547,14 @@ const PresenterDashboard = ({ conf, onBack }) => {
 
   /* ── derived counts ─────────────────────────────────────────────────── */
   const accepted = papers.filter(p => p.status === 'accepted').length;
-  const pending  = papers.filter(p => p.status === 'pending').length;
+  const pending = papers.filter(p => p.status === 'pending').length;
   const withSlides = papers.filter(p => p.slide_url).length;
 
   return (
-    <div className="min-h-screen bg-[#080b11] text-slate-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="bg-[#080b11] text-slate-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 
-      {/* ── Header ── */}
-      <header className="sticky top-0 z-40 bg-[#080b11]/90 backdrop-blur-xl border-b border-white/6 px-6 py-3">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onBack}
-              className="text-slate-500 hover:text-white text-xs font-semibold transition-colors"
-            >
-              ← Back
-            </button>
-            <div className="h-4 w-px bg-white/10" />
-            <span className="text-sm font-semibold text-white truncate max-w-[260px]">{conf.title}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={fetchPapers}
-              disabled={loading}
-              className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/8 text-slate-500 hover:text-white hover:border-white/16 transition-all"
-            >
-              <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-            </button>
-            <span className="text-xs font-bold text-blue-300 bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 rounded-md uppercase tracking-wider">
-              Presenter
-            </span>
-          </div>
-        </div>
-      </header>
+
 
       <div className="max-w-5xl mx-auto p-8 space-y-8">
 
@@ -623,8 +597,8 @@ const PresenterDashboard = ({ conf, onBack }) => {
           <div className="grid grid-cols-3 gap-4">
             {[
               { label: 'Total Submissions', value: papers.length, color: 'text-slate-200', icon: FileText },
-              { label: 'Accepted',          value: accepted,       color: 'text-emerald-400', icon: CheckCircle },
-              { label: 'Slides Uploaded',   value: withSlides,     color: 'text-blue-400', icon: Presentation },
+              { label: 'Accepted', value: accepted, color: 'text-emerald-400', icon: CheckCircle },
+              { label: 'Slides Uploaded', value: withSlides, color: 'text-blue-400', icon: Presentation },
             ].map(({ label, value, color, icon: Icon }) => (
               <div key={label} className="bg-[#0d1117] border border-white/6 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2">
@@ -681,7 +655,7 @@ const PresenterDashboard = ({ conf, onBack }) => {
             </div>
             <h3 className="text-lg font-bold text-white mb-2">No Papers Submitted</h3>
             <p className="text-slate-500 text-sm max-w-xs mx-auto">
-              You have not submitted any papers to this conference yet. 
+              You have not submitted any papers to this conference yet.
               Submit your research through the conference page.
             </p>
           </div>
@@ -710,9 +684,9 @@ const PresenterDashboard = ({ conf, onBack }) => {
             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Presenter Checklist</h4>
             <div className="space-y-2.5">
               {[
-                { done: papers.length > 0,                label: 'Submit your research paper',           sub: 'Paper received by the conference' },
-                { done: accepted > 0,                      label: 'Receive acceptance from reviewers',    sub: 'At least one paper accepted' },
-                { done: withSlides > 0,                    label: 'Upload presentation slides',           sub: 'Upload PDF, PPTX or Keynote file' },
+                { done: papers.length > 0, label: 'Submit your research paper', sub: 'Paper received by the conference' },
+                { done: accepted > 0, label: 'Receive acceptance from reviewers', sub: 'At least one paper accepted' },
+                { done: withSlides > 0, label: 'Upload presentation slides', sub: 'Upload PDF, PPTX or Keynote file' },
                 { done: papers.some(p => Array.isArray(p.preferred_slots) && p.preferred_slots.length >= 3), label: 'Submit your time preference', sub: 'Help the organiser build the schedule' },
               ].map(({ done, label, sub }) => (
                 <div key={label} className="flex items-start gap-3">

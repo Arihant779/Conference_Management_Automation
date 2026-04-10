@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowRight, Share2, Check, LogIn } from 'lucide-react';
+import { ArrowRight, Share2, Check, LogIn, Star } from 'lucide-react';
 import ModernTemplate from './Templates/ModernTemplate';
 import ClassicTemplate from './Templates/ClassicTemplate';
 import RoleBasedDashboard from '../Dashboard/RoleBasedDashboard';
@@ -11,9 +11,9 @@ const ROLE_LABELS = {
   organizer: 'Organizer',
   logistics_head: 'Logistics Team Lead',
   outreach_head: 'Outreach Team Lead',
-  technical_head: 'Technical Team Lead',
-  registration_head: 'Registration Team Lead',
-  sponsorship_head: 'Sponsorship Team Lead',
+  technical_head: 'Reviewing Team Head',
+  registration_head: 'Registration Team Head',
+  sponsorship_head: 'Sponsorship Team Head',
   hospitality_head: 'Hospitality Team Lead',
   publication_head: 'Publications Team Lead',
   finance_head: 'Finance Team Lead',
@@ -23,7 +23,7 @@ const ROLE_LABELS = {
   design_lead: 'Design Lead',
   web_lead: 'Website Lead',
   security_coord: 'Security Coordinator',
-  member: 'Member',
+  member: 'Team Member',
   reviewer: 'Reviewer',
   presenter: 'Presenter',
 };
@@ -74,7 +74,7 @@ const ConferenceView = ({
 
   useEffect(() => {
     if (onPendingConsumed) onPendingConsumed();
-  }, []);
+  }, [onPendingConsumed]);
 
   /* ── Resolve role ── */
   useEffect(() => {
@@ -116,7 +116,7 @@ const ConferenceView = ({
       .eq('conference_id', confId).eq('head_id', cuData.id);
     if (teamData?.length > 0) {
       setIsTeamLeader(true);
-      setTeamLeaderPosition(`${teamData[0].name} Lead`);
+      setTeamLeaderPosition(teamData[0].name.includes('Head') ? teamData[0].name : `${teamData[0].name} Lead`);
     }
   }, [user, confId, isGuest]);
 
@@ -213,14 +213,23 @@ const ConferenceView = ({
               <div className="h-6 w-px bg-white/10" />
             </>
           )}
-          <span className="font-bold text-white truncate max-w-xs tracking-wide">{displayTitle}</span>
+          <div className="flex items-center gap-3">
+            <span className="font-bold text-white truncate max-w-xs tracking-wide">{displayTitle}</span>
+            {(isOrganizer || isTeamLeader) && (
+              <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${isOrganizer ? 'text-violet-300 bg-violet-500/10 border-violet-500/20' : 'text-indigo-300 bg-indigo-500/10 border-indigo-500/20'
+                }`}>
+                <Star size={11} className="fill-current" />
+                {editorPosition}
+              </div>
+            )}
+          </div>
 
           {!isGuest && (
             <button
               onClick={handleShare}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${copied
-                ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
-                : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:border-white/20'
+                  ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+                  : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:border-white/20'
                 }`}
             >
               {copied ? <Check size={12} /> : <Share2 size={12} />}
@@ -254,14 +263,13 @@ const ConferenceView = ({
           </div>
         </div>
       </nav>
-
       <div className="flex-1 bg-black overflow-y-auto relative">
         {viewMode === 'home' ? (
           conf.template === 'classic'
             ? <ClassicTemplate {...templateProps} />
             : <ModernTemplate {...templateProps} />
         ) : viewMode === 'dashboard' ? (
-          <RoleBasedDashboard conf={conf} role={resolvedRole} onBack={onBack} />
+          <RoleBasedDashboard conf={conf} role={resolvedRole} onBack={onBack} onSwitchView={handleTabClick} />
         ) : viewMode === 'submitPaper' ? (
           <PaperSubmission conf={conf} />
         ) : null}

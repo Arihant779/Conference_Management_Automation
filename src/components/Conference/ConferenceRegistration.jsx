@@ -240,7 +240,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
         user_id: userId || null,
         email: form.email.trim().toLowerCase(),
         full_name: `${form.first_name.trim()} ${form.last_name.trim()}`,
-        role: 'presenter',
+        role: 'attendee',
         joined_at: new Date().toISOString(),
         accommodation_required: form.accommodation_required,
         accommodation_notes: form.accommodation_notes || null,

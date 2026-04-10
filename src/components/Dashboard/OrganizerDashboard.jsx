@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  BarChart2, FileText, Users, CheckSquare, Bell, Plus, X, Send,
-  ChevronDown, CheckCircle, XCircle, MapPin, Edit2, Trash2,
-  Search, Layers, Clock, Sparkles, Star, Check, Settings
+  BarChart2, FileText, Users, CheckSquare, Square, Bell, Plus, X, Send,
+  CheckCircle, XCircle, MapPin, Edit2, Trash2, ArrowRight,
+  Search, Layers, Clock, Sparkles, Star, Check
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
@@ -16,34 +16,35 @@ const cls = (...c) => c.filter(Boolean).join(' ');
 
 const ROLE_STYLE = {
   organizer: 'bg-violet-500/10 text-violet-300 border-violet-500/25',
-  reviewer:  'bg-amber-500/10  text-amber-300  border-amber-500/25',
+  reviewer: 'bg-amber-500/10  text-amber-300  border-amber-500/25',
   presenter: 'bg-blue-500/10   text-blue-300   border-blue-500/25',
-  member:    'bg-slate-500/10  text-slate-300  border-slate-500/25',
+  member: 'bg-slate-500/10  text-slate-300  border-slate-500/25',
 };
 const PRIORITY_STYLE = {
-  high:   'bg-red-500/10 text-red-400 border-red-500/20',
+  high: 'bg-red-500/10 text-red-400 border-red-500/20',
   medium: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  low:    'bg-slate-500/10 text-slate-400 border-slate-500/20',
+  low: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
 };
 const TEAM_COLORS = [
-  '#6366f1','#8b5cf6','#ec4899','#f59e0b',
-  '#10b981','#3b82f6','#ef4444','#06b6d4',
+  '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b',
+  '#10b981', '#3b82f6', '#ef4444', '#06b6d4',
 ];
 const VOLUNTEER_ROLE_LABELS = {
-  logistics_head:    'Logistics Team',
-  outreach_head:     'Outreach Team',
-  technical_head:    'Technical Team',
+  logistics_head: 'Logistics Team',
+  outreach_head: 'Outreach Team Head',
+  organizer_head: 'Organizing Team Head',
+  technical_head: 'Reviewing Team Head',
+  program_coord: 'Event Management Team',
+  social_coord: 'Social Media Coord.',
+  volunteer_coord: 'Volunteer Coordinator',
+  design_lead: 'Design Lead',
+  web_lead: 'Website Lead',
+  security_coord: 'Security Coordinator',
   registration_head: 'Registration Team',
-  sponsorship_head:  'Sponsorship Team',
-  hospitality_head:  'Hospitality Team',
-  publication_head:  'Publications Team',
-  finance_head:      'Finance Team',
-  program_coord:     'Program Coordinator',
-  social_coord:      'Social Media Coord.',
-  volunteer_coord:   'Volunteer Coordinator',
-  design_lead:       'Design Lead',
-  web_lead:          'Website Lead',
-  security_coord:    'Security Coordinator',
+  sponsorship_head: 'Sponsorship Team',
+  hospitality_head: 'Hospitality Team',
+  publication_head: 'Publications Team',
+  finance_head: 'Finance Team',
 };
 const TEAM_TYPES = Object.entries(VOLUNTEER_ROLE_LABELS).map(([id, label]) => ({ id, label }));
 
@@ -164,9 +165,9 @@ const Textarea = ({ className, ...props }) => (
 const Btn = ({ variant = 'primary', children, className, ...props }) => {
   const base = 'px-4 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 justify-center disabled:opacity-40 disabled:cursor-not-allowed';
   const v = {
-    primary:   'bg-indigo-600 hover:bg-indigo-500 text-white',
+    primary: 'bg-indigo-600 hover:bg-indigo-500 text-white',
     secondary: 'border border-white/10 text-slate-400 hover:text-white hover:bg-white/5',
-    danger:    'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20',
+    danger: 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20',
   };
   return <button {...props} className={cls(base, v[variant], className)}>{children}</button>;
 };
@@ -194,10 +195,10 @@ const LoadingRows = () => (
    Shown when organizer clicks the star icon on a member row.
 ══════════════════════════════════════════════════════════ */
 const RateMemberModal = ({ member, confId, organizerId, existingRating, onSave, onClose }) => {
-  const [rating, setRating]     = useState(existingRating?.rating || 0);
-  const [comment, setComment]   = useState(existingRating?.comment || '');
-  const [saving, setSaving]     = useState(false);
-  const [error, setError]       = useState('');
+  const [rating, setRating] = useState(existingRating?.rating || 0);
+  const [comment, setComment] = useState(existingRating?.comment || '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const mName = (m) => m?.full_name || m?.email || m?.user_id?.slice(0, 8) || '?';
 
@@ -297,15 +298,15 @@ const VolunteerCandidatePanel = ({
   confId, onAdd, onAddVolunteer,
   globalRatings,   // Map<user_id, { avg, count }>
 }) => {
-  const [search, setSearch]       = useState('');
+  const [search, setSearch] = useState('');
   const [filterMode, setFilterMode] = useState('volunteers');
-  const [adding, setAdding]       = useState(null);
+  const [adding, setAdding] = useState(null);
 
   const alreadyInTeamUserIds = new Set(teamMembers.map(m => m.user_id));
-  const alreadyInTeam        = new Set(teamMembers.map(m => m.id));
-  const memberUserIds        = new Set(members.map(m => m.user_id));
+  const alreadyInTeam = new Set(teamMembers.map(m => m.id));
+  const memberUserIds = new Set(members.map(m => m.user_id));
 
-  const mName  = (m) => m?.full_name || m?.user_name || m?.email || m?.user_email || m?.user_id?.slice(0, 8) || '?';
+  const mName = (m) => m?.full_name || m?.user_name || m?.email || m?.user_email || m?.user_id?.slice(0, 8) || '?';
   const mEmail = (m) => m?.email || m?.user_email || '';
   const relevantRoleLabel = teamTypeId ? VOLUNTEER_ROLE_LABELS[teamTypeId] : null;
 
@@ -326,7 +327,7 @@ const VolunteerCandidatePanel = ({
       return mName(m).toLowerCase().includes(q) || mEmail(m).toLowerCase().includes(q);
     });
 
-  const candidates     = filterMode === 'volunteers' ? matchedVolunteers : nonTeamMembers;
+  const candidates = filterMode === 'volunteers' ? matchedVolunteers : nonTeamMembers;
   const volunteerCount = (allVolunteers || [])
     .filter(u => !alreadyInTeamUserIds.has(u.user_id))
     .filter(u => !teamTypeId ? u.volunteer_roles?.length > 0 : u.volunteer_roles?.includes(teamTypeId))
@@ -408,12 +409,12 @@ const VolunteerCandidatePanel = ({
       ) : (
         <div className="max-h-64 overflow-y-auto space-y-1.5 pr-0.5">
           {candidates.map(c => {
-            const isVolTab         = filterMode === 'volunteers';
-            const isAlreadyMember  = memberUserIds.has(c.user_id);
-            const domains          = (c.volunteer_domains || []).slice(0, 2);
-            const isAdding         = adding === c.user_id;
-            const key              = c.user_id || c.id;
-            const ratingInfo       = globalRatings?.[c.user_id];
+            const isVolTab = filterMode === 'volunteers';
+            const isAlreadyMember = memberUserIds.has(c.user_id);
+            const domains = (c.volunteer_domains || []).slice(0, 2);
+            const isAdding = adding === c.user_id;
+            const key = c.user_id || c.id;
+            const ratingInfo = globalRatings?.[c.user_id];
 
             return (
               <div
@@ -486,58 +487,204 @@ const VolunteerCandidatePanel = ({
   );
 };
 
+
+const UserPickerPanel = ({ confId, members, onSelect }) => {
+  const [search, setSearch] = useState('');
+  const [allUsers, setAllUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('users')
+        .select('user_id, user_name, user_email')
+        .order('user_name', { ascending: true });
+      if (!error) setAllUsers(data || []);
+      setLoading(false);
+    };
+    fetchUsers();
+  }, []);
+
+  const existingUserIds = new Set(members.map(m => m.user_id));
+
+  const filtered = allUsers
+    .filter(u => !existingUserIds.has(u.user_id))
+    .filter(u => {
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return (
+        u.user_name?.toLowerCase().includes(q) ||
+        u.user_email?.toLowerCase().includes(q)
+      );
+    });
+
+  return (
+    <div className="mt-1">
+      {/* Search */}
+      <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 mb-3">
+        <Search size={12} className="text-slate-600 shrink-0" />
+        <input
+          className="bg-transparent outline-none text-xs text-white placeholder-slate-600 flex-1"
+          style={{ fontFamily: "'DM Sans', sans-serif" }}
+          placeholder="Search by name or email…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+        {search && (
+          <button onClick={() => setSearch('')} className="text-slate-600 hover:text-slate-400">
+            <X size={11} />
+          </button>
+        )}
+      </div>
+
+      {/* List */}
+      {loading ? (
+        <div className="space-y-2">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-12 bg-white/5 rounded-xl animate-pulse" />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="py-6 text-center border border-dashed border-white/10 rounded-xl">
+          <p className="text-slate-600 text-xs">
+            {search ? 'No users match your search.' : 'All registered users are already members.'}
+          </p>
+        </div>
+      ) : (
+        <div className="max-h-64 overflow-y-auto space-y-1.5 pr-0.5">
+          {filtered.map(u => (
+            <div
+              key={u.user_id}
+              onClick={() => onSelect(u)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl border bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 cursor-pointer transition-all group"
+            >
+              {/* Avatar */}
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                {(u.user_name || u.user_email)?.[0]?.toUpperCase()}
+              </div>
+
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-semibold text-slate-200 truncate">
+                  {u.user_name || '(no name)'}
+                </div>
+                <div className="text-[10px] text-slate-600 truncate">{u.user_email}</div>
+              </div>
+
+              <span className="text-[9px] text-slate-600 group-hover:text-indigo-400 transition-colors font-semibold shrink-0">
+                + Select
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 /* ═══════════════════════════════════════════════════════════════════════════
    MAIN ORGANIZER DASHBOARD
 ═══════════════════════════════════════════════════════════════════════════ */
-const OrganizerDashboard = ({ conf, onBack }) => {
-  useApp();
+const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
+  const { user, permissions, userRoles } = useApp();
   const confId = conf.conference_id || conf.id;
 
-  const [section, setSection]         = useState('overview');
-  const [members, setMembers]         = useState([]);
-  const [loadingMembers, setLM]       = useState(true);
-  const [teams, setTeams]             = useState([]);
-  const [loadingTeams, setLT]         = useState(true);
-  const [tasks, setTasks]             = useState([]);
-  const [loadingTasks, setLTasks]     = useState(true);
-  const [notifs, setNotifs]           = useState([]);
-  const [modal, setModal]             = useState(null);
-  const [modalData, setModalData]     = useState(null);
-  const [saving, setSaving]           = useState(false);
+  const [section, setSection] = useState('overview');
+  const [members, setMembers] = useState([]);
+  const [loadingMembers, setLM] = useState(true);
+  const [teams, setTeams] = useState([]);
+  const [loadingTeams, setLT] = useState(true);
+  const [tasks, setTasks] = useState([]);
+  const [loadingTasks, setLTasks] = useState(true);
+
+  /* ── navigation logic ────────────────────────────────── */
+  useEffect(() => {
+    if (section === 'site_preview') {
+      onSwitchView('home');
+      setSection('overview');
+    }
+  }, [section, onSwitchView, setSection]);
+
+  /* ── identity ────────────────────────────────────────── */
+  const myMember = members.find(m => m.user_id === user.id);
+  const myMemberId = myMember?.id;
+  const isGlobalHead = conf.conference_head_id === user.id;
+  const isOrganizer = isGlobalHead || (userRoles && userRoles.includes('organizer'));
+  const myHeadedTeamIds = teams.filter(t => t.head_id === myMemberId).map(t => t.id);
+  const isTeamHead = !isOrganizer && myHeadedTeamIds.length > 0;
+
+  /* ── permissions fallback ───────────────────────────── */
+  const FALLBACK_PERMS = {
+    organizer: ['view_dashboard', 'view_emails', 'send_emails', 'view_papers', 'manage_papers', 'allocate_papers', 'view_members', 'manage_members', 'view_teams', 'manage_teams', 'view_tasks', 'manage_tasks', 'view_notifications', 'send_notifications', 'find_speakers', 'view_feedback', 'manage_feedback', 'view_attendees'],
+    organizer_head: ['view_dashboard', 'view_emails', 'send_emails', 'view_papers', 'manage_papers', 'allocate_papers', 'view_members', 'manage_members', 'view_teams', 'manage_teams', 'view_tasks', 'manage_tasks', 'view_notifications', 'send_notifications', 'find_speakers', 'view_feedback', 'manage_feedback', 'view_attendees'],
+    programming_head: ['view_dashboard', 'view_papers', 'manage_papers', 'allocate_papers', 'view_members', 'view_notifications'],
+    logistics_head: ['view_dashboard', 'view_teams', 'manage_teams', 'view_tasks', 'manage_tasks', 'view_notifications', 'view_attendees', 'manage_members'],
+    outreach_head: ['view_dashboard', 'view_emails', 'send_emails', 'find_speakers', 'view_members', 'view_notifications', 'send_notifications'],
+    feedback_head: ['view_dashboard', 'view_feedback', 'manage_feedback', 'view_notifications'],
+    event_head: ['view_dashboard', 'view_teams', 'view_tasks', 'manage_tasks', 'view_members', 'view_notifications'],
+    technical_head: ['view_dashboard', 'view_teams', 'view_tasks', 'manage_tasks', 'view_notifications', 'view_papers', 'manage_papers', 'allocate_papers'],
+    registration_head: ['view_dashboard', 'view_members', 'manage_members', 'view_teams', 'view_notifications'],
+    sponsorship_head: ['view_dashboard', 'view_emails', 'send_emails', 'view_notifications'],
+    member: ['view_dashboard', 'view_teams', 'view_tasks', 'view_notifications']
+  };
+
+  // Generic fallback for any role ending in _head or _coord
+  const getRolePermissions = (role) => {
+    if (FALLBACK_PERMS[role]) return FALLBACK_PERMS[role];
+    if (role.endsWith('_head') || role.endsWith('_coord') || role.endsWith('_lead')) {
+      return ['view_dashboard', 'view_teams', 'view_tasks', 'manage_tasks', 'view_notifications', 'view_members'];
+    }
+    return [];
+  };
+
+  const effectivePermissions = Array.from(new Set([
+    ...(permissions || []),
+    ...(userRoles ? userRoles.flatMap(getRolePermissions) : [])
+  ]));
+
+  const can = (p) => effectivePermissions.includes(p);
+  const roleLabel = isOrganizer ? 'Organizer' : ((userRoles || []).find(r => r !== 'team_head' && (r.endsWith('_head') || r.endsWith('_coord') || r.endsWith('_lead')))?.replace(/technical_head/g, 'Reviewing Team Head')?.replace(/outreach_head/g, 'Outreach Team Head')?.replace(/logistics_head/g, 'Logistics Team Head')?.replace(/event_head/g, 'Event Management Team Head')?.replace(/organizer_head/g, 'Organizing Team Head')?.replace(/_/g, ' ')?.replace(/\b\w/g, l => l.toUpperCase()) || (userRoles?.includes('team_head') || isTeamHead ? 'Team Lead' : (userRoles?.includes('reviewer') ? 'Reviewer' : 'Team Member')));
+  const dashboardTitle = isOrganizer ? 'Organizer Dashboard' : (roleLabel.includes('Head') || roleLabel.includes('Lead') || roleLabel.includes('Coord') ? `${roleLabel === 'Team Lead' ? 'Team' : roleLabel} Dashboard` : (isTeamHead || userRoles?.includes('team_head') ? 'Team Management' : 'Conference Dashboard'));
+  const [notifs, setNotifs] = useState([]);
+  const [modal, setModal] = useState(null);
+  const [modalData, setModalData] = useState(null);
+  const [saving, setSaving] = useState(false);
   const [memberSearch, setMemberSearch] = useState('');
-  const [expandedTeam, setExpandedTeam] = useState(null);
   const [paperFilter, setPaperFilter] = useState('all');
   const [allVolunteers, setAllVolunteers] = useState([]);
+  const [selectedAttendees, setSelectedAttendees] = useState(new Set());
+  const [updatingBulk, setUpdatingBulk] = useState(false);
 
   /* ── rating state ─────────────────────────────────────── */
   // My ratings for this conference: Map<rated_user_id, { id, rating, comment }>
-  const [myRatings, setMyRatings]     = useState({});
+  const [myRatings, setMyRatings] = useState({});
   // Global avg ratings across all conferences: Map<user_id, { avg, count }>
   const [globalRatings, setGlobalRatings] = useState({});
   // Which member is being rated right now
   const [ratingMember, setRatingMember] = useState(null);
 
   /* forms */
-  const [mForm, setMForm]   = useState({ email: '', role: 'reviewer' });
+  const [mForm, setMForm] = useState({ email: '', role: 'reviewer' });
   const [tmForm, setTmForm] = useState({ name: '', type: '', description: '', color: '#6366f1', head_id: '' });
   const [tkForm, setTkForm] = useState({ title: '', description: '', team_id: '', assignee_id: '', priority: 'medium', due_date: '' });
-  const [nForm, setNForm]   = useState({ title: '', message: '', target_role: 'all', target_team_id: '' });
+  const [nForm, setNForm] = useState({ title: '', message: '', target_role: 'all', target_team_id: '' });
 
   /* speakers */
-  const [spTopic, setSpTopic]     = useState('');
-  const [spLimit, setSpLimit]     = useState(10);
-  const [spSource, setSpSource]   = useState(5);
+  const [spTopic, setSpTopic] = useState('');
+  const [spLimit, setSpLimit] = useState(10);
+  const [spSource, setSpSource] = useState(5);
   const [spLoading, setSpLoading] = useState(false);
   const [spResults, setSpResults] = useState([]);
-  const [spError, setSpError]     = useState('');
+  const [spError, setSpError] = useState('');
 
   /* papers */
   const [confPapers, setConfPapers] = useState([]);
-  const [loadingPapers, setLP]      = useState(true);
+  const [loadingPapers, setLP] = useState(true);
 
   const pendingCount = confPapers.filter(p => p.status === 'pending').length;
-  const accepted     = confPapers.filter(p => p.status === 'accepted').length;
-  const rejected     = confPapers.filter(p => p.status === 'rejected').length;
+  const accepted = confPapers.filter(p => p.status === 'accepted').length;
+  const rejected = confPapers.filter(p => p.status === 'rejected').length;
 
   /* Current organizer's user_id — we store it after fetching the conf membership */
   const [organizerUserId, setOrganizerUserId] = useState(null);
@@ -547,20 +694,34 @@ const OrganizerDashboard = ({ conf, onBack }) => {
     setLM(true);
     const { data, error } = await supabase
       .from('conference_user')
-      .select('id, user_id, role, email, full_name, joined_at, users(user_name, user_email)')
+      .select('id, user_id, role, email, full_name, joined_at, accommodation_required, accommodation_notes, users(user_name, user_email)')
       .eq('conference_id', confId)
       .order('joined_at', { ascending: false });
 
     if (error) console.error('fetchMembers error:', error);
     const enriched = (data || []).map(m => ({
       ...m,
-      email:     m.email     || m.users?.user_email || '',
-      full_name: m.full_name || m.users?.user_name  || '',
+      email: m.email || m.users?.user_email || '',
+      full_name: m.full_name || m.users?.user_name || '',
     }));
     setMembers(enriched);
     setLM(false);
     return enriched;
   }, [confId]);
+
+  const handleBulkRoomUpdate = async (assign) => {
+    if (selectedAttendees.size === 0) return;
+    setUpdatingBulk(true);
+    // Columns missing from schema.
+    console.warn('Bulk room update skipped: columns missing from schema');
+    setUpdatingBulk(false);
+  };
+
+  const handleSingleRoomUpdate = async (id, assign, roomNum = null) => {
+    // room_assigned and room_number appear to be missing from the schema.
+    // Disabling for now to prevent 400 errors.
+    console.warn('Room update skipped: columns missing from schema');
+  };
 
   const fetchAllVolunteers = useCallback(async () => {
     const { data, error } = await supabase
@@ -581,7 +742,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
     if (error) console.error('fetchPapers error:', error);
     const paperMap = {};
     (data || []).forEach(p => {
-      const title    = p.paper_title || 'Untitled';
+      const title = p.paper_title || 'Untitled';
       const hasAssign = p.paper_assignments?.length > 0;
       if (!paperMap[title] || (hasAssign && !paperMap[title].paper_assignments?.length)) paperMap[title] = p;
     });
@@ -707,7 +868,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
     const agg = {};
     (data || []).forEach(r => {
       if (!agg[r.rated_user_id]) agg[r.rated_user_id] = { sum: 0, count: 0 };
-      agg[r.rated_user_id].sum   += r.rating;
+      agg[r.rated_user_id].sum += r.rating;
       agg[r.rated_user_id].count += 1;
     });
 
@@ -740,18 +901,6 @@ const OrganizerDashboard = ({ conf, onBack }) => {
   }, [fetchMembers, fetchAllVolunteers, fetchTeams, fetchTasks, fetchNotifs, fetchPapers, fetchGlobalRatings]);
 
   /* ── member CRUD ─────────────────────────────────────────── */
-  const addMember = async () => {
-    if (!mForm.email.trim()) return;
-    setSaving(true);
-    const { data: foundUser, error: userError } = await supabase.from('users').select('user_id,user_name,user_email').eq('user_email', mForm.email.trim().toLowerCase()).maybeSingle();
-    if (userError || !foundUser) { alert('No account found with that email.'); setSaving(false); return; }
-    const { data: existing } = await supabase.from('conference_user').select('id').eq('conference_id', confId).eq('user_id', foundUser.user_id).maybeSingle();
-    if (existing) { alert('Already a member.'); setSaving(false); return; }
-    const { error: insertError } = await supabase.from('conference_user').insert([{ conference_id: confId, user_id: foundUser.user_id, email: foundUser.user_email, full_name: foundUser.user_name, role: mForm.role, joined_at: new Date().toISOString() }]);
-    setSaving(false);
-    if (insertError) alert(insertError.message);
-    else { setModal(null); setMForm({ email: '', role: 'reviewer' }); fetchMembers(); fetchAllVolunteers(); }
-  };
 
   const updateRole = async (id, role) => {
     const { error } = await supabase.from('conference_user').update({ role }).eq('id', id);
@@ -768,7 +917,16 @@ const OrganizerDashboard = ({ conf, onBack }) => {
   const createTeam = async () => {
     if (!tmForm.name.trim()) return;
     setSaving(true);
-    const { error } = await supabase.from('conference_teams').insert([{ conference_id: confId, name: tmForm.name.trim(), description: tmForm.description.trim(), color: tmForm.color, head_id: tmForm.head_id || null, created_at: new Date().toISOString() }]);
+    const { data: newTeam, error } = await supabase.from('conference_teams').insert([{ conference_id: confId, name: tmForm.name.trim(), description: tmForm.description.trim(), color: tmForm.color, head_id: tmForm.head_id || null, created_at: new Date().toISOString() }]).select().single();
+
+    // RBAC: If a head is assigned and the type is a known role, map it
+    if (!error && newTeam && tmForm.head_id && tmForm.type && tmForm.type !== 'custom') {
+      await supabase.from('conference_user_roles_mapping').upsert({
+        conference_user_id: tmForm.head_id,
+        role_name: tmForm.type
+      }, { onConflict: 'conference_user_id,role_name' });
+    }
+
     setSaving(false);
     if (!error) { setModal(null); setTmForm({ name: '', type: '', description: '', color: '#6366f1', head_id: '' }); fetchTeams(); } else alert(error.message);
   };
@@ -776,7 +934,26 @@ const OrganizerDashboard = ({ conf, onBack }) => {
   const saveTeam = async () => {
     if (!tmForm.name.trim()) return;
     setSaving(true);
-    await supabase.from('conference_teams').update({ name: tmForm.name.trim(), description: tmForm.description.trim(), color: tmForm.color, head_id: tmForm.head_id || null }).eq('id', modalData.id);
+    const { error } = await supabase.from('conference_teams').update({ name: tmForm.name.trim(), description: tmForm.description.trim(), color: tmForm.color, head_id: tmForm.head_id || null }).eq('id', modalData.id);
+
+    // RBAC: Sync roles if team type or head changed
+    if (!error && tmForm.head_id) {
+      // 1. If type changed, remove the OLD role first
+      if (tmForm.type !== tmForm.originalType && tmForm.originalType && tmForm.originalType !== 'custom') {
+        await supabase.from('conference_user_roles_mapping')
+          .delete()
+          .eq('conference_user_id', tmForm.head_id)
+          .eq('role_name', tmForm.originalType);
+      }
+      // 2. Add/Update the NEW role
+      if (tmForm.type && tmForm.type !== 'custom') {
+        await supabase.from('conference_user_roles_mapping').upsert({
+          conference_user_id: tmForm.head_id,
+          role_name: tmForm.type
+        }, { onConflict: 'conference_user_id,role_name' });
+      }
+    }
+
     setSaving(false); setModal(null); fetchTeams();
   };
 
@@ -786,25 +963,47 @@ const OrganizerDashboard = ({ conf, onBack }) => {
     fetchTeams(); fetchTasks();
   };
 
-  const addVolunteerToConference = async (volunteer) => {
-    const { data: existing } = await supabase.from('conference_user').select('id').eq('conference_id', confId).eq('user_id', volunteer.user_id).maybeSingle();
-    if (existing) { await fetchMembers(); return existing.id; }
-    const { data, error } = await supabase.from('conference_user').insert([{ conference_id: confId, user_id: volunteer.user_id, email: volunteer.user_email || '', full_name: volunteer.user_name || '', role: 'member', joined_at: new Date().toISOString() }]).select('id').single();
-    if (error) { console.error(error); return null; }
-    await fetchMembers();
-    return data.id;
-  };
 
   const addToTeam = async (teamId, confUserId) => {
-    const m = members.find(m => m.id === confUserId);
-    if (!m) return;
-    await supabase.from('team_members').insert([{ team_id: teamId, conference_id: confId, conference_user_id: confUserId, user_id: m.user_id }]);
-    fetchTeams();
+    const member = members.find(m => m.id === confUserId);
+    if (!member) return;
+
+    // Check if already in team
+    const team = teams.find(t => t.id === teamId);
+    if (team?.memberList.some(tm => tm.conference_user_id === confUserId)) {
+      alert('Already in team.');
+      return;
+    }
+
+    setSaving(true);
+    const { error } = await supabase.from('team_members').insert([{
+      conference_id: confId,
+      team_id: teamId,
+      user_id: member.user_id,
+      conference_user_id: confUserId
+    }]);
+    setSaving(false);
+
+    if (error) {
+      alert(`Add error: ${error.message}`);
+    } else {
+      fetchTeams();
+    }
   };
 
   const removeFromTeam = async (teamId, confUserId) => {
-    await supabase.from('team_members').delete().eq('team_id', teamId).eq('conference_user_id', confUserId);
-    fetchTeams();
+    setSaving(true);
+    const { error } = await supabase.from('team_members')
+      .delete()
+      .eq('team_id', teamId)
+      .eq('conference_user_id', confUserId);
+    setSaving(false);
+
+    if (error) {
+      alert(`Remove error: ${error.message}`);
+    } else {
+      fetchTeams();
+    }
   };
 
   /* ── task CRUD ───────────────────────────────────────────── */
@@ -857,23 +1056,33 @@ const OrganizerDashboard = ({ conf, onBack }) => {
   };
 
   /* ── ui helpers ──────────────────────────────────────────── */
-  const mName        = (m) => m?.full_name || m?.email || m?.user_id?.substring(0, 8) || '?';
-  const teamName     = (id) => teams.find(t => t.id === id)?.name || '—';
+  const mName = (m) => m?.full_name || m?.email || m?.user_id?.substring(0, 8) || '?';
+  const teamName = (id) => teams.find(t => t.id === id)?.name || '—';
   const assigneeName = (id) => { const m = members.find(m => m.id === id || m.user_id === id); return m ? mName(m) : '—'; };
 
   const filteredMembers = members.filter(m =>
+    m.role !== 'attendee' && (
+      !memberSearch ||
+      mName(m).toLowerCase().includes(memberSearch.toLowerCase()) ||
+      m.email?.toLowerCase().includes(memberSearch.toLowerCase())
+    )
+  );
+
+  // Add this right below:
+  const attendees = members.filter(m => m.role === 'attendee');
+  const filteredAttendees = attendees.filter(m =>
     !memberSearch ||
     mName(m).toLowerCase().includes(memberSearch.toLowerCase()) ||
     m.email?.toLowerCase().includes(memberSearch.toLowerCase())
   );
 
-  const volunteerMap   = Object.fromEntries(allVolunteers.map(u => [u.user_id, { volunteer_roles: u.volunteer_roles || [], volunteer_domains: u.volunteer_domains || [] }]));
+  const volunteerMap = Object.fromEntries(allVolunteers.map(u => [u.user_id, { volunteer_roles: u.volunteer_roles || [], volunteer_domains: u.volunteer_domains || [] }]));
   const volunteersCount = allVolunteers.length;
 
   const openEditTeam = (t) => {
     setModalData(t);
     const matchedType = Object.entries(VOLUNTEER_ROLE_LABELS).find(([, label]) => label === t.name)?.[0] || 'custom';
-    setTmForm({ name: t.name, type: matchedType, description: t.description || '', color: t.color || '#6366f1', head_id: t.head_id || '' });
+    setTmForm({ name: t.name, type: matchedType, originalType: matchedType, description: t.description || '', color: t.color || '#6366f1', head_id: t.head_id || '' });
     setModal('editTeam');
   };
   const openEditTask = (t) => {
@@ -883,52 +1092,38 @@ const OrganizerDashboard = ({ conf, onBack }) => {
   };
 
   const nav = [
-    { id: 'overview',      label: 'Overview',        icon: BarChart2,   badge: null },
-    { id: 'papers',        label: 'Papers',           icon: FileText,    badge: pendingCount || null },
-    { id: 'members',       label: 'Members',          icon: Users,       badge: null },
-    { id: 'teams',         label: 'Teams',            icon: Layers,      badge: null },
-    { id: 'tasks',         label: 'Tasks',            icon: CheckSquare, badge: tasks.filter(t => t.status !== 'done').length || null },
-    { id: 'notifications', label: 'Notifications',    icon: Bell,        badge: null },
-    { id: 'emails',        label: 'Emails',           icon: Send,        badge: null },
-    { id: 'speakers',      label: 'Find Speakers',    icon: Users,       badge: null },
-    { id: 'allocation',    label: 'Paper Allocation', icon: FileText,    badge: null },
-    { id: 'feedback',      label: 'Feedback',         icon: Star,        badge: null },
-  ];
+    { id: 'overview', label: 'Overview', icon: BarChart2, badge: null, permission: 'view_dashboard' },
+    { id: 'papers', label: 'Papers', icon: FileText, badge: pendingCount || null, permission: 'view_papers' },
+    { id: 'members', label: 'Members', icon: Users, badge: null, permission: 'view_members' },
+    { id: 'attendees', label: 'Attendees', icon: Users, badge: null, permission: 'view_attendees' },
+    { id: 'teams', label: 'Teams', icon: Layers, badge: null, permission: 'view_teams' },
+    { id: 'tasks', label: 'Tasks', icon: CheckSquare, badge: tasks.filter(t => t.status !== 'done').length || null, permission: 'view_tasks' },
+    { id: 'notifications', label: 'Notifications', icon: Bell, badge: null, permission: 'view_notifications' },
+    { id: 'emails', label: 'Emails', icon: Send, badge: null, permission: 'view_emails' },
+    { id: 'speakers', label: 'Find Speakers', icon: Users, badge: null, permission: 'find_speakers' },
+    { id: 'allocation', label: 'Paper Allocation', icon: FileText, badge: null, permission: 'allocate_papers' },
+    { id: 'feedback', label: 'Feedback', icon: Star, badge: null, permission: 'view_feedback' },
+    { id: 'site_preview', label: 'Site Preview', icon: Sparkles, badge: null },
+  ].filter(item => !item.permission || can(item.permission));
 
   /* ══════════════════════════════════════════════════════════
      RENDER
   ══════════════════════════════════════════════════════════ */
   return (
-    <div className="min-h-screen bg-[#080b11] text-slate-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="bg-[#080b11] text-slate-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 
-      {/* HEADER - hidden/commented out
-      <header className="sticky top-0 z-40 bg-[#080b11]/95 backdrop-blur-xl border-b border-white/6 px-6 py-3">
-        <div className="max-w-[1400px] mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="text-slate-500 hover:text-white text-xs font-semibold px-2 py-1.5 hover:bg-white/5 rounded-lg transition-all">← Back</button>
-            <div className="h-4 w-px bg-white/10" />
-            <div>
-              <div className="font-bold text-white text-sm">{conf.title}</div>
-              <div className="text-xs text-slate-600 flex items-center gap-1"><MapPin size={10} />{conf.location ?? 'Location TBD'}</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {volunteersCount > 0 && (
-              <div className="hidden md:flex items-center gap-1.5 text-xs font-semibold text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-md">
-                <Sparkles size={11} />{volunteersCount} volunteer{volunteersCount !== 1 ? 's' : ''}
-              </div>
-            )}
-            <span className="text-xs font-bold text-violet-300 bg-violet-500/10 border border-violet-500/20 px-2.5 py-1 rounded-md uppercase tracking-wider">Organizer</span>
-            <Btn className="text-xs py-2 px-3" onClick={() => setModal('notification')}><Bell size={13} />Announce</Btn>
-          </div>
-        </div>
-      </header>
-      */}
+
 
       <div className="max-w-[1400px] mx-auto flex">
         {/* SIDEBAR */}
-        <aside className="w-52 shrink-0 sticky top-[53px] h-[calc(100vh-53px)] border-r border-white/10 py-5 px-2.5 flex flex-col gap-0.5 overflow-y-auto">
+        <aside className="w-52 shrink-0 sticky top-4 border-r border-white/10 py-5 px-2.5 flex flex-col gap-0.5 overflow-y-auto" style={{ height: 'calc(100vh - 120px)' }}>
+          <div className="px-3 mb-6">
+            <div className="text-[11px] text-indigo-400 font-bold uppercase tracking-widest flex items-center gap-2">
+              {(isOrganizer || isTeamHead || userRoles?.includes('team_head')) && <Star size={12} className="fill-current" />}
+              {dashboardTitle}
+            </div>
+          </div>
           {nav.map(({ id, label, icon: Icon, badge }) => (
             <button
               key={id}
@@ -943,24 +1138,33 @@ const OrganizerDashboard = ({ conf, onBack }) => {
               {badge ? <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/20 px-1.5 py-0.5 rounded-full font-bold">{badge}</span> : null}
             </button>
           ))}
+
         </aside>
 
         {/* MAIN CONTENT */}
-        <main className="flex-1 p-8 min-h-screen">
+        <main className="flex-1 p-8">
 
           {/* ═══ OVERVIEW ═══ */}
           {section === 'overview' && (
             <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold text-white">Event Overview</h2>
-                <p className="text-slate-500 text-sm mt-0.5">Real-time conference metrics</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Event Overview</h2>
+                  <p className="text-slate-500 text-sm mt-0.5">Real-time conference metrics</p>
+                </div>
+                {isGlobalHead && (
+                  <Btn variant="danger" onClick={() => setModal('deleteConference')}>
+                    <Trash2 size={14} /> Delete Conference
+                  </Btn>
+                )}
               </div>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                 {[
-                  { label: 'Members',    value: members.length,                               color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
-                  { label: 'Teams',      value: teams.length,                                 color: 'text-purple-400', bg: 'bg-purple-500/10' },
-                  { label: 'Papers',     value: confPapers.length,                            color: 'text-blue-400',   bg: 'bg-blue-500/10'   },
-                  { label: 'Open Tasks', value: tasks.filter(t => t.status !== 'done').length, color: 'text-amber-400', bg: 'bg-amber-500/10'  },
+                  { label: 'Members', value: members.filter(m => m.role !== 'attendee').length, color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
+                  { label: 'Attendees', value: members.filter(m => m.role === 'attendee').length, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+                  { label: 'Teams', value: teams.length, color: 'text-purple-400', bg: 'bg-purple-500/10' },
+                  { label: 'Papers', value: confPapers.length, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+                  { label: 'Open Tasks', value: tasks.filter(t => t.status !== 'done').length, color: 'text-amber-400', bg: 'bg-amber-500/10' },
                 ].map(({ label, value, color, bg }) => (
                   <div key={label} className={cls('rounded-xl p-5 border border-white/10', bg)}>
                     <div className={cls('text-3xl font-bold mb-1', color)}>{value}</div>
@@ -994,11 +1198,11 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                   </div>
                   <div className="h-2.5 bg-white/5 rounded-full overflow-hidden flex">
                     <div className="bg-emerald-500 h-full" style={{ width: `${(accepted / confPapers.length) * 100}%` }} />
-                    <div className="bg-red-500 h-full"     style={{ width: `${(rejected / confPapers.length) * 100}%` }} />
-                    <div className="bg-amber-500 h-full"   style={{ width: `${(pendingCount / confPapers.length) * 100}%` }} />
+                    <div className="bg-red-500 h-full" style={{ width: `${(rejected / confPapers.length) * 100}%` }} />
+                    <div className="bg-amber-500 h-full" style={{ width: `${(pendingCount / confPapers.length) * 100}%` }} />
                   </div>
                   <div className="flex gap-5 mt-3 text-xs text-slate-500">
-                    {[['bg-emerald-500','Accepted',accepted],['bg-red-500','Rejected',rejected],['bg-amber-500','Pending',pendingCount]].map(([c,l,v]) => (
+                    {[['bg-emerald-500', 'Accepted', accepted], ['bg-red-500', 'Rejected', rejected], ['bg-amber-500', 'Pending', pendingCount]].map(([c, l, v]) => (
                       <span key={l} className="flex items-center gap-1.5"><span className={cls('w-2 h-2 rounded-full inline-block', c)} />{l} {v}</span>
                     ))}
                   </div>
@@ -1009,7 +1213,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                 <div className="bg-[#0d1117] border border-white/10 rounded-xl p-5">
                   <div className="flex justify-between mb-4">
                     <span className="text-sm font-semibold text-slate-300">Teams</span>
-                    <button onClick={() => setSection('teams')} className="text-xs text-indigo-400 hover:text-indigo-300">Manage →</button>
+                    {can('manage_teams') && <button onClick={() => setSection('teams')} className="text-xs text-indigo-400 hover:text-indigo-300">Manage →</button>}
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {teams.slice(0, 6).map(t => (
@@ -1026,7 +1230,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
               <div className="bg-[#0d1117] border border-white/10 rounded-xl p-5">
                 <div className="flex justify-between mb-3">
                   <span className="text-sm font-semibold text-slate-300">Task Completion</span>
-                  <button onClick={() => setSection('tasks')} className="text-xs text-indigo-400 hover:text-indigo-300">Manage →</button>
+                  {can('manage_tasks') && <button onClick={() => setSection('tasks')} className="text-xs text-indigo-400 hover:text-indigo-300">Manage →</button>}
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
@@ -1049,7 +1253,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                   <p className="text-slate-500 text-sm mt-0.5">{confPapers.length} total · {pendingCount} pending review</p>
                 </div>
                 <div className="flex gap-1 bg-white/5 p-1 rounded-xl w-fit border border-white/10">
-                  {[['all',`All (${confPapers.length})`],['pending',`Pending (${pendingCount})`],['accepted',`Accepted (${accepted})`],['rejected',`Rejected (${rejected})`]].map(([k,l]) => (
+                  {[['all', `All (${confPapers.length})`], ['pending', `Pending (${pendingCount})`], ['accepted', `Accepted (${accepted})`], ['rejected', `Rejected (${rejected})`]].map(([k, l]) => (
                     <button key={k} onClick={() => setPaperFilter(k)} className={cls('px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all', paperFilter === k ? 'bg-white text-black' : 'text-slate-500 hover:text-slate-200')}>{l}</button>
                   ))}
                 </div>
@@ -1086,8 +1290,8 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                           <div className="flex flex-col items-end gap-2 shrink-0">
                             <span className={cls('px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider border',
                               paper.status === 'accepted' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                              paper.status === 'rejected' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                              'bg-amber-500/10 text-amber-400 border-amber-500/20')}>
+                                paper.status === 'rejected' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                                  'bg-amber-500/10 text-amber-400 border-amber-500/20')}>
                               {paper.status === 'accepted' || paper.status === 'rejected' ? paper.status : 'Pending'}
                             </span>
 
@@ -1103,7 +1307,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                                   View File →
                                 </a>
                               )}
-                              {(paper.status === 'pending' || !paper.status) && (
+                              {(can('manage_papers') && (paper.status === 'pending' || !paper.status)) && (
                                 <>
                                   <button
                                     onClick={(e) => { e.stopPropagation(); updatePaperStatus(paper.paper_id, 'accepted'); }}
@@ -1141,7 +1345,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                     {volunteersCount > 0 && <span className="ml-2 text-indigo-400 font-semibold">· {volunteersCount} with volunteer preferences</span>}
                   </p>
                 </div>
-                <Btn onClick={() => setModal('addMember')}><Plus size={15} />Add Member</Btn>
+                {can('manage_members') && <Btn onClick={() => setModal('addMember')}><Plus size={15} />Add Member</Btn>}
               </div>
 
               <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5">
@@ -1160,10 +1364,10 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                 : (
                   <div className="space-y-2">
                     {filteredMembers.map(m => {
-                      const prefs    = volunteerMap[m.user_id];
-                      const hasVol   = prefs?.volunteer_roles?.length > 0;
+                      const prefs = volunteerMap[m.user_id];
+                      const hasVol = prefs?.volunteer_roles?.length > 0;
                       const myRating = myRatings[m.user_id];
-                      const gRating  = globalRatings[m.user_id];
+                      const gRating = globalRatings[m.user_id];
 
                       return (
                         <div key={m.id} className="bg-[#0d1117] border border-white/10 rounded-xl px-5 py-3.5 flex items-center gap-4 hover:border-white/20 transition-all group">
@@ -1178,7 +1382,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                               <span className="text-sm font-semibold text-white truncate">{mName(m)}</span>
                               {hasVol && <Star size={10} className="text-indigo-400 fill-indigo-400 shrink-0" title="Has volunteer preferences" />}
                             </div>
-                            <div className="text-xs text-slate-500 truncate">{m.email || m.user_id}</div>
+                            {isOrganizer && <div className="text-xs text-slate-500 truncate">{m.email || m.user_id}</div>}
 
                             {/* Rating row */}
                             <div className="flex items-center gap-3 mt-1 flex-wrap">
@@ -1236,21 +1440,29 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                               {myRating && <span className="text-[10px] font-bold">{myRating.rating}</span>}
                             </button>
 
-                            <select
-                              value={m.role}
-                              onChange={e => updateRole(m.id, e.target.value)}
-                              className={cls('text-xs font-bold px-2.5 py-1 rounded-md border uppercase tracking-wider bg-transparent cursor-pointer outline-none', ROLE_STYLE[m.role] || ROLE_STYLE.member)}
-                            >
-                              {['organizer','reviewer','presenter','member'].map(r => (
-                                <option key={r} value={r} className="bg-[#0d1117] text-white normal-case">{r}</option>
-                              ))}
-                            </select>
-                            <button
-                              onClick={() => { setModalData(m); setModal('confirmDelete'); }}
-                              className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
-                            >
-                              <Trash2 size={15} />
-                            </button>
+                            {isOrganizer ? (
+                              <>
+                                <select
+                                  value={m.role}
+                                  onChange={e => updateRole(m.id, e.target.value)}
+                                  className={cls('text-xs font-bold px-2.5 py-1 rounded-md border uppercase tracking-wider bg-transparent cursor-pointer outline-none', ROLE_STYLE[m.role] || ROLE_STYLE.member)}
+                                >
+                                  {['organizer', 'reviewer', 'presenter', 'member'].map(r => (
+                                    <option key={r} value={r} className="bg-[#0d1117] text-white normal-case">{r === 'member' ? 'Team Member' : r}</option>
+                                  ))}
+                                </select>
+                                <button
+                                  onClick={() => { setModalData(m); setModal('confirmDelete'); }}
+                                  className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              </>
+                            ) : (
+                              <div className={cls('text-[10px] font-bold px-2.5 py-1 rounded-md border uppercase tracking-widest', ROLE_STYLE[m.role] || ROLE_STYLE.member)}>
+                                {m.role === 'member' ? 'Team Member' : m.role}
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -1261,131 +1473,261 @@ const OrganizerDashboard = ({ conf, onBack }) => {
             </div>
           )}
 
+          {/* ═══ ATTENDEES ═══ */}
+          {section === 'attendees' && (
+            <div className="space-y-6 pb-20">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Attendees</h2>
+                  <p className="text-slate-500 text-sm mt-0.5">
+                    {attendees.length} registered attendee{attendees.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              </div>
+
+              {/* Logistics Stats */}
+              {roleLabel.includes('Logistics') || isOrganizer ? (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                    <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-1">Total Registered</div>
+                    <div className="text-2xl font-bold text-white">{attendees.length}</div>
+                  </div>
+                  <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-2xl p-4">
+                    <div className="text-[10px] text-emerald-500/70 uppercase tracking-widest font-bold mb-1">Room Assigned</div>
+                    <div className="text-2xl font-bold text-emerald-400">{attendees.filter(a => a.room_assigned).length}</div>
+                  </div>
+                  <div className="bg-amber-500/5 border border-amber-500/10 rounded-2xl p-4">
+                    <div className="text-[10px] text-amber-500/70 uppercase tracking-widest font-bold mb-1">Pending Allotment</div>
+                    <div className="text-2xl font-bold text-amber-400">{attendees.filter(a => !a.room_assigned).length}</div>
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Search & Select All */}
+              <div className="flex flex-col sm:flex-row gap-4 items-center">
+                <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 flex-1 w-full">
+                  <Search size={14} className="text-slate-500 shrink-0" />
+                  <input
+                    className="bg-transparent outline-none text-sm text-white placeholder-slate-600 flex-1"
+                    style={{ fontFamily: "'DM Sans', sans-serif" }}
+                    placeholder="Search by name or email…"
+                    value={memberSearch}
+                    onChange={e => setMemberSearch(e.target.value)}
+                  />
+                  {memberSearch && <button onClick={() => setMemberSearch('')} className="text-slate-600 hover:text-slate-400"><X size={13} /></button>}
+                </div>
+
+                <div className="flex items-center gap-4 w-full sm:w-auto">
+                  <button
+                    disabled={filteredAttendees.length === 0}
+                    onClick={() => {
+                      if (selectedAttendees.size === filteredAttendees.length && filteredAttendees.length > 0) setSelectedAttendees(new Set());
+                      else setSelectedAttendees(new Set(filteredAttendees.map(a => a.id)));
+                    }}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-all whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {selectedAttendees.size === filteredAttendees.length && filteredAttendees.length > 0 ? <CheckSquare size={14} className="text-indigo-400" /> : <Square size={14} />}
+                    {selectedAttendees.size === filteredAttendees.length && filteredAttendees.length > 0 ? 'Deselect All' : 'Select All'}
+                  </button>
+
+                  {attendees.length > 0 && (
+                    <button
+                      onClick={() => {
+                        const headers = ['Name', 'Email', 'Joined', 'Accommodation Required', 'Room Assigned', 'Room Number'];
+                        const rows = attendees.map(a => [
+                          mName(a),
+                          a.email || '',
+                          a.joined_at ? new Date(a.joined_at).toLocaleDateString() : '',
+                          a.accommodation_required ? 'Yes' : 'No',
+                          a.room_assigned ? 'Yes' : 'No',
+                          a.room_number || ''
+                        ]);
+                        const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+                        const blob = new Blob([csv], { type: 'text/csv' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a'); link.href = url; link.download = `attendees-${confId}.csv`; link.click(); URL.revokeObjectURL(url);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+                    >
+                      <FileText size={14} /> Export
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Bulk Action Bar */}
+              {selectedAttendees.size > 0 && (
+                <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-indigo-600 text-white rounded-2xl shadow-2xl shadow-indigo-500/40 border border-indigo-400/30 px-6 py-4 flex items-center gap-6 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                  <div className="flex items-center gap-2 border-r border-indigo-400/30 pr-6">
+                    <div className="w-6 h-6 rounded-full bg-white text-indigo-600 flex items-center justify-center text-xs font-black">{selectedAttendees.size}</div>
+                    <span className="text-xs font-bold uppercase tracking-widest">Selected</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      disabled={updatingBulk}
+                      onClick={() => handleBulkRoomUpdate(true)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold transition-all disabled:opacity-50"
+                    >
+                      <CheckCircle size={14} /> Mark Assigned
+                    </button>
+                    <button
+                      disabled={updatingBulk}
+                      onClick={() => handleBulkRoomUpdate(false)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold transition-all disabled:opacity-50"
+                    >
+                      <XCircle size={14} /> Mark Unassigned
+                    </button>
+                  </div>
+                  <button onClick={() => setSelectedAttendees(new Set())} className="text-indigo-200 hover:text-white transition-colors"><X size={16} /></button>
+                </div>
+              )}
+
+              {loadingMembers ? (
+                <LoadingRows />
+              ) : filteredAttendees.length === 0 ? (
+                <Empty icon={Users} msg={attendees.length === 0 ? 'No attendees have registered yet.' : 'No attendees match your search.'} />
+              ) : (
+                <div className="space-y-2">
+                  {filteredAttendees.map((a) => (
+                    <div
+                      key={a.id}
+                      onClick={() => {
+                        const next = new Set(selectedAttendees);
+                        if (next.has(a.id)) next.delete(a.id); else next.add(a.id);
+                        setSelectedAttendees(next);
+                      }}
+                      className={cls(
+                        'group bg-[#0d1117] border rounded-xl px-5 py-4 flex items-center gap-4 transition-all cursor-pointer',
+                        selectedAttendees.has(a.id) ? 'border-indigo-500 bg-indigo-500/5 shadow-lg shadow-indigo-500/5' : 'border-white/10 hover:border-white/20'
+                      )}
+                    >
+                      {/* Checkbox */}
+                      <div className={cls('w-5 h-5 rounded-md border flex items-center justify-center transition-all', selectedAttendees.has(a.id) ? 'bg-indigo-500 border-indigo-500' : 'border-slate-700 bg-white/5')}>
+                        {selectedAttendees.has(a.id) && <Check size={12} className="text-white" />}
+                      </div>
+
+                      {/* Avatar */}
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
+                        {mName(a)[0]?.toUpperCase()}
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold text-white truncate">{mName(a)}</div>
+                        <div className="text-xs text-slate-500 truncate">{a.email}</div>
+                      </div>
+
+                      {/* Logistics Controls */}
+                      <div className="flex items-center gap-4" onClick={e => e.stopPropagation()}>
+                        {(roleLabel.includes('Logistics') || isOrganizer) ? (
+                          <button
+                            onClick={() => handleSingleRoomUpdate(a.id, !a.room_assigned)}
+                            className={cls(
+                              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all',
+                              a.room_assigned
+                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                                : 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+                            )}
+                          >
+                            {a.room_assigned ? <CheckCircle size={10} /> : <Clock size={10} />}
+                            {a.room_assigned ? 'Room Assigned' : 'Awaiting Room'}
+                          </button>
+                        ) : (
+                          a.room_assigned && (
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border bg-emerald-500/10 border-emerald-500/30 text-emerald-400">
+                              <CheckCircle size={10} /> Room Assigned
+                            </div>
+                          )
+                        )}
+
+                        {isOrganizer && (
+                          <button
+                            onClick={() => { setModalData(a); setModal('confirmDelete'); }}
+                            className="p-2 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ═══ TEAMS ═══ */}
           {section === 'teams' && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-2xl font-bold text-white">Teams</h2>
-                  <p className="text-slate-500 text-sm mt-0.5">{teams.length} teams</p>
+                  <p className="text-slate-500 text-sm mt-0.5">{teams.filter(t => isOrganizer || t.head_id === myMemberId).length} teams</p>
                 </div>
-                <Btn onClick={() => { setTmForm({ name:'',type:'',description:'',color:'#6366f1',head_id:'' }); setModal('createTeam'); }}>
-                  <Plus size={15} />Create Team
-                </Btn>
+                {isOrganizer && (
+                  <Btn onClick={() => { setTmForm({ name: '', type: '', originalType: '', description: '', color: '#6366f1', head_id: '' }); setModal('createTeam'); }}>
+                    <Plus size={15} />Create Team
+                  </Btn>
+                )}
               </div>
+
               {loadingTeams ? <LoadingRows /> : teams.length === 0
-                ? <Empty icon={Layers} msg="No teams yet." action={{ label: '+ Create Team', onClick: () => setModal('createTeam') }} />
+                ? <Empty icon={Layers} msg="No teams yet." action={{ label: isOrganizer ? '+ Create Team' : null, onClick: () => setModal('createTeam') }} />
                 : (
-                  <div className="space-y-3">
-                    {teams.map(team => {
-                      const isOpen = expandedTeam === team.id;
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {teams.filter(t => isOrganizer || t.head_id === myMemberId).map(team => {
                       const teamMembers = team.memberList.map(tm => members.find(m => m.id === tm.conference_user_id || m.user_id === tm.user_id)).filter(Boolean);
-                      const nonMembers  = members.filter(m => !team.memberList.some(tm => tm.conference_user_id === m.id));
-                      const teamTasks   = tasks.filter(t => t.team_id === team.id);
+                      const head = team.head_id ? members.find(m => m.id === team.head_id) : null;
 
                       return (
-                        <div key={team.id} className="bg-[#0d1117] border border-white/10 rounded-xl overflow-hidden">
-                          <div className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => setExpandedTeam(isOpen ? null : team.id)}>
-                            <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: team.color }} />
-                            <div className="flex-1">
-                              <div className="font-semibold text-white text-sm">{team.name}</div>
-                              {team.description && <div className="text-xs text-slate-500 mt-0.5">{team.description}</div>}
-                            </div>
-                            <div className="flex items-center gap-3">
-                              {team.head_id && members.find(m => m.id === team.head_id) && (
-                                <span className="text-xs text-indigo-400/70 font-medium">Head: {mName(members.find(m => m.id === team.head_id))}</span>
+                        <div key={team.id} className="bg-[#0d1117] border border-white/10 rounded-xl p-5 hover:border-white/20 transition-all flex flex-col h-full">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: team.color }} />
+                            <h3 className="font-bold text-white flex-1 truncate">{team.name}</h3>
+                            <div className="flex items-center gap-1">
+                              <button onClick={() => openEditTeam(team)} className="p-1.5 rounded-lg text-slate-600 hover:text-white hover:bg-white/5 transition-all"><Edit2 size={13} /></button>
+                              {isOrganizer && (
+                                <button onClick={() => { if (window.confirm(`Delete team "${team.name}"?`)) deleteTeam(team.id); }} className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"><Trash2 size={13} /></button>
                               )}
-                              <span className="text-xs text-slate-500 font-semibold">{team.memberList.length} member{team.memberList.length !== 1 ? 's' : ''}</span>
                             </div>
-                            <button onClick={e => { e.stopPropagation(); openEditTeam(team); }} className="p-1.5 rounded-lg text-slate-600 hover:text-white hover:bg-white/10 transition-all"><Edit2 size={13} /></button>
-                            <button onClick={e => { e.stopPropagation(); if (window.confirm(`Delete team "${team.name}"?`)) deleteTeam(team.id); }} className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"><Trash2 size={13} /></button>
-                            <ChevronDown size={15} className={cls('text-slate-600 transition-transform', isOpen && 'rotate-180')} />
                           </div>
 
-                          {isOpen && (
-                            <div className="border-t border-white/5 px-5 py-5 space-y-6 bg-black/20">
-                              {/* Current members */}
-                              <div>
-                                <div className="text-[11px] text-slate-600 uppercase tracking-wider font-bold mb-2">Members ({teamMembers.length})</div>
-                                {(() => {
-                                  const head = team.head_id ? members.find(m => m.id === team.head_id) : null;
-                                  return head ? (
-                                    <div className="flex items-center gap-2 mb-3 bg-indigo-500/10 border border-indigo-500/15 rounded-lg px-3 py-2 w-fit">
-                                      <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white">{mName(head)[0]?.toUpperCase()}</div>
-                                      <span className="text-xs text-indigo-300 font-semibold">{mName(head)}</span>
-                                      <span className="text-[9px] text-indigo-400/60 uppercase tracking-wider font-bold">Head</span>
-                                    </div>
-                                  ) : null;
-                                })()}
-                                {teamMembers.length === 0
-                                  ? <p className="text-xs text-slate-600 italic">No members yet</p>
-                                  : (
-                                    <div className="flex flex-wrap gap-2">
-                                      {teamMembers.map(m => {
-                                        const gRating = globalRatings[m.user_id];
-                                        return (
-                                          <div key={m.id} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5">
-                                            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white">{mName(m)[0]?.toUpperCase()}</div>
-                                            <span className="text-xs text-slate-300 font-medium">{mName(m)}</span>
-                                            <span className={cls('text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase', ROLE_STYLE[m.role] || ROLE_STYLE.member)}>{m.role}</span>
-                                            {/* Inline global avg for team member chip */}
-                                            {gRating && <RatingBadge avg={gRating.avg} count={gRating.count} size={9} />}
-                                            <button onClick={() => removeFromTeam(team.id, m.id)} className="text-slate-600 hover:text-red-400 transition-colors"><X size={12} /></button>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  )
-                                }
+                          {team.description && <p className="text-xs text-slate-500 mb-4 line-clamp-2">{team.description}</p>}
+
+                          <div className="flex-1 space-y-4">
+                            {/* Team Head */}
+                            {head && (
+                              <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-lg px-3 py-2">
+                                <div className="text-[9px] text-indigo-400 uppercase font-bold tracking-wider mb-1">Team Head</div>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center text-[10px] font-bold text-white">{mName(head)[0]?.toUpperCase()}</div>
+                                  <span className="text-xs text-indigo-300 font-semibold truncate">{mName(head)}</span>
+                                </div>
                               </div>
+                            )}
 
-                              {/* Volunteer Candidate Panel */}
-                              {nonMembers.length > 0 && (
-                                <div>
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div className="text-[11px] text-slate-600 uppercase tracking-wider font-bold">Add Member to Team</div>
-                                    {volunteersCount > 0 && (
-                                      <div className="flex items-center gap-1 text-[9px] font-bold text-indigo-400/70 bg-indigo-500/10 border border-indigo-500/15 px-1.5 py-0.5 rounded">
-                                        <Sparkles size={8} />Volunteer-aware
-                                      </div>
-                                    )}
+                            {/* Member summary */}
+                            <div>
+                              <div className="text-[9px] text-slate-600 uppercase font-bold tracking-wider mb-2">Members ({teamMembers.length})</div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {teamMembers.slice(0, 5).map(m => (
+                                  <div key={m.id} className="w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[9px] font-bold text-slate-400" title={mName(m)}>
+                                    {mName(m)[0]?.toUpperCase()}
                                   </div>
-                                  <VolunteerCandidatePanel
-                                    allVolunteers={allVolunteers}
-                                    members={members}
-                                    teamMembers={teamMembers}
-                                    teamTypeId={Object.entries(VOLUNTEER_ROLE_LABELS).find(([,label]) => label === team.name)?.[0] ?? null}
-                                    confId={confId}
-                                    onAdd={(confUserId) => addToTeam(team.id, confUserId)}
-                                    onAddVolunteer={addVolunteerToConference}
-                                    globalRatings={globalRatings}
-                                  />
-                                </div>
-                              )}
-
-                              {/* Team tasks */}
-                              <div>
-                                <div className="flex justify-between items-center mb-2">
-                                  <div className="text-[11px] text-slate-600 uppercase tracking-wider font-bold">Tasks ({teamTasks.length})</div>
-                                  <button onClick={() => { setTkForm({ title:'',description:'',team_id:team.id,assignee_id:'',priority:'medium',due_date:'' }); setModal('addTask'); }} className="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold">+ Add Task</button>
-                                </div>
-                                {teamTasks.length === 0
-                                  ? <p className="text-xs text-slate-600 italic">No tasks for this team</p>
-                                  : teamTasks.map(task => (
-                                    <div key={task.id} className="flex items-center gap-2.5 py-2 border-t border-white/5 first:border-t-0">
-                                      <div onClick={() => toggleTask(task)} className={cls('w-4 h-4 rounded-full border-2 flex items-center justify-center cursor-pointer shrink-0 transition-colors', task.status === 'done' ? 'bg-emerald-500 border-emerald-500' : 'border-slate-600 hover:border-indigo-400')}>
-                                        {task.status === 'done' && <CheckCircle size={9} className="text-white" />}
-                                      </div>
-                                      <span className={cls('text-xs flex-1', task.status === 'done' ? 'line-through text-slate-600' : 'text-slate-300')}>{task.title}</span>
-                                      <span className={cls('text-[9px] font-bold px-1.5 py-0.5 rounded border', PRIORITY_STYLE[task.priority || 'medium'])}>{task.priority}</span>
-                                      {task.assignee_id && <span className="text-[10px] text-slate-600">{assigneeName(task.assignee_id)}</span>}
-                                      <button onClick={() => openEditTask(task)} className="text-slate-600 hover:text-white transition-colors"><Edit2 size={12} /></button>
-                                    </div>
-                                  ))
-                                }
+                                ))}
+                                {teamMembers.length > 5 && (
+                                  <div className="w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[9px] font-bold text-slate-600">
+                                    +{teamMembers.length - 5}
+                                  </div>
+                                )}
                               </div>
                             </div>
-                          )}
+                          </div>
+
+                          <div className="mt-6 pt-4 border-t border-white/5 flex gap-2">
+                            <Btn variant="ghost" className="text-[10px] flex-1 py-2" onClick={() => openEditTeam(team)}>Manage Members</Btn>
+                            <Btn variant="ghost" className="text-[10px] flex-1 py-2" onClick={() => setSection('tasks')}>View Tasks</Btn>
+                          </div>
                         </div>
                       );
                     })}
@@ -1403,7 +1745,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                   <h2 className="text-2xl font-bold text-white">Tasks</h2>
                   <p className="text-slate-500 text-sm mt-0.5">{tasks.filter(t => t.status === 'done').length}/{tasks.length} complete</p>
                 </div>
-                <Btn onClick={() => { setTkForm({ title:'',description:'',team_id:'',assignee_id:'',priority:'medium',due_date:'' }); setModal('addTask'); }}>
+                <Btn onClick={() => { setTkForm({ title: '', description: '', team_id: '', assignee_id: '', priority: 'medium', due_date: '' }); setModal('addTask'); }}>
                   <Plus size={15} />Add Task
                 </Btn>
               </div>
@@ -1411,7 +1753,7 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                 ? <Empty icon={CheckSquare} msg="No tasks yet." action={{ label: '+ Add Task', onClick: () => setModal('addTask') }} />
                 : (
                   <div className="space-y-2">
-                    {tasks.map(task => (
+                    {tasks.filter(t => isOrganizer || myHeadedTeamIds.includes(t.team_id)).map(task => (
                       <div key={task.id} className="bg-[#0d1117] border border-white/10 rounded-xl px-5 py-3.5 flex items-center gap-4 hover:border-white/20 transition-all group">
                         <div onClick={() => toggleTask(task)} className={cls('w-5 h-5 rounded-full border-2 flex items-center justify-center cursor-pointer shrink-0 transition-colors', task.status === 'done' ? 'bg-emerald-500 border-emerald-500' : 'border-slate-600 hover:border-indigo-400')}>
                           {task.status === 'done' && <CheckCircle size={11} className="text-white" />}
@@ -1419,9 +1761,9 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                         <div className="flex-1 min-w-0">
                           <div className={cls('text-sm font-medium', task.status === 'done' ? 'line-through text-slate-600' : 'text-slate-200')}>{task.title}</div>
                           <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                            {task.team_id     && <span className="text-[10px] text-slate-600 flex items-center gap-1"><Layers size={9} />{teamName(task.team_id)}</span>}
+                            {task.team_id && <span className="text-[10px] text-slate-600 flex items-center gap-1"><Layers size={9} />{teamName(task.team_id)}</span>}
                             {task.assignee_id && <span className="text-[10px] text-slate-600 flex items-center gap-1"><Users size={9} />{assigneeName(task.assignee_id)}</span>}
-                            {task.due_date    && <span className="text-[10px] text-slate-600 flex items-center gap-1"><Clock size={9} />{new Date(task.due_date).toLocaleDateString()}</span>}
+                            {task.due_date && <span className="text-[10px] text-slate-600 flex items-center gap-1"><Clock size={9} />{new Date(task.due_date).toLocaleDateString()}</span>}
                           </div>
                         </div>
                         <span className={cls('text-[10px] font-bold px-2 py-0.5 rounded border uppercase', PRIORITY_STYLE[task.priority || 'medium'])}>{task.priority || 'med'}</span>
@@ -1456,8 +1798,8 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                         <div className="flex justify-between items-start mb-2">
                           <div className="font-semibold text-white text-sm">{n.title}</div>
                           <div className="flex items-center gap-2 shrink-0">
-                            {n.target_role     && <span className="text-[10px] text-slate-500 bg-white/5 border border-white/10 px-2 py-0.5 rounded-md uppercase font-bold">{n.target_role}</span>}
-                            {n.target_team_id  && <span className="text-[10px] text-indigo-400 bg-indigo-500/10 border border-indigo-500/15 px-2 py-0.5 rounded-md font-bold">{teamName(n.target_team_id)}</span>}
+                            {n.target_role && <span className="text-[10px] text-slate-500 bg-white/5 border border-white/10 px-2 py-0.5 rounded-md uppercase font-bold">{n.target_role}</span>}
+                            {n.target_team_id && <span className="text-[10px] text-indigo-400 bg-indigo-500/10 border border-indigo-500/15 px-2 py-0.5 rounded-md font-bold">{teamName(n.target_team_id)}</span>}
                             <span className="text-xs text-slate-600">{new Date(n.created_at).toLocaleDateString()}</span>
                           </div>
                         </div>
@@ -1470,10 +1812,10 @@ const OrganizerDashboard = ({ conf, onBack }) => {
             </div>
           )}
 
-          {section === 'feedback'      && <FeedbackManager conf={conf} />}
-          {section === 'emails'        && <EmailComposer conf={conf} senderRole="organizer" onOpenEmailSettings={() => setSection('emailSettings')} />}
+          {section === 'feedback' && <FeedbackManager conf={conf} />}
+          {section === 'emails' && <EmailComposer conf={conf} senderRole="organizer" onOpenEmailSettings={() => setSection('emailSettings')} />}
           {section === 'emailSettings' && <EmailSettings conf={conf} />}
-          {section === 'allocation'    && <PaperAllocation conf={conf} />}
+          {section === 'allocation' && <PaperAllocation conf={conf} />}
 
           {/* ═══ SPEAKERS ═══ */}
           {section === 'speakers' && (
@@ -1491,14 +1833,29 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                   </div>
                   <Field label="Max Results">
                     <Sel value={spLimit} onChange={e => setSpLimit(Number(e.target.value))}>
-                      {[5,10,15,20].map(n => <option key={n} value={n} className="bg-[#0d1117]">{n} speakers</option>)}
+                      {[5, 10, 15, 20].map(n => <option key={n} value={n} className="bg-[#0d1117]">{n} speakers</option>)}
                     </Sel>
                   </Field>
                 </div>
                 <Field label="Speaker Source">
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                    {[{key:1,label:'🇮🇳 Indian'},{key:2,label:'🌍 Foreign'},{key:3,label:'💼 LinkedIn'},{key:4,label:'🎓 IIT / NIT'},{key:5,label:'⭐ All Sources'}].map(({ key, label }) => (
-                      <button key={key} onClick={() => setSpSource(key)} className={cls('py-2.5 px-3 rounded-xl text-xs font-bold border transition-all', spSource === key ? 'bg-indigo-600 border-indigo-500 text-white' : 'border-white/10 text-slate-500 hover:text-white hover:border-white/20')}>{label}</button>
+                    {[
+                      { key: 1, label: 'IN Indian' },
+                      { key: 2, label: '🌐 Foreign' },
+                      { key: 3, label: '💼 LinkedIn' },
+                      { key: 4, label: '🎓 IIT / NIT' },
+                      { key: 5, label: '⭐ All Sources' }
+                    ].map(({ key, label }) => (
+                      <button
+                        key={key}
+                        onClick={() => setSpSource(key)}
+                        className={cls(
+                          'py-2.5 px-3 rounded-xl text-[10px] font-bold border transition-all',
+                          spSource === key ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/20' : 'border-white/10 text-slate-500 hover:text-white hover:border-white/5'
+                        )}
+                      >
+                        {label}
+                      </button>
                     ))}
                   </div>
                 </Field>
@@ -1543,10 +1900,9 @@ const OrganizerDashboard = ({ conf, onBack }) => {
       {/* ══════════════════════════ MODALS ══════════════════════════ */}
 
       {modal === 'addMember' && (
-        <Modal title="Add Member" onClose={() => setModal(null)}>
+        <Modal title="Add Member" onClose={() => setModal(null)} width="max-w-lg">
           <div className="space-y-4">
-            <Field label="Email Address"><Input type="email" placeholder="member@example.com" value={mForm.email} onChange={e => setMForm({ ...mForm, email: e.target.value })} /></Field>
-            <Field label="Role">
+            <Field label="Role for New Member">
               <Sel value={mForm.role} onChange={e => setMForm({ ...mForm, role: e.target.value })}>
                 <option value="reviewer">Reviewer</option>
                 <option value="presenter">Presenter</option>
@@ -1554,26 +1910,41 @@ const OrganizerDashboard = ({ conf, onBack }) => {
                 <option value="member">Member</option>
               </Sel>
             </Field>
-            {/* Show global rating if found */}
-            {mForm.email.trim().length > 5 && (() => {
-              const found = Object.entries(globalRatings).find(([uid]) => {
-                const user = allVolunteers.find(u => u.user_email === mForm.email.trim().toLowerCase());
-                return user && user.user_id === uid;
-              });
-              return found ? (
-                <div className="flex items-center gap-2 bg-amber-500/5 border border-amber-500/15 rounded-lg px-3 py-2">
-                  <Star size={11} className="text-amber-400 fill-amber-400" />
-                  <span className="text-xs text-slate-400">
-                    This user's global average rating: <span className="text-amber-300 font-bold">{found[1].avg.toFixed(1)}/5</span>
-                    <span className="text-slate-600 ml-1">({found[1].count} rating{found[1].count !== 1 ? 's' : ''})</span>
-                  </span>
-                </div>
-              ) : null;
-            })()}
+
+            <Field label="Select User">
+              <UserPickerPanel
+                confId={confId}
+                members={members}
+                onSelect={async (user) => {
+                  // Check not already a member
+                  const already = members.find(m => m.user_id === user.user_id);
+                  if (already) { alert('Already a member.'); return; }
+
+                  setSaving(true);
+                  const { error } = await supabase.from('conference_user').insert([{
+                    conference_id: confId,
+                    user_id: user.user_id,
+                    email: user.user_email || '',
+                    full_name: user.user_name || '',
+                    role: mForm.role,
+                    joined_at: new Date().toISOString(),
+                  }]);
+                  setSaving(false);
+
+                  if (error) { alert(error.message); return; }
+                  setModal(null);
+                  setMForm({ email: '', role: 'reviewer' });
+                  fetchMembers();
+                  fetchAllVolunteers();
+                }}
+              />
+            </Field>
           </div>
+
           <div className="flex gap-3 mt-6">
-            <Btn variant="secondary" className="flex-1" onClick={() => setModal(null)}>Cancel</Btn>
-            <Btn className="flex-1" onClick={addMember} disabled={saving || !mForm.email.trim()}>{saving ? 'Adding…' : 'Add Member'}</Btn>
+            <Btn variant="secondary" className="flex-1" onClick={() => setModal(null)}>
+              Cancel
+            </Btn>
           </div>
         </Modal>
       )}
@@ -1589,58 +1960,116 @@ const OrganizerDashboard = ({ conf, onBack }) => {
       )}
 
       {(modal === 'createTeam' || modal === 'editTeam') && (
-        <Modal title={modal === 'createTeam' ? 'Create Team' : 'Edit Team'} onClose={() => setModal(null)} width="max-w-xl">
-          <div className="space-y-4">
-            <Field label="Team Type">
-              <div className="space-y-2">
-                <div className="grid grid-cols-2 gap-1.5 max-h-52 overflow-y-auto pr-0.5">
-                  {TEAM_TYPES.map(({ id, label }) => (
-                    <button key={id} type="button" onClick={() => setTmForm({ ...tmForm, type: id, name: label })} className={cls('text-left px-3 py-2 rounded-lg border text-xs font-medium transition-all flex items-center gap-2', tmForm.type === id ? 'bg-indigo-500/15 border-indigo-500/50 text-indigo-300' : 'bg-white/5 border-white/10 text-slate-500 hover:border-indigo-500/30 hover:text-slate-200')}>
-                      {tmForm.type === id && <Check size={10} className="shrink-0 text-indigo-400" />}{label}
+        <Modal title={modal === 'createTeam' ? 'Create Team' : 'Manage Team'} onClose={() => setModal(null)} width="max-w-xl">
+          <div className="space-y-6">
+            {/* 1. TEAM CONFIGURATION (Restored) */}
+            <div className={cls('space-y-4', !isOrganizer && 'opacity-70 pointer-events-none')}>
+              <Field label="Team Type">
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-1.5 max-h-52 overflow-y-auto pr-0.5">
+                    {TEAM_TYPES.map(({ id, label }) => (
+                      <button key={id} type="button" onClick={() => setTmForm({ ...tmForm, type: id, name: label })} className={cls('text-left px-3 py-2 rounded-lg border text-xs font-medium transition-all flex items-center gap-2', tmForm.type === id ? 'bg-indigo-500/15 border-indigo-500/50 text-indigo-300' : 'bg-white/5 border-white/10 text-slate-500 hover:border-indigo-500/30 hover:text-slate-200')}>
+                        {tmForm.type === id && <Check size={10} className="shrink-0 text-indigo-400" />}{label}
+                      </button>
+                    ))}
+                    <button type="button" onClick={() => setTmForm({ ...tmForm, type: 'custom', name: '' })} className={cls('text-left px-3 py-2 rounded-lg border text-xs font-medium transition-all flex items-center gap-2 col-span-2', tmForm.type === 'custom' ? 'bg-slate-500/15 border-slate-400/40 text-slate-300' : 'bg-white/5 border-white/10 text-slate-500 hover:border-white/20 hover:text-slate-200')}>
+                      {tmForm.type === 'custom' && <Check size={10} className="shrink-0" />}✏️ Custom name…
                     </button>
-                  ))}
-                  <button type="button" onClick={() => setTmForm({ ...tmForm, type: 'custom', name: '' })} className={cls('text-left px-3 py-2 rounded-lg border text-xs font-medium transition-all flex items-center gap-2 col-span-2', tmForm.type === 'custom' ? 'bg-slate-500/15 border-slate-400/40 text-slate-300' : 'bg-white/5 border-white/10 text-slate-500 hover:border-white/20 hover:text-slate-200')}>
-                    {tmForm.type === 'custom' && <Check size={10} className="shrink-0" />}✏️ Custom name…
-                  </button>
+                  </div>
+                  {tmForm.type === 'custom' && <Input autoFocus placeholder="Enter a custom team name…" value={tmForm.name} onChange={e => setTmForm({ ...tmForm, name: e.target.value })} />}
                 </div>
-                {tmForm.type === 'custom' && <Input autoFocus placeholder="Enter a custom team name…" value={tmForm.name} onChange={e => setTmForm({ ...tmForm, name: e.target.value })} />}
+              </Field>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Description (optional)">
+                  <Input placeholder="What does this team do?" value={tmForm.description} onChange={e => setTmForm({ ...tmForm, description: e.target.value })} />
+                </Field>
+                <Field label="Team Head (optional)">
+                  <Sel value={tmForm.head_id} onChange={e => setTmForm({ ...tmForm, head_id: e.target.value })}>
+                    <option value="">— No team head —</option>
+                    {members.map(m => <option key={m.id} value={m.id} className="bg-[#0d1117]">{mName(m)} ({m.role})</option>)}
+                  </Sel>
+                </Field>
               </div>
-            </Field>
-            <Field label="Description (optional)"><Input placeholder="What does this team do?" value={tmForm.description} onChange={e => setTmForm({ ...tmForm, description: e.target.value })} /></Field>
-            <Field label="Team Head (optional)">
-              <Sel value={tmForm.head_id} onChange={e => setTmForm({ ...tmForm, head_id: e.target.value })}>
-                <option value="">— No team head —</option>
-                {members.map(m => <option key={m.id} value={m.id} className="bg-[#0d1117]">{mName(m)} ({m.role})</option>)}
-              </Sel>
-            </Field>
-            <Field label="Team Color">
-              <div className="flex gap-2 flex-wrap">
-                {TEAM_COLORS.map(c => (
-                  <button key={c} onClick={() => setTmForm({ ...tmForm, color: c })} className={cls('w-8 h-8 rounded-lg transition-all border-2', tmForm.color === c ? 'border-white scale-110' : 'border-transparent hover:scale-105')} style={{ backgroundColor: c }} />
-                ))}
+
+              <Field label="Team Color">
+                <div className="flex gap-2 flex-wrap">
+                  {TEAM_COLORS.map(c => (
+                    <button key={c} onClick={() => setTmForm({ ...tmForm, color: c })} className={cls('w-8 h-8 rounded-lg transition-all border-2', tmForm.color === c ? 'border-white scale-110' : 'border-transparent hover:scale-105')} style={{ backgroundColor: c }} />
+                  ))}
+                </div>
+              </Field>
+            </div>
+
+            {/* 2. MEMBER MANAGEMENT (Preserved) */}
+            <div className="border-t border-white/10 pt-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Users size={16} className="text-indigo-400" />
+                  <h4 className="text-sm font-bold text-white uppercase tracking-wider">Member Management</h4>
+                </div>
+                {modal === 'editTeam' && (
+                  <span className="text-[10px] font-bold text-slate-500 bg-white/5 px-2 py-0.5 rounded border border-white/10">
+                    {modalData.memberList?.length || 0} Members
+                  </span>
+                )}
               </div>
-            </Field>
-            {(tmForm.type && tmForm.type !== 'custom' || (tmForm.type === 'custom' && tmForm.name.trim().length >= 3)) && (
-              <div className="border-t border-white/10 pt-4">
+
+              {modal === 'editTeam' && modalData.memberList?.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">
+                  {(modalData.memberList || []).map(tm => {
+                    const m = members.find(mem => mem.id === tm.conference_user_id);
+                    if (!m) return null;
+                    return (
+                      <div key={m.id} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl p-2 group">
+                        <div className="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+                          {mName(m)[0]?.toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[11px] font-semibold text-white truncate">{mName(m)}</div>
+                        </div>
+                        {isOrganizer && (
+                          <button onClick={() => removeFromTeam(modalData.id, m.id)} className="p-1 px-2 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all"><X size={12} /></button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="bg-indigo-500/5 rounded-2xl p-4 border border-indigo-500/10">
                 <div className="flex items-center gap-2 mb-3">
-                  <Sparkles size={13} className="text-indigo-400" />
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Suggested Volunteers</span>
+                  <Plus size={14} className="text-indigo-400" />
+                  <span className="text-xs font-bold text-indigo-300 uppercase tracking-wider">Add New Members</span>
                 </div>
                 <VolunteerCandidatePanel
-                  allVolunteers={allVolunteers} members={members} teamMembers={[]}
+                  allVolunteers={allVolunteers} members={members} teamMembers={modalData?.memberList || []}
                   teamTypeId={tmForm.type !== 'custom' ? tmForm.type : null}
-                  confId={confId} onAdd={() => {}} onAddVolunteer={() => Promise.resolve(null)}
+                  confId={confId}
+                  onAdd={(memberId) => addToTeam(modal === 'editTeam' ? modalData.id : null, memberId)}
+                  onAddVolunteer={async (v) => {
+                    setSaving(true);
+                    const { data, error } = await supabase.from('conference_user').insert([{
+                      conference_id: confId, user_id: v.user_id, email: v.user_email || '', full_name: v.user_name || '', role: 'member', joined_at: new Date().toISOString()
+                    }]).select().single();
+                    setSaving(false);
+                    if (error) { alert(error.message); return null; }
+                    fetchMembers();
+                    return data.id;
+                  }}
                   globalRatings={globalRatings}
                 />
-                <p className="text-[10px] text-slate-600 mt-2">You can add members after the team is created.</p>
               </div>
-            )}
+            </div>
           </div>
-          <div className="flex gap-3 mt-6">
-            <Btn variant="secondary" className="flex-1" onClick={() => setModal(null)}>Cancel</Btn>
-            <Btn className="flex-1" onClick={modal === 'createTeam' ? createTeam : saveTeam} disabled={saving || !tmForm.name.trim()}>
-              {saving ? 'Saving…' : modal === 'createTeam' ? 'Create Team' : 'Save Changes'}
-            </Btn>
+
+          <div className="flex gap-3 mt-8">
+            <Btn variant="secondary" className="flex-1" onClick={() => setModal(null)}>Close</Btn>
+            {isOrganizer && (
+              <Btn className="flex-1" onClick={modal === 'createTeam' ? createTeam : saveTeam} disabled={saving || !tmForm.name.trim()}>
+                {saving ? 'Saving…' : modal === 'createTeam' ? 'Create Team' : 'Save Changes'}
+              </Btn>
+            )}
           </div>
         </Modal>
       )}
@@ -1653,8 +2082,8 @@ const OrganizerDashboard = ({ conf, onBack }) => {
             <div className="grid grid-cols-2 gap-4">
               <Field label="Assign to Team">
                 <Sel value={tkForm.team_id} onChange={e => setTkForm({ ...tkForm, team_id: e.target.value })}>
-                  <option value="">No team</option>
-                  {teams.map(t => <option key={t.id} value={t.id} className="bg-[#0d1117]">{t.name}</option>)}
+                  <option value="">{isOrganizer ? 'No team' : 'Select your team'}</option>
+                  {teams.filter(t => isOrganizer || t.head_id === myMemberId).map(t => <option key={t.id} value={t.id} className="bg-[#0d1117]">{t.name}</option>)}
                 </Sel>
               </Field>
               <Field label="Assignee">
@@ -1722,6 +2151,59 @@ const OrganizerDashboard = ({ conf, onBack }) => {
           }}
           onClose={() => setRatingMember(null)}
         />
+      )}
+
+      {modal === 'deleteConference' && (
+        <Modal title="Delete Conference" onClose={() => setModal(null)} width="max-w-sm">
+          <div className="mb-6 space-y-3">
+            <p className="text-slate-400 text-sm">
+              Are you sure you want to delete{' '}
+              <span className="text-white font-semibold">"{conf.title}"</span>?
+            </p>
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+              <p className="text-red-400 text-xs leading-relaxed">
+                This will permanently delete the conference and all associated data —
+                members, teams, tasks, papers, and notifications. This cannot be undone.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Btn variant="secondary" className="flex-1" onClick={() => setModal(null)}>
+              Cancel
+            </Btn>
+            <Btn
+              variant="danger"
+              className="flex-1"
+              disabled={saving}
+              onClick={async () => {
+                setSaving(true);
+                // Delete in dependency order
+                await supabase.from('notifications').delete().eq('conference_id', confId);
+                await supabase.from('conference_tasks').delete().eq('conference_id', confId);
+                await supabase.from('team_members').delete().eq('conference_id', confId);
+                await supabase.from('conference_teams').delete().eq('conference_id', confId);
+                await supabase.from('paper_assignments').delete().eq('conference_id', confId);
+                await supabase.from('paper_review').delete().in(
+                  'paper_id',
+                  (await supabase.from('paper').select('paper_id').eq('conference_id', confId)).data?.map(p => p.paper_id) || []
+                );
+                await supabase.from('assignment').delete().eq('conference_id', confId);
+                await supabase.from('paper').delete().eq('conference_id', confId);
+                await supabase.from('conference_user').delete().eq('conference_id', confId);
+                await supabase.from('feedback_questions').delete().in(
+                  'form_id',
+                  (await supabase.from('feedback_forms').select('id').eq('conference_id', confId)).data?.map(f => f.id) || []
+                );
+                await supabase.from('feedback_forms').delete().eq('conference_id', confId);
+                await supabase.from('conference').delete().eq('conference_id', confId);
+                setSaving(false);
+                onBack(); // go back to hub
+              }}
+            >
+              {saving ? 'Deleting…' : 'Delete Permanently'}
+            </Btn>
+          </div>
+        </Modal>
       )}
     </div>
   );

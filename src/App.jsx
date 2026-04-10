@@ -19,18 +19,18 @@ const clearURLParams = () => {
 
 // ─── sessionStorage helpers ───────────────────────────────────────────────────
 const PENDING_KEY = 'confmanager_pending';
-const savePending  = (confId, intent) => sessionStorage.setItem(PENDING_KEY, JSON.stringify({ confId, intent }));
-const loadPending  = () => { try { const r = sessionStorage.getItem(PENDING_KEY); return r ? JSON.parse(r) : null; } catch { return null; } };
+const savePending = (confId, intent) => sessionStorage.setItem(PENDING_KEY, JSON.stringify({ confId, intent }));
+const loadPending = () => { try { const r = sessionStorage.getItem(PENDING_KEY); return r ? JSON.parse(r) : null; } catch { return null; } };
 const clearPending = () => sessionStorage.removeItem(PENDING_KEY);
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 const App = () => {
-  const { user, setUser } = useApp();
-  const [view, setView]                 = useState('dashboard');
+  const { user, setUser, setActiveConfId } = useApp();
+  const [view, setView] = useState('dashboard');
   const [selectedConf, setSelectedConf] = useState(null);
-  const [initialView, setInitialView]   = useState('home');
-  const [loading, setLoading]           = useState(true);
+  const [initialView, setInitialView] = useState('home');
+  const [loading, setLoading] = useState(true);
 
   // Track previous user to detect the login transition (null → user)
   const [prevUser, setPrevUser] = useState(null);
@@ -59,6 +59,7 @@ const App = () => {
           setSelectedConf(confData);
           setInitialView(pending.intent || 'home');
           setView('conference');
+          setActiveConfId(pending.confId);
         }
       }
 
@@ -95,6 +96,7 @@ const App = () => {
           setSelectedConf(confData);
           setInitialView(pending.intent || 'home'); // ← restores 'submitPaper'
           setView('conference');
+          setActiveConfId(pending.confId);
         }
       };
 
@@ -127,6 +129,7 @@ const App = () => {
           onBack={() => {
             setView('dashboard');
             setSelectedConf(null);
+            setActiveConfId(null);
             clearPending();
           }}
           onRequireAuth={(intent) => {
@@ -164,6 +167,7 @@ const App = () => {
           setView('dashboard');
           setSelectedConf(null);
           setInitialView('home');
+          setActiveConfId(null);
           clearPending();
         }}
       />
@@ -175,6 +179,7 @@ const App = () => {
       onSelectConf={(conf) => {
         setSelectedConf(conf);
         setInitialView('home');
+        setActiveConfId(conf.conference_id ?? conf.id);
         setView('conference');
       }}
       onCreateConf={() => setView('create')}

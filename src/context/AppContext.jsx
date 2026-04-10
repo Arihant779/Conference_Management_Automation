@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../Supabase/supabaseclient';
+import { usePermissions } from '../hooks/usePermissions';
 
 const AppContext = createContext(null);
 
@@ -7,6 +8,9 @@ export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);           // Supabase auth user object
   const [conferences, setConferences] = useState([]); // list of conferences
   const [loading, setLoading] = useState(true);     // initial auth check in progress
+  const [activeConfId, setActiveConfId] = useState(null);
+
+  const { permissions, roles: userRoles, loading: loadingPermissions } = usePermissions(activeConfId, user?.id);
 
   /* ── Restore session on mount & listen to auth changes ─────────── */
   useEffect(() => {
@@ -93,6 +97,10 @@ export const AppProvider = ({ children }) => {
       addConference,
       logout,
       loading,
+      permissions,
+      userRoles,
+      setActiveConfId,
+      loadingPermissions,
     }}>
       {children}
     </AppContext.Provider>

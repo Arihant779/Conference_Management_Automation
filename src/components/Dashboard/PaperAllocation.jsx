@@ -49,7 +49,7 @@ const PaperAllocation = ({ conf }) => {
   useEffect(() => {
     if (!confId) return;
     setLoadingReviewers(true);
-    
+
     // Fetch Reviewers
     supabase
       .from('conference_user')
@@ -112,18 +112,18 @@ const PaperAllocation = ({ conf }) => {
               paper_id: a.paper_id,
               paper_name: a.paper?.paper_title || 'Untitled',
               reviewer_id: a.reviewer_id,
-              reviewer_name: a.reviewer?.user_name || 'Reviewer',
+              reviewer_name: a.reviewer?.full_name || 'Reviewer',
               similarity_score: a.similarity || 0,
               dbId: a.id
             })),
             isFromDb: true
           };
-          
+
           // Basic summary
           const sims = data.map(a => a.similarity || 0);
           mapped.summary = {
             total_assignments: data.length,
-            avg_similarity: sims.length ? (sims.reduce((a,b)=>a+b, 0) / sims.length).toFixed(4) : 0,
+            avg_similarity: sims.length ? (sims.reduce((a, b) => a + b, 0) / sims.length).toFixed(4) : 0,
             min_similarity: sims.length ? Math.min(...sims).toFixed(4) : 0,
             max_similarity: sims.length ? Math.max(...sims).toFixed(4) : 0
           };
@@ -184,7 +184,7 @@ const PaperAllocation = ({ conf }) => {
       const capacities = validReviewers.map(r => parseInt(r.capacity) || 3);
 
       const fd = new FormData();
-      
+
       // Process papers: fetch blobs for DB papers if needed
       for (const p of papers) {
         if (p.file) {
@@ -235,7 +235,7 @@ const PaperAllocation = ({ conf }) => {
 
   const confirmAssignments = async () => {
     if (!result?.assignments || !confId) return;
-    
+
     setLoading(true);
     setError('');
 
@@ -250,7 +250,7 @@ const PaperAllocation = ({ conf }) => {
 
       if (manualPapersIndices.length > 0) {
         console.log(`Persisting ${manualPapersIndices.length} manual papers...`);
-        
+
         for (const mp of manualPapersIndices) {
           if (!mp.file) continue;
 
@@ -264,10 +264,10 @@ const PaperAllocation = ({ conf }) => {
 
           if (existingPaper) {
             console.log(`Paper "${mp.name}" already exists. Using ID: ${existingPaper.paper_id}`);
-            updatedPapers[mp.idx] = { 
-              ...updatedPapers[mp.idx], 
+            updatedPapers[mp.idx] = {
+              ...updatedPapers[mp.idx],
               dbId: existingPaper.paper_id,
-              file_url: existingPaper.file_url 
+              file_url: existingPaper.file_url
             };
             continue;
           }
@@ -275,7 +275,7 @@ const PaperAllocation = ({ conf }) => {
           // B. Upload to Storage
           const fileName = `${mp.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase()}`;
           const filePath = `${confId}/${fileName}`;
-          
+
           const { data: storageData, error: storageError } = await supabase
             .storage
             .from('papers')
@@ -306,8 +306,8 @@ const PaperAllocation = ({ conf }) => {
           if (paperDbError) throw new Error(`Database error for ${mp.name}: ${paperDbError.message}`);
 
           // D. Update local reference with new database ID
-          updatedPapers[mp.idx] = { 
-            ...updatedPapers[mp.idx], 
+          updatedPapers[mp.idx] = {
+            ...updatedPapers[mp.idx],
             dbId: newPaperData.paper_id,
             file_url: publicUrl
           };
@@ -337,7 +337,7 @@ const PaperAllocation = ({ conf }) => {
         .from('paper_assignments')
         .delete()
         .eq('conference_id', confId);
-      
+
       if (delError) throw delError;
 
       // 4. Insert new assignments
@@ -364,7 +364,7 @@ const PaperAllocation = ({ conf }) => {
         .from('paper_assignments')
         .delete()
         .eq('conference_id', confId);
-      
+
       if (error) throw error;
       setResult(null);
       setConfirmed(false);
@@ -458,13 +458,13 @@ const PaperAllocation = ({ conf }) => {
                     dbPapers.map(p => {
                       const isSelected = papers.some(x => x.dbId === p.id);
                       return (
-                        <div 
-                          key={p.id} 
+                        <div
+                          key={p.id}
                           onClick={() => toggleDbPaper(p)}
                           className={cls(
                             "flex items-center gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-all",
-                            isSelected 
-                              ? "bg-indigo-600/20 border-indigo-500/50 text-indigo-200" 
+                            isSelected
+                              ? "bg-indigo-600/20 border-indigo-500/50 text-indigo-200"
                               : "bg-white/3 border-white/6 text-slate-400 hover:border-white/10 hover:bg-white/5"
                           )}
                         >
@@ -540,13 +540,13 @@ const PaperAllocation = ({ conf }) => {
                     dbReviewers.map(r => {
                       const isSelected = reviewers.some(x => x.dbId === r.id);
                       return (
-                        <div 
-                          key={r.id} 
+                        <div
+                          key={r.id}
                           onClick={() => toggleDbReviewer(r)}
                           className={cls(
                             "flex items-center gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-all",
-                            isSelected 
-                              ? "bg-indigo-600/20 border-indigo-500/50 text-indigo-200" 
+                            isSelected
+                              ? "bg-indigo-600/20 border-indigo-500/50 text-indigo-200"
                               : "bg-white/3 border-white/6 text-slate-400 hover:border-white/10 hover:bg-white/5"
                           )}
                         >
