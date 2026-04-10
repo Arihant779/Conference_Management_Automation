@@ -26,35 +26,72 @@ const FeedbackForm = ({ conf }) => {
   /* ── fetch published form ── */
   const fetchForm = useCallback(async () => {
     setLoading(true);
-
-    const { data: f } = await supabase
-      .from('feedback_forms')
-      .select('*')
-      .eq('conference_id', confId)
-      .eq('is_published', true)
-      .maybeSingle();
-
-    if (!f) { setLoading(false); return; }
-    setForm(f);
-
-    const { data: qs } = await supabase
-      .from('feedback_questions')
-      .select('*')
-      .eq('form_id', f.id)
-      .order('sort_order', { ascending: true });
-    setQuestions(qs || []);
-
-    // check if already submitted
-    if (user) {
-      const { data: existing } = await supabase
-        .from('feedback_responses')
-        .select('id')
-        .eq('form_id', f.id)
-        .eq('user_id', user.id)
+    try {
+      const { data: forms, error: formError } = await supabase
+        .from('feedback_forms')
+        .select('*')
+        .eq('conference_id', confId)
+        .eq('is_published', true)
+        .order('created_at', { ascending: true })
         .limit(1);
-      if (existing && existing.length > 0) {
-        setAlreadyDone(true);
+
+      if (formError) {
+        console.error('[FeedbackForm] Fetch form error:', formError);
+        setLoading(false);
+        return;
       }
+
+      if (!forms || forms.length === 0) { 
+        console.log('[FeedbackForm] No published form found for confId:', confId);
+        
+        // Let's check if ANY form exists for this conference (even unpublished)
+        const { data: anyForms } = await supabase
+          .from('feedback_forms')
+          .select('id, is_published')
+          .eq('conference_id', confId)
+          .limit(1);
+        
+        if (anyForms && anyForms.length > 0) {
+          console.log('[FeedbackForm] An unpublished form exists:', anyForms[0].id);
+          setForm({ ...anyForms[0], _is_unpublished: true });
+        }
+        
+        setLoading(false); 
+        return; 
+      }
+      
+      const f = forms[0];
+      console.log('[FeedbackForm] Found published form:', f.id, 'for confId:', confId);
+      setForm(f);
+
+      const { data: qs, error: qError } = await supabase
+        .from('feedback_questions')
+        .select('*')
+        .eq('form_id', f.id)
+        .order('sort_order', { ascending: true });
+      
+      if (qError) {
+        console.error('[FeedbackForm] Fetch questions error:', qError);
+      }
+      setQuestions(qs || []);
+
+      // check if already submitted
+      if (user) {
+        const { data: existing, error: eError } = await supabase
+          .from('feedback_responses')
+          .select('id')
+          .eq('form_id', f.id)
+          .eq('user_id', user.id)
+          .limit(1);
+        
+        if (eError) console.error('[FeedbackForm] Check submission error:', eError);
+        
+        if (existing && existing.length > 0) {
+          setAlreadyDone(true);
+        }
+      }
+    } catch (err) {
+      console.error('[FeedbackForm] Unexpected error:', err);
     }
 
     setLoading(false);
@@ -106,7 +143,53 @@ const FeedbackForm = ({ conf }) => {
     );
   }
 
-  if (!form || questions.length === 0) return null; // no published form
+  if (!form || (questions.length === 0 && !form._is_unpublished)) {
+    return (
+      <div className="max-w-3xl mx-auto px-6 py-12">
+        <div className={cls("border-2 border-dashed rounded-[2rem] p-12 text-center transition-all", isDark ? "bg-white/2 border-white/5" : "bg-zinc-50 border-zinc-200 shadow-xl")}>
+          <Star size={48} className={cls("mx-auto mb-4 opacity-20", isDark ? "text-white" : "text-zinc-400")} />
+          <h3 className={cls("text-lg font-bold mb-2", isDark ? "text-white" : "text-zinc-800")}>No Feedback Form Active</h3>
+          <p className={cls("text-sm max-w-md mx-auto mb-8 leading-relaxed", isDark ? "text-slate-500" : "text-zinc-500")}>
+            The organizers haven't activated a feedback questionnaire for this event yet.
+          </p>
+          <button 
+            onClick={() => fetchForm()}
+            className={cls("px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-lg", 
+              isDark ? "bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20" : "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20")}
+          >
+            Check for Updates
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (form._is_unpublished) {
+    return (
+      <div className="max-w-3xl mx-auto px-6 py-12">
+        <div className={cls("border-2 border-dashed rounded-[3rem] p-12 text-center transition-all relative overflow-hidden", isDark ? "bg-amber-500/5 border-amber-500/20" : "bg-amber-50 border-amber-200")}>
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+            <Star size={120} className="text-amber-500" />
+          </div>
+          <div className={cls("w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl", isDark ? "bg-amber-500/20 text-amber-400" : "bg-white text-amber-600")}>
+            <Star size={32} />
+          </div>
+          <h3 className={cls("text-2xl font-black mb-3 tracking-tight", isDark ? "text-white" : "text-zinc-900")}>Form is Offline</h3>
+          <p className={cls("text-sm max-w-md mx-auto mb-8 font-medium leading-relaxed", isDark ? "text-amber-200/50" : "text-amber-700/70")}>
+            We found a feedback form for this conference, but the organizer hasn't **Activated** it yet. 
+            Reviewers and attendees cannot see the questions until the form is live.
+          </p>
+          <button 
+            onClick={() => fetchForm()}
+            className={cls("px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:scale-105 active:scale-95 shadow-xl", 
+              isDark ? "bg-amber-500 hover:bg-amber-400 text-white shadow-amber-500/20" : "bg-white hover:bg-amber-50 text-amber-600 shadow-amber-600/10 border border-amber-200")}
+          >
+            Retry Connection
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (submitted || alreadyDone) {
     return (

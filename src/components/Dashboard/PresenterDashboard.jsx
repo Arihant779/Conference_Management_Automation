@@ -2,12 +2,14 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   FileText, Calendar, CheckCircle, Award, Upload, Clock,
   AlertCircle, X, Presentation, ChevronRight, Download,
-  RefreshCw, Sparkles, ExternalLink, Send, Info
+  RefreshCw, Sparkles, ExternalLink, Send, Info, Star, Bell
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
 import Sidebar from './Organizer/components/Sidebar';
 import AmbientBackground from '../Common/AmbientBackground';
+import MemberNotifications from './MemberNotifications';
+import FeedbackForm from './FeedbackForm';
 
 /* ─── helpers ──────────────────────────────────────────────────────────── */
 const cls = (...c) => c.filter(Boolean).join(' ');
@@ -505,6 +507,8 @@ const PresenterDashboard = ({ conf, onBack }) => {
 
   const nav = [
     { id: 'overview', label: 'My Submissions', icon: FileText },
+    { id: 'feedback', label: 'Feedback', icon: Star },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
   ];
 
   /* ── fetch this presenter's papers for this conference ─────────────── */
@@ -564,167 +568,191 @@ const PresenterDashboard = ({ conf, onBack }) => {
       <AmbientBackground />
 
       <div className="w-full h-screen flex relative z-10 overflow-hidden">
-        <Sidebar nav={nav} section={section} setSection={setSection} isOrganizer={false} onBack={onBack} />
+        <Sidebar nav={nav} section={section} setSection={setSection} isOrganizer={false} onBack={onBack} roleLabel="Presenter" />
 
         <main className="flex-1 overflow-y-auto p-8 custom-scrollbar">
           <div className="max-w-5xl mx-auto space-y-8">
 
-        {/* ── Page title ── */}
-        <div>
-          <h2 className={`text-2xl font-bold transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>Presenter Dashboard</h2>
-          <p className="text-slate-500 text-sm mt-1">
-            Manage your submissions, upload slides, and set your presentation time preference.
-          </p>
-        </div>
-
-        {/* ── Conference info strip ── */}
-        <div className={`border transition-all duration-300 rounded-xl p-4 flex items-center gap-6 flex-wrap ${
-          isDark ? 'bg-[#0d1117] border-white/6' : 'bg-white border-zinc-200 shadow-sm'
-        }`}>
-          <div>
-            <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Conference</div>
-            <div className={`text-sm font-semibold transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>{conf.title}</div>
-          </div>
-          {conf.start_date && (
-            <div>
-              <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Date</div>
-              <div className={`text-sm flex items-center gap-1.5 transition-colors ${isDark ? 'text-slate-300' : 'text-zinc-600'}`}>
-                <Calendar size={12} className="text-slate-500" />
-                {new Date(conf.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                {conf.end_date && conf.end_date !== conf.start_date && (
-                  <> – {new Date(conf.end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</>
-                )}
-              </div>
-            </div>
-          )}
-          {conf.location && (
-            <div>
-              <div className="text-[10px] text-slate-600 uppercase tracking-wider font-bold mb-0.5">Location</div>
-              <div className="text-sm text-slate-300">{conf.location}</div>
-            </div>
-          )}
-        </div>
-
-        {/* ── Stats strip ── */}
-        {!loading && papers.length > 0 && (
-          <div className="grid grid-cols-3 gap-4">
-            {[
-              { label: 'Total Submissions', value: papers.length, color: isDark ? 'text-slate-200' : 'text-zinc-800', icon: FileText },
-              { label: 'Accepted',          value: accepted,       color: 'text-emerald-400', icon: CheckCircle },
-              { label: 'Slides Uploaded',   value: withSlides,     color: 'text-blue-400', icon: Presentation },
-            ].map(({ label, value, color, icon: Icon }) => (
-              <div key={label} className={`border rounded-xl p-4 transition-all duration-300 ${
-                isDark ? 'bg-[#0d1117] border-white/6' : 'bg-white border-zinc-200 shadow-sm'
-              }`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] text-slate-500 uppercase tracking-wider font-extrabold">{label}</span>
-                  <Icon size={14} className={cls(color, 'opacity-60')} />
+            {section === 'overview' && (
+              <>
+                {/* ── Page title ── */}
+                <div>
+                  <h2 className={`text-2xl font-bold transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>Presenter Dashboard</h2>
+                  <p className="text-slate-500 text-sm mt-1">
+                    Manage your submissions, upload slides, and set your presentation time preference.
+                  </p>
                 </div>
-                <div className={cls('text-2xl font-black transition-colors', color)}>{value}</div>
-              </div>
-            ))}
-          </div>
-        )}
 
-        {/* ── Accepted congratulations banner ── */}
-        {accepted > 0 && (
-          <div className="bg-[#0a1a12] border border-emerald-500/20 rounded-2xl p-6 relative overflow-hidden">
-            <div className="absolute right-5 top-5 opacity-6">
-              <Award size={90} className="text-emerald-400" />
-            </div>
-            <div className="flex items-center gap-3 mb-2 relative z-10">
-              <Sparkles size={18} className="text-emerald-400" />
-              <h4 className="font-bold text-lg text-white">
-                {accepted === 1 ? 'Your paper has been accepted!' : `${accepted} of your papers have been accepted!`}
-              </h4>
-            </div>
-            <p className="text-sm text-emerald-200/60 relative z-10 max-w-lg">
-              Congratulations! Please upload your presentation slides and submit your preferred time slot below.
-              The organiser will confirm your final schedule.
-            </p>
-          </div>
-        )}
-
-        {/* ── Loading ── */}
-        {loading && (
-          <div className="space-y-3">
-            {[1, 2].map(i => (
-              <div key={i} className="h-28 bg-white/3 border border-white/5 rounded-2xl animate-pulse" />
-            ))}
-          </div>
-        )}
-
-        {/* ── Error ── */}
-        {error && (
-          <div className="flex items-start gap-3 bg-red-500/8 border border-red-500/20 rounded-xl p-4">
-            <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
-            <p className="text-sm text-red-400">{error}</p>
-          </div>
-        )}
-
-        {/* ── No papers ── */}
-        {!loading && !error && papers.length === 0 && (
-          <div className="py-20 text-center border-2 border-dashed border-white/6 rounded-2xl">
-            <div className="w-16 h-16 bg-slate-800 border border-white/8 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-600">
-              <FileText size={28} />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-2">No Papers Submitted</h3>
-            <p className="text-slate-500 text-sm max-w-xs mx-auto">
-              You have not submitted any papers to this conference yet. 
-              Submit your research through the conference page.
-            </p>
-          </div>
-        )}
-
-        {/* ── Paper cards ── */}
-        {!loading && papers.length > 0 && (
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">
-              Your Submissions ({papers.length})
-            </h3>
-            {papers.map(paper => (
-              <PaperCard
-                key={paper.paper_id}
-                paper={paper}
-                onSlideUploaded={handleSlideUploaded}
-                onTimeSaved={handleTimeSaved}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* ── Guide section ── */}
-        {!loading && papers.length > 0 && (
-          <div className={`border rounded-2xl p-5 transition-all duration-300 ${
-            isDark ? 'bg-[#0d1117] border-white/6' : 'bg-white border-zinc-200 shadow-sm'
-          }`}>
-            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Presenter Checklist</h4>
-            <div className="space-y-2.5">
-              {[
-                { done: papers.length > 0,                label: 'Submit your research paper',           sub: 'Paper received by the conference' },
-                { done: accepted > 0,                      label: 'Receive acceptance from reviewers',    sub: 'At least one paper accepted' },
-                { done: withSlides > 0,                    label: 'Upload presentation slides',           sub: 'Upload PDF, PPTX or Keynote file' },
-                { done: papers.some(p => Array.isArray(p.preferred_slots) && p.preferred_slots.length >= 3), label: 'Submit your time preference', sub: 'Help the organiser build the schedule' },
-              ].map(({ done, label, sub }) => (
-                <div key={label} className="flex items-start gap-3">
-                  <div className={cls(
-                    'w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5',
-                    done ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'border-white/10 text-slate-600'
-                  )}>
-                    {done && <CheckCircle size={12} />}
-                  </div>
+                {/* ── Conference info strip ── */}
+                <div className={`border transition-all duration-300 rounded-xl p-4 flex items-center gap-6 flex-wrap ${
+                  isDark ? 'bg-[#0d1117] border-white/6' : 'bg-white border-zinc-200 shadow-sm'
+                }`}>
                   <div>
-                    <p className={cls('text-sm font-semibold', done ? 'text-slate-200' : 'text-slate-500')}>{label}</p>
-                    <p className="text-[11px] text-slate-600">{sub}</p>
+                    <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Conference</div>
+                    <div className={`text-sm font-semibold transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>{conf.title}</div>
                   </div>
+                  {conf.start_date && (
+                    <div>
+                      <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Date</div>
+                      <div className={`text-sm flex items-center gap-1.5 transition-colors ${isDark ? 'text-slate-300' : 'text-zinc-600'}`}>
+                        <Calendar size={12} className="text-slate-500" />
+                        {new Date(conf.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        {conf.end_date && conf.end_date !== conf.start_date && (
+                          <> – {new Date(conf.end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {conf.location && (
+                    <div>
+                      <div className="text-[10px] text-slate-600 uppercase tracking-wider font-bold mb-0.5">Location</div>
+                      <div className="text-sm text-slate-300">{conf.location}</div>
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
 
-        </div>
-      </main>
+                {/* ── Stats strip ── */}
+                {!loading && papers.length > 0 && (
+                  <div className="grid grid-cols-3 gap-4">
+                    {[
+                      { label: 'Total Submissions', value: papers.length, color: isDark ? 'text-slate-200' : 'text-zinc-800', icon: FileText },
+                      { label: 'Accepted',          value: accepted,       color: 'text-emerald-400', icon: CheckCircle },
+                      { label: 'Slides Uploaded',   value: withSlides,     color: 'text-blue-400', icon: Presentation },
+                    ].map(({ label, value, color, icon: Icon }) => (
+                      <div key={label} className={`border rounded-xl p-4 transition-all duration-300 ${
+                        isDark ? 'bg-[#0d1117] border-white/6' : 'bg-white border-zinc-200 shadow-sm'
+                      }`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] text-slate-500 uppercase tracking-wider font-extrabold">{label}</span>
+                          <Icon size={14} className={cls(color, 'opacity-60')} />
+                        </div>
+                        <div className={cls('text-2xl font-black transition-colors', color)}>{value}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* ── Accepted congratulations banner ── */}
+                {accepted > 0 && (
+                  <div className="bg-[#0a1a12] border border-emerald-500/20 rounded-2xl p-6 relative overflow-hidden">
+                    <div className="absolute right-5 top-5 opacity-6">
+                      <Award size={90} className="text-emerald-400" />
+                    </div>
+                    <div className="flex items-center gap-3 mb-2 relative z-10">
+                      <Sparkles size={18} className="text-emerald-400" />
+                      <h4 className="font-bold text-lg text-white">
+                        {accepted === 1 ? 'Your paper has been accepted!' : `${accepted} of your papers have been accepted!`}
+                      </h4>
+                    </div>
+                    <p className="text-sm text-emerald-200/60 relative z-10 max-w-lg">
+                      Congratulations! Please upload your presentation slides and submit your preferred time slot below.
+                      The organiser will confirm your final schedule.
+                    </p>
+                  </div>
+                )}
+
+                {/* ── Loading ── */}
+                {loading && (
+                  <div className="space-y-3">
+                    {[1, 2].map(i => (
+                      <div key={i} className="h-28 bg-white/3 border border-white/5 rounded-2xl animate-pulse" />
+                    ))}
+                  </div>
+                )}
+
+                {/* ── Error ── */}
+                {error && (
+                  <div className="flex items-start gap-3 bg-red-500/8 border border-red-500/20 rounded-xl p-4">
+                    <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
+                    <p className="text-sm text-red-400">{error}</p>
+                  </div>
+                )}
+
+                {/* ── No papers ── */}
+                {!loading && !error && papers.length === 0 && (
+                  <div className="py-20 text-center border-2 border-dashed border-white/6 rounded-2xl">
+                    <div className="w-16 h-16 bg-slate-800 border border-white/8 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-600">
+                      <FileText size={28} />
+                    </div>
+                    <h3 className="text-lg font-bold text-white mb-2">No Papers Submitted</h3>
+                    <p className="text-slate-500 text-sm max-w-xs mx-auto">
+                      You have not submitted any papers to this conference yet. 
+                      Submit your research through the conference page.
+                    </p>
+                  </div>
+                )}
+
+                {/* ── Paper cards ── */}
+                {!loading && papers.length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+                      Your Submissions ({papers.length})
+                    </h3>
+                    {papers.map(paper => (
+                      <PaperCard
+                        key={paper.paper_id}
+                        paper={paper}
+                        onSlideUploaded={handleSlideUploaded}
+                        onTimeSaved={handleTimeSaved}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* ── Guide section ── */}
+                {!loading && papers.length > 0 && (
+                  <div className={`border rounded-2xl p-5 transition-all duration-300 ${
+                    isDark ? 'bg-[#0d1117] border-white/6' : 'bg-white border-zinc-200 shadow-sm'
+                  }`}>
+                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Presenter Checklist</h4>
+                    <div className="space-y-2.5">
+                      {[
+                        { done: papers.length > 0,                label: 'Submit your research paper',           sub: 'Paper received by the conference' },
+                        { done: accepted > 0,                      label: 'Receive acceptance from reviewers',    sub: 'At least one paper accepted' },
+                        { done: withSlides > 0,                    label: 'Upload presentation slides',           sub: 'Upload PDF, PPTX or Keynote file' },
+                        { done: papers.some(p => Array.isArray(p.preferred_slots) && p.preferred_slots.length >= 3), label: 'Submit your time preference', sub: 'Help the organiser build the schedule' },
+                      ].map(({ done, label, sub }) => (
+                        <div key={label} className="flex items-start gap-3">
+                          <div className={cls(
+                            'w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5',
+                            done ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'border-white/10 text-slate-600'
+                          )}>
+                            {done && <CheckCircle size={12} />}
+                          </div>
+                          <div>
+                            <p className={cls('text-sm font-semibold', done ? 'text-slate-200' : 'text-slate-500')}>{label}</p>
+                            <p className="text-[11px] text-slate-600">{sub}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {section === 'feedback' && (
+              <div className="space-y-8 animate-in fade-in duration-500">
+                <div>
+                  <h2 className={`text-2xl font-bold transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>Feedback</h2>
+                  <p className="text-slate-500 text-sm mt-0.5">Submit your conference feedback</p>
+                </div>
+                <FeedbackForm conf={conf} />
+              </div>
+            )}
+
+            {section === 'notifications' && (
+              <div className="space-y-8 animate-in fade-in duration-500">
+                <div>
+                  <h2 className={`text-2xl font-bold transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>Notifications</h2>
+                  <p className="text-slate-500 text-sm mt-0.5">Conference announcements</p>
+                </div>
+                <MemberNotifications conf={conf} />
+              </div>
+            )}
+
+          </div>
+        </main>
     </div>
   </div>
 );

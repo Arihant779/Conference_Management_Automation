@@ -82,27 +82,11 @@ const TeamModal = ({
   };
 
   const handleSaveAll = async () => {
-    const teamId = mode === 'editTeam' ? modalData.id : null;
-
-    // 1. Process removes
-    for (const confUserId of pendingRemoves) {
-      if (existingMemberIds.has(confUserId)) {
-        await onRemoveFromTeam(teamId, confUserId);
-      }
-    }
-
-    // 2. Process adds
-    for (const confUserId of pendingAdds) {
-      if (!existingMemberIds.has(confUserId) || pendingRemoves.has(confUserId)) {
-        await onAddToTeam(teamId, confUserId);
-      }
-    }
-
-    // 3. Save team config (name, description, head, color)
+    // 1. Save team config (name, description, head, color) AND sync members
     if (mode === 'createTeam') {
-      await onCreate();
+      await onCreate([...pendingAdds]); 
     } else {
-      await onSave();
+      await onSave([...pendingAdds], [...pendingRemoves]);
     }
 
     setPendingAdds(new Set());
@@ -122,15 +106,19 @@ const TeamModal = ({
                     className="text-left px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2"
                     style={tmForm.type === id
                       ? { background: 'rgba(245,197,24,0.12)', border: '1px solid rgba(245,197,24,0.35)', color: '#f5c518' }
-                      : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#6b7280' }}>
+                      : { 
+                          background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', 
+                          border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`, 
+                          color: isDark ? '#6b7280' : '#4b5563' 
+                        }}>
                     {tmForm.type === id && <Check size={10} className="shrink-0" style={{ color: '#f5c518' }} />}{label}
                   </button>
                 ))}
                 <button type="button" onClick={() => setTmForm({ ...tmForm, type: 'custom', name: '' })}
                   className="text-left px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 col-span-2"
                   style={tmForm.type === 'custom'
-                    ? { background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.18)', color: '#d4d4d8' }
-                    : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#6b7280' }}>
+                    ? { background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.15)'}`, color: isDark ? '#d4d4d8' : '#3f3f46' }
+                    : { background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`, color: isDark ? '#6b7280' : '#4b5563' }}>
                   {tmForm.type === 'custom' && <Check size={10} className="shrink-0" />}✏️ Custom name…
                 </button>
               </div>
@@ -144,7 +132,7 @@ const TeamModal = ({
             <Field label="Team Head (optional)">
               <Sel value={tmForm.head_id} onChange={e => setTmForm({ ...tmForm, head_id: e.target.value })}>
                 <option value="">— No team head —</option>
-                {members.map(m => <option key={m.id} value={m.id} style={{ background: '#13151c' }}>{mName(m)} ({m.role})</option>)}
+                {members.map(m => <option key={m.id} value={m.id} className={isDark ? "bg-[#13151c] text-white" : "bg-white text-zinc-900"}>{mName(m)} ({m.role})</option>)}
               </Sel>
             </Field>
           </div>
@@ -160,13 +148,13 @@ const TeamModal = ({
         </div>
 
         {/* ── MEMBER MANAGEMENT ── */}
-        <div className="pt-5 space-y-4" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className="pt-5 space-y-4" style={{ borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.08)'}` }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users size={16} style={{ color: '#f5c518' }} />
-              <h4 className="text-sm font-bold text-white uppercase tracking-wider">Member Management</h4>
+              <h4 className={`text-sm font-bold uppercase tracking-wider ${isDark ? 'text-white' : 'text-zinc-800'}`}>Member Management</h4>
             </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ color: '#6b7280', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ color: isDark ? '#6b7280' : '#4b5563', background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)'}` }}>
               {effectiveTeamMembers.size} Members
             </span>
           </div>
@@ -184,15 +172,15 @@ const TeamModal = ({
                   <div key={m.id}
                     className={cls('flex items-center gap-3 rounded-xl p-2 group transition-all', isMarkedForRemoval && 'opacity-40')}
                     style={{
-                      background: isNew ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.04)',
-                      border: isNew ? '1px solid rgba(16,185,129,0.25)' : '1px solid rgba(255,255,255,0.08)',
+                      background: isNew ? 'rgba(16,185,129,0.08)' : (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)'),
+                      border: isNew ? '1px solid rgba(16,185,129,0.25)' : `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
                     }}>
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-                      style={{ background: isNew ? '#10b981' : '#27293a' }}>
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold ${isDark ? 'text-white' : 'text-zinc-700'}`}
+                      style={{ background: isNew ? '#10b981' : (isDark ? '#27293a' : '#f1f5f9') }}>
                       {mName(m)[0]?.toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[11px] font-semibold text-white truncate flex items-center gap-1.5">
+                      <div className={`text-[11px] font-semibold truncate flex items-center gap-1.5 ${isDark ? 'text-white' : 'text-zinc-800'}`}>
                         {mName(m)}
                         {isNew && (
                           <span className="text-[8px] px-1.5 py-0.5 rounded font-black uppercase"
@@ -251,7 +239,7 @@ const TeamModal = ({
           )}
 
           {/* Add New Members panel */}
-          <div className="rounded-2xl p-4" style={{ background: 'rgba(245,197,24,0.04)', border: '1px solid rgba(245,197,24,0.1)' }}>
+          <div className="rounded-2xl p-4" style={{ background: isDark ? 'rgba(245,197,24,0.04)' : 'rgba(245,197,24,0.02)', border: `1px solid ${isDark ? 'rgba(245,197,24,0.1)' : 'rgba(245,197,24,0.15)'}` }}>
             <div className="flex items-center gap-2 mb-3">
               <Plus size={14} style={{ color: '#f5c518' }} />
               <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#f5c518', opacity: 0.8 }}>Add New Members</span>

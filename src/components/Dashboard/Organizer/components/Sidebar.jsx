@@ -23,7 +23,7 @@ const Sidebar = ({ nav, section, setSection, isOrganizer, roleLabel }) => {
             <BarChart2 size={16} className="text-zinc-900" />
           </div>
           <span className={`text-sm font-black uppercase tracking-widest transition-colors duration-300 ${isDark ? 'text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-600' : 'text-zinc-900'}`}>
-            {isOrganizer ? 'Organizer' : roleLabel.split(' ')[0]}
+            {isOrganizer ? 'Organizer' : (roleLabel?.split(' ')[0] || 'User')}
           </span>
         </div>
         <div className={`text-[10px] pl-11 uppercase tracking-widest font-bold transition-colors ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Dashboard</div>

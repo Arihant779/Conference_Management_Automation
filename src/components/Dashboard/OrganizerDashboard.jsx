@@ -150,22 +150,38 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     setAllVolunteers((data || []).filter(u => Array.isArray(u.volunteer_roles) && u.volunteer_roles.length > 0));
   }, []);
 
-  const fetchPapers = useCallback(async () => {
+   const fetchPapers = useCallback(async () => {
     setLP(true);
     const { data, error } = await supabase.from('paper').select('paper_id,paper_title,abstract,keywords,research_area,status,file_url,author_id,users(user_name,user_email),paper_assignments(status)').eq('conference_id', confId).order('paper_id', { ascending: false });
     if (error) console.error(error);
-    const paperMap = {};
-    (data || []).forEach(p => { const title = p.paper_title || 'Untitled'; const hasAssign = p.paper_assignments?.length > 0; if (!paperMap[title] || (hasAssign && !paperMap[title].paper_assignments?.length)) paperMap[title] = p; });
-    const deduped = Object.values(paperMap);
-    setConfPapers(deduped); setLP(false);
+    
+    // Previously removed deduplication by title to show all actual submissions
+    setConfPapers(data || []); 
+    setLP(false);
+    
     const syncConsensus = async () => {
       let changed = false;
-      const updated = deduped.map(p => {
-        if (p.paper_assignments?.length > 0 && p.status === 'pending') {
-          const total = p.paper_assignments.length, acc = p.paper_assignments.filter(a => a.status === 'accepted').length, pen = p.paper_assignments.filter(a => a.status === 'pending').length;
+      const updated = (data || []).map(p => {
+        const assignments = p.paper_assignments || [];
+        if (assignments.length > 0) {
+          const total = assignments.length, 
+                acc = assignments.filter(a => a.status === 'accepted').length, 
+                pen = assignments.filter(a => a.status === 'pending').length;
+          
           let consensus = 'pending';
-          if (total > 0) { const t = 0.66; if ((acc / total) >= t) consensus = 'accepted'; else if (((acc + pen) / total) < t) consensus = 'rejected'; }
-          if (p.status !== consensus) { supabase.from('paper').upsert({ paper_id: p.paper_id, status: consensus, conference_id: confId }, { onConflict: 'paper_id' }).then(); changed = true; return { ...p, status: consensus }; }
+          if (total > 0) { 
+            const t = 0.66; 
+            if ((acc / total) >= t) consensus = 'accepted'; 
+            else if (((acc + pen) / total) < t) consensus = 'rejected'; 
+          }
+          
+          // Re-evaluation: If status is accepted/rejected but consensus is pending (due to re-allocation), update it.
+          // This allows Re-allocation to override previous manual or logic-based results.
+          if (p.status !== consensus) { 
+            supabase.from('paper').upsert({ paper_id: p.paper_id, status: consensus, conference_id: confId }, { onConflict: 'paper_id' }).then(); 
+            changed = true; 
+            return { ...p, status: consensus }; 
+          }
         }
         return p;
       });
@@ -268,6 +284,13 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     fetchMembers(); fetchAllVolunteers(); fetchTeams(); fetchTasks(); fetchNotifs(); fetchPapers(); fetchGlobalRatings();
   }, [fetchMembers, fetchAllVolunteers, fetchTeams, fetchTasks, fetchNotifs, fetchPapers, fetchGlobalRatings]);
 
+  // Refresh data when section changes to ensure consistency
+  useEffect(() => {
+    if (section === 'papers' || section === 'allocation') fetchPapers();
+    if (section === 'teams') fetchTeams();
+    if (section === 'tasks') fetchTasks();
+  }, [section, fetchPapers, fetchTeams, fetchTasks]);
+
   /* ── member CRUD ── */
   const updateRole = async (id, role) => {
     const { error } = await supabase.from('conference_user').update({ role }).eq('id', id);
@@ -287,27 +310,83 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   };
 
   /* ── team CRUD ── */
-  const createTeam = async () => {
+   const createTeam = async (initialAdds = []) => {
     if (!tmForm.name.trim()) return; setSaving(true);
     const { data: newTeam, error } = await supabase.from('conference_teams').insert([{ conference_id: confId, name: tmForm.name.trim(), description: tmForm.description.trim(), color: tmForm.color, head_id: tmForm.head_id || null, created_at: new Date().toISOString() }]).select().single();
-    if (!error && newTeam && tmForm.head_id && tmForm.type && tmForm.type !== 'custom') {
-      await supabase.from('conference_user_roles_mapping').upsert({ conference_user_id: tmForm.head_id, role_name: tmForm.type }, { onConflict: 'conference_user_id,role_name' });
+    
+    if (!error && newTeam) {
+      if (tmForm.head_id && tmForm.type && tmForm.type !== 'custom') {
+        await supabase.from('conference_user_roles_mapping').upsert({ conference_user_id: tmForm.head_id, role_name: tmForm.type }, { onConflict: 'conference_user_id,role_name' });
+      }
+      
+      if (initialAdds.length > 0) {
+        const toAdd = initialAdds.map(confUserId => {
+          const m = members.find(mem => mem.id === confUserId);
+          return { conference_id: confId, team_id: newTeam.id, user_id: m.user_id, conference_user_id: confUserId };
+        });
+        await supabase.from('team_members').insert(toAdd);
+      }
+      
+      setModal(null); setTmForm({ name: '', type: '', description: '', color: '#f5c518', head_id: '' }); fetchTeams();
+    } else if (error) {
+      alert(error.message);
     }
     setSaving(false);
-    if (!error) { setModal(null); setTmForm({ name: '', type: '', description: '', color: '#f5c518', head_id: '' }); fetchTeams(); } else alert(error.message);
   };
 
-  const saveTeam = async () => {
+  const saveTeam = async (adds = [], removes = []) => {
     if (!tmForm.name.trim()) return; setSaving(true);
-    const { error } = await supabase.from('conference_teams').update({ name: tmForm.name.trim(), description: tmForm.description.trim(), color: tmForm.color, head_id: tmForm.head_id || null }).eq('id', modalData.id);
-    if (!error && tmForm.head_id) {
-      if (tmForm.type !== tmForm.originalType && tmForm.originalType && tmForm.originalType !== 'custom') { await supabase.from('conference_user_roles_mapping').delete().eq('conference_user_id', tmForm.head_id).eq('role_name', tmForm.originalType); }
-      if (tmForm.type && tmForm.type !== 'custom') { await supabase.from('conference_user_roles_mapping').upsert({ conference_user_id: tmForm.head_id, role_name: tmForm.type }, { onConflict: 'conference_user_id,role_name' }); }
+    const teamId = modalData.id;
+    const { error } = await supabase.from('conference_teams').update({ name: tmForm.name.trim(), description: tmForm.description.trim(), color: tmForm.color, head_id: tmForm.head_id || null }).eq('id', teamId);
+    
+    if (!error) {
+      // Handle Role Mapping for Team Head
+      if (tmForm.head_id) {
+        if (tmForm.type !== tmForm.originalType && tmForm.originalType && tmForm.originalType !== 'custom') { await supabase.from('conference_user_roles_mapping').delete().eq('conference_user_id', tmForm.head_id).eq('role_name', tmForm.originalType); }
+        if (tmForm.type && tmForm.type !== 'custom') { await supabase.from('conference_user_roles_mapping').upsert({ conference_user_id: tmForm.head_id, role_name: tmForm.type }, { onConflict: 'conference_user_id,role_name' }); }
+      }
+      
+      // Handle Member Sync
+      if (removes.length > 0) {
+        await supabase.from('team_members').delete().eq('team_id', teamId).in('conference_user_id', removes);
+      }
+      if (adds.length > 0) {
+        const toAdd = adds.map(confUserId => {
+          const m = members.find(mem => mem.id === confUserId);
+          return { conference_id: confId, team_id: teamId, user_id: m.user_id, conference_user_id: confUserId };
+        });
+        await supabase.from('team_members').insert(toAdd);
+      }
+      
+      setModal(null); fetchTeams();
+    } else {
+      alert(error.message);
     }
-    setSaving(false); setModal(null); fetchTeams();
+    setSaving(false);
   };
 
   const deleteTeam = async (id) => { await supabase.from('team_members').delete().eq('team_id', id); await supabase.from('conference_teams').delete().eq('id', id); fetchTeams(); fetchTasks(); };
+
+   const handleTeamMemberSync = async (teamId, adds, removes) => {
+    setSaving(true);
+    try {
+      if (removes.length > 0) {
+        await supabase.from('team_members').delete().eq('team_id', teamId).in('conference_user_id', removes);
+      }
+      if (adds.length > 0) {
+        const toAdd = adds.map(confUserId => {
+          const m = members.find(mem => mem.id === confUserId);
+          return { conference_id: confId, team_id: teamId, user_id: m.user_id, conference_user_id: confUserId };
+        });
+        await supabase.from('team_members').insert(toAdd);
+      }
+      fetchTeams();
+    } catch (err) {
+      alert(`Sync error: ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const addToTeam = async (teamId, confUserId) => {
     const member = members.find(m => m.id === confUserId);
@@ -533,7 +612,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
           {section === 'emails'        && <EmailComposer conf={conf} senderRole="organizer" onOpenEmailSettings={() => setSection('emailSettings')} />}
           {section === 'emailSettings' && <EmailSettings conf={conf} />}
           {section === 'welcome_email' && <EmailAutomationsManager conf={conf} />}
-          {section === 'allocation'    && <PaperAllocation conf={conf} />}
+          {section === 'allocation'    && <PaperAllocation conf={conf} onRefresh={fetchPapers} />}
 
         </main>
       </div>
@@ -562,6 +641,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
           allVolunteers={allVolunteers} confId={confId} globalRatings={globalRatings}
           onClose={() => setModal(null)} onCreate={createTeam} onSave={saveTeam}
           onAddToTeam={addToTeam} onRemoveFromTeam={removeFromTeam}
+          onSyncTeamMembers={handleTeamMemberSync}
           onAddVolunteer={handleAddVolunteerToConference}
         />
       )}

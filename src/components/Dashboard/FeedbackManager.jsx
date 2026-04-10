@@ -83,6 +83,7 @@ const FeedbackManager = ({ conf }) => {
       existing = created;
     }
 
+    console.log('[FeedbackManager] Current form:', existing?.id, 'for confId:', confId, 'published:', existing?.is_published);
     setForm(existing);
 
     if (existing) {
@@ -146,9 +147,16 @@ const FeedbackManager = ({ conf }) => {
     const willPublish = !form.is_published;
     setSaving(true);
 
-    await supabase.from('feedback_forms')
+    const { error } = await supabase.from('feedback_forms')
       .update({ is_published: willPublish, updated_at: new Date().toISOString() })
       .eq('id', form.id);
+
+    if (error) {
+      console.error('[FeedbackManager] Toggle publish error:', error);
+      alert('Failed to update form status: ' + error.message);
+      setSaving(false);
+      return;
+    }
 
     // send notification when publishing
     if (willPublish) {
@@ -163,6 +171,7 @@ const FeedbackManager = ({ conf }) => {
 
     setSaving(false);
     setForm(f => ({ ...f, is_published: willPublish }));
+    console.log('[FeedbackManager] Successfully toggled is_published to:', willPublish);
   };
 
   /* ── response count ── */
@@ -203,16 +212,26 @@ const FeedbackManager = ({ conf }) => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Btn isDark={isDark} variant="secondary" onClick={() => setShowAdd(true)}><Plus size={15} />Add Question</Btn>
-          <Btn
-            isDark={isDark}
-            variant={form?.is_published ? 'danger' : 'success'}
-            onClick={togglePublish}
-            disabled={saving || questions.length === 0}
-          >
-            <Send size={14} />
-            {form?.is_published ? 'Stop Collection' : 'Activate Form'}
-          </Btn>
+          {form?.is_published ? (
+             <div className={cls("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border flex items-center gap-2", 
+               isDark ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-emerald-50 border-emerald-200 text-emerald-600")}>
+               <CheckCircle size={14} /> Published & Live
+             </div>
+          ) : (
+            <>
+              <Btn isDark={isDark} variant="secondary" onClick={() => setShowAdd(true)}>
+                <Plus size={15} />Add Question
+              </Btn>
+              <Btn
+                isDark={isDark}
+                variant="success"
+                onClick={togglePublish}
+                disabled={saving || questions.length === 0}
+              >
+                <Send size={14} /> Activate Form
+              </Btn>
+            </>
+          )}
         </div>
       </div>
 
@@ -302,14 +321,16 @@ const FeedbackManager = ({ conf }) => {
                         </span>
                       </div>
                     </div>
-                    <div className="flex gap-1.5 transition-all">
-                      <button onClick={() => startEdit(q)} className={cls("p-2 rounded-xl transition-all", isDark ? "text-slate-600 hover:text-white hover:bg-white/10" : "text-zinc-300 hover:text-zinc-900 hover:bg-zinc-50 hover:border-zinc-200")}>
-                         <Edit2 size={15} />
-                      </button>
-                      <button onClick={() => deleteQuestion(q.id)} className={cls("p-2 rounded-xl transition-all", isDark ? "text-slate-600 hover:text-red-400 hover:bg-red-500/10" : "text-zinc-300 hover:text-red-600 hover:bg-red-50")}>
-                         <Trash2 size={15} />
-                      </button>
-                    </div>
+                    {!form?.is_published && (
+                      <div className="flex gap-1.5 transition-all">
+                        <button onClick={() => startEdit(q)} className={cls("p-2 rounded-xl transition-all", isDark ? "text-slate-600 hover:text-white hover:bg-white/10" : "text-zinc-300 hover:text-zinc-900 hover:bg-zinc-50 hover:border-zinc-200")}>
+                          <Edit2 size={15} />
+                        </button>
+                        <button onClick={() => deleteQuestion(q.id)} className={cls("p-2 rounded-xl transition-all", isDark ? "text-slate-600 hover:text-red-400 hover:bg-red-500/10" : "text-zinc-300 hover:text-red-600 hover:bg-red-50")}>
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -321,22 +342,35 @@ const FeedbackManager = ({ conf }) => {
       {/* Actions footer */}
       {questions.length > 0 && (
         <div className={cls("pt-6 border-t flex flex-col sm:flex-row gap-4", isDark ? "border-white/6" : "border-zinc-200")}>
-           <Btn
-            isDark={isDark}
-            variant="secondary"
-            className="flex-1 py-4 justify-center rounded-2xl text-[10px] font-black uppercase tracking-[0.2em]"
-            onClick={() => setShowSummary(true)}
-          >
-            <Eye size={16} /> Analytics Dashboard
-          </Btn>
-          <Btn
-            isDark={isDark}
-            variant="secondary"
-            className="flex-1 py-4 justify-center rounded-2xl text-[10px] font-black uppercase tracking-[0.2em]"
-            onClick={() => setShowAdd(true)}
-          >
-            <Plus size={16} /> New Question
-          </Btn>
+          {form?.is_published ? (
+            <Btn
+              isDark={isDark}
+              variant="secondary"
+              className="w-full py-4 justify-center rounded-2xl text-[10px] font-black uppercase tracking-[0.2em]"
+              onClick={() => setShowSummary(true)}
+            >
+              <Eye size={16} /> View Responses & Analytics
+            </Btn>
+          ) : (
+            <>
+              <Btn
+                isDark={isDark}
+                variant="secondary"
+                className="flex-1 py-4 justify-center rounded-2xl text-[10px] font-black uppercase tracking-[0.2em]"
+                onClick={() => setShowSummary(true)}
+              >
+                <Eye size={16} /> Analytics Dashboard
+              </Btn>
+              <Btn
+                isDark={isDark}
+                variant="secondary"
+                className="flex-1 py-4 justify-center rounded-2xl text-[10px] font-black uppercase tracking-[0.2em]"
+                onClick={() => setShowAdd(true)}
+              >
+                <Plus size={16} /> New Question
+              </Btn>
+            </>
+          )}
         </div>
       )}
 

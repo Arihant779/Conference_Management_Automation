@@ -27,12 +27,12 @@ const Btn = ({ variant = 'primary', children, className, isDark, ...props }) => 
   return <button {...props} className={cls(base, v[variant], className)}>{children}</button>;
 };
 
-const ALLOCATION_API = 'http://localhost:4000/api/allocate-papers';
+const ALLOCATION_API = 'http://localhost:5000/api/allocate-papers';
 
 /* ═════════════════════════════════════════════════════════════
    MAIN COMPONENT
 ═════════════════════════════════════════════════════════════ */
-const PaperAllocation = ({ conf }) => {
+const PaperAllocation = ({ conf, onRefresh }) => {
   const { theme, user } = useApp();
   const isDark = theme === 'dark';
   const confId = conf?.conference_id ?? conf?.id;
@@ -77,27 +77,19 @@ const PaperAllocation = ({ conf }) => {
         }
       });
 
-    // Fetch Papers
+    // Fetch Papers - Removed title-based deduplication to allow multiple submissions
     supabase
       .from('paper')
       .select('paper_id, paper_title, abstract, file_url, keywords, research_area')
       .eq('conference_id', confId)
       .then(({ data }) => {
         if (data?.length) {
-          // Deduplicate by title
-          const paperMap = {};
-          data.forEach(p => {
-            const title = p.paper_title || 'Untitled Paper';
-            if (!paperMap[title]) {
-              paperMap[title] = {
-                id: p.paper_id,
-                name: title,
-                abstract: p.abstract || '',
-                file_url: p.file_url,
-              };
-            }
-          });
-          setDbPapers(Object.values(paperMap));
+          setDbPapers(data.map(p => ({
+            id: p.paper_id,
+            name: p.paper_title || 'Untitled Paper',
+            abstract: p.abstract || '',
+            file_url: p.file_url,
+          })));
         }
         setLoadingReviewers(false);
       });
@@ -215,7 +207,7 @@ const PaperAllocation = ({ conf }) => {
       setResult(data);
       setActiveTab('results');
     } catch (err) {
-      setError(err.message || 'Failed to connect to AI Engine. Make sure the backend is running on port 4000.');
+      setError(err.message || 'Failed to connect to AI Engine. Make sure the backend is running on port 5000.');
     }
     setLoading(false);
   };
@@ -249,18 +241,6 @@ const PaperAllocation = ({ conf }) => {
       if (manualPapersIndices.length > 0) {
         for (const mp of manualPapersIndices) {
           if (!mp.file) continue;
-          const { data: existingPaper } = await supabase
-            .from('paper')
-            .select('paper_id, file_url')
-            .eq('conference_id', confId)
-            .eq('paper_title', mp.name)
-            .maybeSingle();
-
-          if (existingPaper) {
-            updatedPapers[mp.idx] = { ...updatedPapers[mp.idx], dbId: existingPaper.paper_id, file_url: existingPaper.file_url };
-            continue;
-          }
-
           const fileName = `${mp.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase()}`;
           const filePath = `${confId}/${fileName}`;
           const { error: storageError } = await supabase.storage.from('papers').upload(filePath, mp.file, { upsert: true });
@@ -294,7 +274,16 @@ const PaperAllocation = ({ conf }) => {
       const { error: insError } = await supabase.from('paper_assignments').insert(toInsert);
       if (insError) throw insError;
 
+      // Reset paper status to 'pending' for all involved papers to allow consensus re-run
+      const uniquePaperIds = [...new Set(toInsert.map(a => a.paper_id))];
+      for (const pId of uniquePaperIds) {
+        await supabase
+          .from('paper')
+          .upsert({ paper_id: pId, status: 'pending', conference_id: confId }, { onConflict: 'paper_id' });
+      }
+
       setConfirmed(true);
+      if (onRefresh) onRefresh(); // Trigger refresh in parent
       alert(`Success: ${toInsert.length} assignments saved!`);
 
       /* ── Execute Email Automations (on_paper_assigned) ── */
