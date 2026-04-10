@@ -4,7 +4,8 @@ import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
 
 const ChatInterface = ({ conferenceId, teamId, chatType, title }) => {
-    const { user: currentUser } = useApp();
+    const { user: currentUser, theme } = useApp();
+    const isDark = theme === 'dark';
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
@@ -115,36 +116,40 @@ const ChatInterface = ({ conferenceId, teamId, chatType, title }) => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden shadow-xl">
+        <div className={`flex flex-col h-full border rounded-2xl overflow-hidden shadow-xl transition-colors duration-300 ${
+            isDark ? 'bg-[#0d1117] border-white/8' : 'bg-white border-zinc-200'
+        }`}>
             {/* Header */}
-            <div className="px-6 py-4 bg-white/5 border-b border-white/8 flex items-center justify-between">
+            <div className={`px-6 py-4 flex items-center justify-between border-b ${
+                isDark ? 'bg-white/5 border-white/8' : 'bg-zinc-50 border-zinc-200'
+            }`}>
                 <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-lg ${chatType === 'team' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-violet-500/10 text-violet-400'}`}>
                         {chatType === 'team' ? <Users size={18} /> : <Shield size={18} />}
                     </div>
                     <div>
-                        <h3 className="font-bold text-white text-sm">{title || 'Chat'}</h3>
+                        <h3 className={`font-bold text-sm ${isDark ? 'text-white' : 'text-zinc-900'}`}>{title || 'Chat'}</h3>
                         <div className="flex items-center gap-1.5 mt-0.5">
                             <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                            <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Live</span>
+                            <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Live</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4 scroll-smooth min-h-[400px]">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 scroll-smooth custom-scrollbar">
                 {loading ? (
                     <div className="flex flex-col items-center justify-center h-full gap-3 py-10 opacity-50">
                         <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                        <span className="text-xs text-slate-500 font-medium">Loading messages...</span>
+                        <span className="text-xs text-zinc-500 font-medium">Loading messages...</span>
                     </div>
                 ) : messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full py-10 text-center">
-                        <div className="p-4 rounded-full bg-white/5 border border-white/5 mb-4 opacity-50">
-                            <Hash size={32} className="text-slate-700" />
+                        <div className={`p-4 rounded-full border mb-4 opacity-50 ${isDark ? 'bg-white/5 border-white/5' : 'bg-zinc-50 border-zinc-200'}`}>
+                            <Hash size={32} className="text-zinc-400" />
                         </div>
-                        <p className="text-sm text-slate-500 font-medium">No messages yet.</p>
+                        <p className="text-sm text-zinc-500 font-medium">No messages yet.</p>
                     </div>
                 ) : (
                     messages.map((msg, idx) => {
@@ -159,10 +164,10 @@ const ChatInterface = ({ conferenceId, teamId, chatType, title }) => {
                             >
                                 {!isConsecutive && (
                                     <div className={`flex items-center gap-2 mb-1.5 px-1 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                                        <span className="text-[11px] font-bold text-slate-400">
+                                        <span className={`text-[11px] font-bold ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>
                                             {isMe ? 'You' : msg.sender_name || 'User'}
                                         </span>
-                                        <span className="text-[9px] text-slate-600 font-medium">
+                                        <span className={`text-[9px] font-medium ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>
                                             {formatTime(msg.created_at)}
                                         </span>
                                     </div>
@@ -170,7 +175,9 @@ const ChatInterface = ({ conferenceId, teamId, chatType, title }) => {
                                 <div
                                     className={`max-w-[85%] px-4 py-2 rounded-2xl text-sm leading-relaxed ${isMe
                                             ? 'bg-indigo-600 text-white rounded-tr-none shadow-lg'
-                                            : 'bg-white/5 text-slate-200 border border-white/8 rounded-tl-none'
+                                            : isDark 
+                                                ? 'bg-white/5 text-zinc-200 border border-white/8 rounded-tl-none'
+                                                : 'bg-zinc-100 text-zinc-800 border border-zinc-200 rounded-tl-none'
                                         }`}
                                 >
                                     {msg.message}
@@ -183,10 +190,12 @@ const ChatInterface = ({ conferenceId, teamId, chatType, title }) => {
             </div>
 
             {/* Input */}
-            <form onSubmit={handleSendMessage} className="p-4 bg-white/4 border-t border-white/8">
+            <form onSubmit={handleSendMessage} className={`p-4 border-t ${isDark ? 'bg-white/4 border-white/8' : 'bg-zinc-50/50 border-zinc-200'}`}>
                 <div className="relative flex items-center gap-3">
                     <input
-                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm text-white placeholder-slate-600 outline-none focus:border-indigo-500 transition-all"
+                        className={`flex-1 border rounded-xl px-5 py-3 text-sm placeholder-zinc-500 outline-none focus:border-indigo-500 transition-all ${
+                            isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-zinc-200 text-zinc-900'
+                        }`}
                         placeholder="Type your message..."
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}

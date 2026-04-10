@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
-import { mName, VOLUNTEER_ROLE_LABELS } from './Organizer/constants';
+import { cls, mName, VOLUNTEER_ROLE_LABELS } from './Organizer/constants';
 
 /* ── external dashboard components (unchanged) ── */
 import EmailComposer from './EmailComposer';
@@ -523,13 +523,13 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
       <AmbientBackground />
 
-      <div className="w-full flex relative z-10">
+      <div className="w-full h-screen flex relative z-10 overflow-hidden">
 
         {/* ── SIDEBAR ── */}
         <Sidebar nav={nav} section={section} setSection={setSection} isOrganizer={isOrganizer} roleLabel={roleLabel} />
 
         {/* ── MAIN CONTENT ── */}
-        <main className="flex-1 p-8 relative min-h-screen">
+        <main className={cls('flex-1 p-8 relative custom-scrollbar', section === 'chat' ? 'overflow-hidden' : 'overflow-y-auto')}>
 
           {section === 'overview' && (
             <OverviewSection

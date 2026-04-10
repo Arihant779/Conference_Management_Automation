@@ -21,14 +21,14 @@ const ChatSection = ({
   }, [showLeaderHub, activeChatTeamId, visibleTeams, setActiveChatTeamId]);
 
   return (
-    <AnimatedSection className="space-y-6 h-[calc(100vh-160px)] flex flex-col">
+    <AnimatedSection className="flex flex-col h-full gap-4 overflow-hidden">
       {/* Chat Type Selector */}
-      <div className="flex items-center gap-2 flex-wrap shrink-0">
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 shrink-0 custom-scrollbar whitespace-nowrap">
         <div
           className="flex items-center gap-1 p-1 rounded-xl border transition-colors duration-300"
           style={{
-            background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(15,23,42,0.03)',
-            borderColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.08)',
+            background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(15,23,42,0.04)',
+            borderColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.1)',
           }}
         >
           {showLeaderHub && (

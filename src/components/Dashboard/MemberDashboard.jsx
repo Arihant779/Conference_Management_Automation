@@ -45,10 +45,10 @@ const LoadingRows = () => (
   </div>
 );
 
-const Empty = ({ icon: Icon, msg }) => (
-  <div className="py-16 text-center border border-dashed border-white/10 rounded-2xl">
-    <Icon size={28} className="text-slate-700 mx-auto mb-3" />
-    <p className="text-slate-500 text-sm">{msg}</p>
+const Empty = ({ icon: Icon, msg, isDark }) => (
+  <div className={`py-16 text-center border border-dashed rounded-2xl ${isDark ? 'border-white/10' : 'border-zinc-300'}`}>
+    <Icon size={28} className={`${isDark ? 'text-slate-700' : 'text-zinc-300'} mx-auto mb-3`} />
+    <p className={`${isDark ? 'text-slate-500' : 'text-zinc-500'} text-sm`}>{msg}</p>
   </div>
 );
 
@@ -230,7 +230,7 @@ const MemberDashboard = ({ conf, onBack }) => {
             <p className="text-slate-500 text-sm mt-0.5">Teams you are collaborating in</p>
           </div>
           {loadingTeams ? <LoadingRows /> : myTeams.length === 0 ? (
-            <Empty icon={Layers} msg="You are not part of any teams yet." />
+            <Empty icon={Layers} msg="You are not part of any teams yet." isDark={isDark} />
           ) : (
             <div className="space-y-3">
               {myTeams.map(team => {
@@ -252,13 +252,13 @@ const MemberDashboard = ({ conf, onBack }) => {
                     </div>
 
                     {isOpen && (
-                      <div className="border-t border-white/5 px-5 py-5 space-y-6 bg-black/20">
+                      <div className={`border-t px-5 py-5 space-y-6 ${isDark ? 'border-white/5 bg-black/20' : 'border-zinc-100 bg-zinc-50/50'}`}>
                         <div>
-                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-3">Team Members</p>
+                          <p className={`text-[10px] font-black uppercase tracking-widest mb-3 ${isDark ? 'text-slate-600' : 'text-zinc-400'}`}>Team Members</p>
                           <div className="flex flex-wrap gap-2">
                             {teamMembers.map(m => (
-                              <div key={m.id} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 hover:border-amber-500/30 transition-all">
-                                <span className="text-xs text-slate-300 font-medium">{mName(m)}</span>
+                              <div key={m.id} className={`flex items-center gap-2 border rounded-lg px-2.5 py-1.5 transition-all ${isDark ? 'bg-white/5 border-white/10 hover:border-amber-500/30' : 'bg-white border-zinc-200 hover:border-amber-500/30'}`}>
+                                <span className={`text-xs font-medium ${isDark ? 'text-slate-300' : 'text-zinc-700'}`}>{mName(m)}</span>
                                 <span className={cls('text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase', ROLE_STYLE[m.role] || ROLE_STYLE.member)}>{m.role}</span>
                                 {globalRatings[m.user_id] && <RatingBadge avg={globalRatings[m.user_id].avg} count={globalRatings[m.user_id].count} size={9} />}
                               </div>
@@ -300,7 +300,7 @@ const MemberDashboard = ({ conf, onBack }) => {
             <h2 className={`text-2xl font-bold transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>My Tasks</h2>
             <p className="text-slate-500 text-sm mt-0.5">Tasks assigned to you across all teams</p>
           </div>
-          {loadingTasks ? <LoadingRows /> : myTasks.length === 0 ? <Empty icon={CheckSquare} msg="All caught up!" /> : (
+          {loadingTasks ? <LoadingRows /> : myTasks.length === 0 ? <Empty icon={CheckSquare} msg="All caught up!" isDark={isDark} /> : (
             <div className="space-y-3">
               {myTasks.map(task => (
                 <div key={task.id} className={`backdrop-blur-md border rounded-xl px-5 py-4 flex items-center gap-4 transition-all group ${isDark ? 'bg-[#0d1117]/60 border-white/10 hover:border-amber-500/30' : 'bg-white border-zinc-200 hover:border-amber-500/30 shadow-sm'
@@ -332,8 +332,8 @@ const MemberDashboard = ({ conf, onBack }) => {
       <div className="w-full h-screen flex relative z-10 overflow-hidden">
         <Sidebar nav={nav} section={section} setSection={setSection} isOrganizer={false} roleLabel={myMember?.role || 'Member'} onBack={onBack} />
 
-        <main className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-          <div className="max-w-6xl mx-auto">
+        <main className={cls('flex-1 p-8 custom-scrollbar', section === 'chat' ? 'overflow-hidden' : 'overflow-y-auto')}>
+          <div className={cls('mx-auto', section === 'chat' ? 'w-full h-full' : 'max-w-6xl')}>
             <AnimatePresence mode="wait">
               <motion.div
                 key={section}
@@ -341,7 +341,7 @@ const MemberDashboard = ({ conf, onBack }) => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                className="pb-20"
+                className={cls('h-full', section !== 'chat' && 'pb-20')}
               >
                 {renderContent()}
               </motion.div>
