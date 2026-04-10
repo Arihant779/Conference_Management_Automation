@@ -9,144 +9,15 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
+import AmbientBackground from '../Common/AmbientBackground';
+import GlowCard from '../Common/GlowCard';
+import MagneticButton from '../Common/MagneticButton';
+import ThemeToggle from '../Common/ThemeToggle';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // DESIGN SYSTEM — Premium Ambient Background
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const AmbientBackground = ({ theme = 'dark' }) => {
-  const isDark = theme === 'dark';
-  return (
-    <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none transition-colors duration-700">
-      {/* Base Layer */}
-      <div className={`absolute inset-0 transition-colors duration-700 ${isDark ? 'bg-[#04070D]' : 'bg-[#F8FAFC]'}`} />
-
-      {/* Top-left soft glow */}
-      <div className="absolute -top-40 -left-40 w-[700px] h-[700px] rounded-full opacity-20 transition-all duration-700"
-        style={{ background: isDark ? 'radial-gradient(circle, rgba(251,191,36,0.05) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(251,191,36,0.15) 0%, transparent 70%)' }} />
-
-      {/* Bottom-right cool glow */}
-      <div className="absolute -bottom-60 -right-40 w-[800px] h-[800px] rounded-full opacity-15 transition-all duration-700"
-        style={{ background: isDark ? 'radial-gradient(circle, rgba(148,163,184,0.04) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%)' }} />
-
-      {/* Center soft wash */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[600px] rounded-full opacity-[0.06] transition-all duration-700"
-        style={{ background: isDark ? 'radial-gradient(ellipse, rgba(251,191,36,0.06) 0%, transparent 70%)' : 'radial-gradient(ellipse, rgba(251,191,36,0.12) 0%, transparent 70%)' }} />
-
-      {/* Subtle animated floating orb */}
-      <motion.div
-        animate={{ y: [0, -20, 0], x: [0, 15, 0] }}
-        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-[20%] right-[30%] w-[400px] h-[400px] rounded-full opacity-[0.04] transition-all duration-700"
-        style={{ background: isDark ? 'radial-gradient(circle, rgba(148,163,184,0.15) 0%, transparent 60%)' : 'radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 60%)' }}
-      />
-
-      {/* Noise texture for premium grain */}
-      <div className={`absolute inset-0 transition-opacity duration-700 ${isDark ? 'opacity-[0.025]' : 'opacity-[0.015]'}`}
-        style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 256 256%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E")' }} />
-
-      {/* Very subtle grid */}
-      <div className={`absolute inset-0 transition-all duration-700 ${isDark ? 'opacity-[0.02]' : 'opacity-[0.04]'}`}
-        style={{
-          backgroundImage: isDark 
-            ? 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)'
-            : 'linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px)',
-          backgroundSize: '64px 64px',
-          maskImage: 'radial-gradient(ellipse at center, black 30%, transparent 70%)',
-          WebkitMaskImage: 'radial-gradient(ellipse at center, black 30%, transparent 70%)',
-        }} />
-    </div>
-  );
-};
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// DESIGN SYSTEM — Glow Card Wrapper (3D tilt + border glow)
-// ═══════════════════════════════════════════════════════════════════════════════
-
-const GlowCard = ({ children, theme = 'dark', className = '', glowColor = 'rgba(251,191,36,0.1)', ...props }) => {
-  const isDark = theme === 'dark';
-  const ref = useRef(null);
-  const mouseX = useMotionValue(0.5);
-  const mouseY = useMotionValue(0.5);
-
-  const handleMouseMove = useCallback((e) => {
-    if (!ref.current) return;
-    const { left, top, width, height } = ref.current.getBoundingClientRect();
-    mouseX.set((e.clientX - left) / width);
-    mouseY.set((e.clientY - top) / height);
-  }, [mouseX, mouseY]);
-
-  const handleMouseLeave = useCallback(() => {
-    mouseX.set(0.5);
-    mouseY.set(0.5);
-  }, [mouseX, mouseY]);
-
-  const rotateX = useSpring(useTransform(mouseY, [0, 1], [3, -3]), { stiffness: 200, damping: 20 });
-  const rotateY = useSpring(useTransform(mouseX, [0, 1], [-3, 3]), { stiffness: 200, damping: 20 });
-
-  const glowBackground = useMotionTemplate`
-    radial-gradient(
-      600px circle at ${useTransform(mouseX, v => v * 100)}% ${useTransform(mouseY, v => v * 100)}%,
-      ${glowColor},
-      transparent 70%
-    )
-  `;
-
-  return (
-    <motion.div
-      ref={ref}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      style={{ rotateX, rotateY, transformPerspective: 1000, transformStyle: 'preserve-3d' }}
-      className={`group relative ${className}`}
-      {...props}
-    >
-      {/* Border glow on hover */}
-      <motion.div
-        className={`pointer-events-none absolute -inset-px rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-0 ${isDark ? '' : 'mix-blend-multiply'}`}
-        style={{ background: glowBackground }}
-      />
-      {children}
-    </motion.div>
-  );
-};
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// DESIGN SYSTEM — Magnetic Button
-// ═══════════════════════════════════════════════════════════════════════════════
-
-const MagneticButton = ({ children, className, onClick }) => {
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const ref = useRef(null);
-
-  const handleMouse = (e) => {
-    if (!ref.current) return;
-    const { clientX, clientY } = e;
-    const { height, width, left, top } = ref.current.getBoundingClientRect();
-    const middleX = clientX - (left + width / 2);
-    const middleY = clientY - (top + height / 2);
-    x.set(middleX * 0.15);
-    y.set(middleY * 0.15);
-  };
-
-  const reset = () => { x.set(0); y.set(0); };
-
-  return (
-    <motion.button
-      ref={ref}
-      onMouseMove={handleMouse}
-      onMouseLeave={reset}
-      style={{ x, y }}
-      whileHover={{ scale: 1.03 }}
-      whileTap={{ scale: 0.97 }}
-      onClick={onClick}
-      className={className}
-    >
-      {children}
-    </motion.button>
-  );
-};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // DATA — Volunteer Preferences
@@ -874,16 +745,8 @@ const StatCard = ({ icon: Icon, label, value, color, delay = 0, theme = 'dark' }
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const UserDashboard = ({ onSelectConf, onCreateConf }) => {
-  const { user, conferences, logout, fetchConferences } = useApp();
-
-  const [theme, setTheme] = useState(() => localStorage.getItem('confhub-theme') || 'dark');
+  const { user, conferences, logout, fetchConferences, theme, toggleTheme } = useApp();
   const isDark = theme === 'dark';
-
-  const toggleTheme = () => {
-    const next = isDark ? 'light' : 'dark';
-    setTheme(next);
-    localStorage.setItem('confhub-theme', next);
-  };
 
   const [activeTab, setActiveTab] = useState('my');
   const [currentSection, setCurrentSection] = useState('conferences');
@@ -1024,25 +887,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
             </motion.div>
 
             {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              className={`p-2.5 rounded-xl transition-all duration-300 ${isDark 
-                ? 'text-zinc-500 hover:text-amber-400 hover:bg-amber-500/10' 
-                : 'text-zinc-400 hover:text-amber-600 hover:bg-amber-600/10'}`}
-              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            >
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={theme}
-                  initial={{ opacity: 0, rotate: -90, scale: 0.8 }}
-                  animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                  exit={{ opacity: 0, rotate: 90, scale: 0.8 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {isDark ? <Sun size={17} /> : <Moon size={17} />}
-                </motion.div>
-              </AnimatePresence>
-            </button>
+            <ThemeToggle />
 
             {/* Notifications */}
             <button 

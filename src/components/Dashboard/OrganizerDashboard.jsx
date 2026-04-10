@@ -14,8 +14,8 @@ import EmailSettings from './EmailSettings';
 import FeedbackManager from './FeedbackManager';
 
 /* ── modular sub-components ── */
-import { CinematicBackground } from './Organizer/components/common/Effects';
 import Sidebar from './Organizer/components/Sidebar';
+import AmbientBackground from '../Common/AmbientBackground';
 import OverviewSection from './Organizer/components/sections/OverviewSection';
 import PapersSection from './Organizer/components/sections/PapersSection';
 import MembersSection from './Organizer/components/sections/MembersSection';
@@ -37,7 +37,8 @@ import DeleteConferenceModal from './Organizer/components/Modals/DeleteConferenc
    MAIN ORGANIZER DASHBOARD — State Orchestrator
 ═══════════════════════════════════════════════════════════════════════════ */
 const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
-  const { user, permissions, userRoles } = useApp();
+  const { user, permissions, userRoles, theme } = useApp();
+  const isDark = theme === 'dark';
   const confId = conf.conference_id || conf.id;
 
   const [section, setSection]         = useState('overview');
@@ -397,9 +398,9 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
      RENDER
   ══════════════════════════════════════════════════════════ */
   return (
-    <div className="relative min-h-screen text-slate-200 selection:bg-amber-500/30" style={{ background: '#04070D', fontFamily: "'Space Grotesk', 'Inter', system-ui, sans-serif" }}>
+    <div className={`relative min-h-screen transition-colors duration-500 selection:bg-amber-500/30 ${isDark ? 'text-slate-200' : 'text-zinc-800'}`} style={{ fontFamily: "'Space Grotesk', 'Inter', system-ui, sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-      <CinematicBackground />
+      <AmbientBackground />
 
       <div className="w-full flex relative z-10">
 

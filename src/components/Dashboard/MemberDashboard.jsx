@@ -7,8 +7,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
 import MemberNotifications from './MemberNotifications';
-import { CinematicBackground } from './Organizer/components/common/Effects';
 import Sidebar from './Organizer/components/Sidebar';
+import AmbientBackground from '../Common/AmbientBackground';
 
 /* ── modular sub-components (Reused from Organizer) ── */
 import OverviewSection from './Organizer/components/sections/OverviewSection';
@@ -66,7 +66,8 @@ const RatingBadge = ({ avg, count, size = 10 }) => {
    MAIN MEMBER DASHBOARD
 ═══════════════════════════════════════════════════════════════════════════ */
 const MemberDashboard = ({ conf, onBack }) => {
-  const { user } = useApp();
+  const { user, theme } = useApp();
+  const isDark = theme === 'dark';
   const confId = conf.conference_id || conf.id;
 
   const [section, setSection]         = useState('overview');
@@ -207,7 +208,7 @@ const MemberDashboard = ({ conf, onBack }) => {
       return (
         <div className="space-y-8 animate-in slide-in-from-bottom-8">
           <div>
-            <h2 className="text-2xl font-bold text-white">My Teams</h2>
+            <h2 className={`text-2xl font-bold transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>My Teams</h2>
             <p className="text-slate-500 text-sm mt-0.5">Teams you are collaborating in</p>
           </div>
           {loadingTeams ? <LoadingRows /> : myTeams.length === 0 ? (
@@ -220,11 +221,15 @@ const MemberDashboard = ({ conf, onBack }) => {
                 const teamTasks   = tasks.filter(t => t.team_id === team.id);
 
                 return (
-                  <div key={team.id} className="bg-[#0d1117]/60 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden">
-                    <div className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => setExpandedTeam(isOpen ? null : team.id)}>
+                  <div key={team.id} className={`backdrop-blur-md border transition-all duration-300 rounded-xl overflow-hidden ${
+                    isDark ? 'bg-[#0d1117]/60 border-white/10' : 'bg-white border-zinc-200 shadow-sm'
+                  }`}>
+                    <div className={`flex items-center gap-3 px-5 py-4 cursor-pointer transition-colors ${
+                      isDark ? 'hover:bg-white/5' : 'hover:bg-zinc-50'
+                    }`} onClick={() => setExpandedTeam(isOpen ? null : team.id)}>
                       <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: team.color }} />
                       <div className="flex-1">
-                        <div className="font-semibold text-white text-sm">{team.name}</div>
+                        <div className={`font-semibold text-sm transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>{team.name}</div>
                         {team.description && <div className="text-xs text-slate-500 mt-0.5">{team.description}</div>}
                       </div>
                       <ChevronDown size={15} className={cls('text-slate-600 transition-transform', isOpen && 'rotate-180')} />
@@ -246,15 +251,17 @@ const MemberDashboard = ({ conf, onBack }) => {
                         </div>
 
                         <div>
-                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-3">Team Tasks ({teamTasks.length})</p>
+                          <p className={`text-[10px] font-black uppercase tracking-widest mb-3 ${isDark ? 'text-slate-600' : 'text-zinc-400'}`}>Team Tasks ({teamTasks.length})</p>
                           {teamTasks.length === 0 ? <p className="text-xs text-slate-600 italic">No tasks assigned.</p> : (
                             <div className="space-y-2">
                               {teamTasks.map(t => (
-                                <div key={t.id} className="flex items-center gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/5">
+                                <div key={t.id} className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
+                                  isDark ? 'bg-white/[0.02] border-white/5' : 'bg-zinc-50 border-zinc-100'
+                                }`}>
                                    <div onClick={() => toggleTask(t)} className={cls('w-4 h-4 rounded-full border-2 flex items-center justify-center cursor-pointer transition-all', t.status === 'done' ? 'bg-emerald-500 border-emerald-500' : 'border-slate-700 hover:border-amber-500')}>
                                       {t.status === 'done' && <CheckCircle size={10} className="text-white" />}
                                    </div>
-                                   <span className={cls('text-xs flex-1', t.status === 'done' ? 'text-slate-600 line-through' : 'text-slate-300')}>{t.title}</span>
+                                   <span className={cls('text-xs flex-1', t.status === 'done' ? 'text-slate-600 line-through' : (isDark ? 'text-slate-300' : 'text-zinc-800'))}>{t.title}</span>
                                 </div>
                               ))}
                             </div>
@@ -275,24 +282,26 @@ const MemberDashboard = ({ conf, onBack }) => {
       return (
         <div className="space-y-6 animate-in slide-in-from-bottom-8">
           <div>
-            <h2 className="text-2xl font-bold text-white">My Tasks</h2>
+            <h2 className={`text-2xl font-bold transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>My Tasks</h2>
             <p className="text-slate-500 text-sm mt-0.5">Tasks assigned to you across all teams</p>
           </div>
           {loadingTasks ? <LoadingRows /> : myTasks.length === 0 ? <Empty icon={CheckSquare} msg="All caught up!" /> : (
             <div className="space-y-3">
               {myTasks.map(task => (
-                <div key={task.id} className="bg-[#0d1117]/60 backdrop-blur-md border border-white/10 rounded-xl px-5 py-4 flex items-center gap-4 hover:border-amber-500/30 transition-all group">
+                <div key={task.id} className={`backdrop-blur-md border rounded-xl px-5 py-4 flex items-center gap-4 transition-all group ${
+                  isDark ? 'bg-[#0d1117]/60 border-white/10 hover:border-amber-500/30' : 'bg-white border-zinc-200 hover:border-amber-500/30 shadow-sm'
+                }`}>
                   <div onClick={() => toggleTask(task)} className={cls('w-5 h-5 rounded-full border-2 flex items-center justify-center cursor-pointer shrink-0 transition-all', task.status === 'done' ? 'bg-emerald-500 border-emerald-500' : 'border-slate-700 hover:border-amber-500')}>
                     {task.status === 'done' && <CheckCircle size={12} className="text-white" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className={cls('text-sm font-bold', task.status === 'done' ? 'line-through text-slate-600' : 'text-slate-100 group-hover:text-amber-400 transition-colors')}>{task.title}</div>
+                    <div className={cls('text-sm font-bold transition-colors', task.status === 'done' ? 'line-through text-slate-600' : (isDark ? 'text-slate-100 group-hover:text-amber-400' : 'text-zinc-800 group-hover:text-amber-600'))}>{task.title}</div>
                     <div className="flex items-center gap-3 mt-1.5">
-                      {task.team_id && <span className="text-[10px] text-slate-500 flex items-center gap-1 font-bold uppercase tracking-wider"><Layers size={10} />{teamName(task.team_id)}</span>}
-                      {task.due_date && <span className="text-[10px] text-slate-500 flex items-center gap-1 font-bold uppercase tracking-wider"><Clock size={10} />{new Date(task.due_date).toLocaleDateString()}</span>}
+                      {task.team_id && <span className="text-[10px] text-zinc-500 flex items-center gap-1 font-bold uppercase tracking-wider"><Layers size={10} />{teamName(task.team_id)}</span>}
+                      {task.due_date && <span className="text-[10px] text-zinc-500 flex items-center gap-1 font-bold uppercase tracking-wider"><Clock size={10} />{new Date(task.due_date).toLocaleDateString()}</span>}
                     </div>
                   </div>
-                  <span className={cls('text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded border', PRIORITY_STYLE[task.priority || 'medium'])}>{task.priority}</span>
+                  <span className={cls('text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded border transition-colors', PRIORITY_STYLE[task.priority || 'medium'])}>{task.priority}</span>
                 </div>
               ))}
             </div>
@@ -303,8 +312,8 @@ const MemberDashboard = ({ conf, onBack }) => {
   };
 
   return (
-    <div className="relative min-h-screen text-slate-200 selection:bg-amber-500/30 overflow-hidden" style={{ background: '#04070D', fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
-      <CinematicBackground />
+    <div className={`relative min-h-screen transition-colors duration-500 selection:bg-amber-500/30 overflow-hidden ${isDark ? 'text-slate-200' : 'text-zinc-800'}`} style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
+      <AmbientBackground />
 
       <div className="w-full h-screen flex relative z-10 overflow-hidden">
         <Sidebar nav={nav} section={section} setSection={setSection} isOrganizer={false} onBack={onBack} />

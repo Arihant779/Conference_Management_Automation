@@ -6,7 +6,8 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
-import { CinematicBackground } from './Organizer/components/common/Effects';
+import Sidebar from './Organizer/components/Sidebar';
+import AmbientBackground from '../Common/AmbientBackground';
 
 /* ─── helpers ──────────────────────────────────────────────────────────── */
 const cls = (...c) => c.filter(Boolean).join(' ');
@@ -493,12 +494,18 @@ const PaperCard = ({ paper, onSlideUploaded, onTimeSaved }) => {
    MAIN PRESENTER DASHBOARD
 ═══════════════════════════════════════════════════════════════════════════ */
 const PresenterDashboard = ({ conf, onBack }) => {
-  const { user } = useApp();
+  const { user, theme } = useApp();
+  const isDark = theme === 'dark';
   const confId = conf?.conference_id ?? conf?.id;
 
   const [papers,  setPapers]  = useState([]);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState('');
+  const [section, setSection] = useState('overview');
+
+  const nav = [
+    { id: 'overview', label: 'My Submissions', icon: FileText },
+  ];
 
   /* ── fetch this presenter's papers for this conference ─────────────── */
   const fetchPapers = useCallback(async () => {
@@ -552,31 +559,37 @@ const PresenterDashboard = ({ conf, onBack }) => {
   const withSlides = papers.filter(p => p.slide_url).length;
 
   return (
-    <div className="relative min-h-screen text-slate-200 selection:bg-amber-500/30" style={{ background: '#04070D', fontFamily: "'Space Grotesk', 'Inter', system-ui, sans-serif" }}>
+    <div className={`relative min-h-screen transition-colors duration-500 selection:bg-amber-500/30 overflow-hidden ${isDark ? 'text-slate-200' : 'text-zinc-800'}`} style={{ fontFamily: "'Space Grotesk', 'Inter', system-ui, sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-      <CinematicBackground />
+      <AmbientBackground />
 
-      <div className="max-w-5xl mx-auto p-8 space-y-8 relative z-10">
+      <div className="w-full h-screen flex relative z-10 overflow-hidden">
+        <Sidebar nav={nav} section={section} setSection={setSection} isOrganizer={false} onBack={onBack} />
+
+        <main className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+          <div className="max-w-5xl mx-auto space-y-8">
 
         {/* ── Page title ── */}
         <div>
-          <h2 className="text-2xl font-bold text-white">Presenter Dashboard</h2>
+          <h2 className={`text-2xl font-bold transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>Presenter Dashboard</h2>
           <p className="text-slate-500 text-sm mt-1">
             Manage your submissions, upload slides, and set your presentation time preference.
           </p>
         </div>
 
         {/* ── Conference info strip ── */}
-        <div className="bg-[#0d1117] border border-white/6 rounded-xl p-4 flex items-center gap-6 flex-wrap">
+        <div className={`border transition-all duration-300 rounded-xl p-4 flex items-center gap-6 flex-wrap ${
+          isDark ? 'bg-[#0d1117] border-white/6' : 'bg-white border-zinc-200 shadow-sm'
+        }`}>
           <div>
-            <div className="text-[10px] text-slate-600 uppercase tracking-wider font-bold mb-0.5">Conference</div>
-            <div className="text-sm font-semibold text-white">{conf.title}</div>
+            <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Conference</div>
+            <div className={`text-sm font-semibold transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>{conf.title}</div>
           </div>
           {conf.start_date && (
             <div>
-              <div className="text-[10px] text-slate-600 uppercase tracking-wider font-bold mb-0.5">Date</div>
-              <div className="text-sm text-slate-300 flex items-center gap-1.5">
-                <Calendar size={12} className="text-slate-600" />
+              <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Date</div>
+              <div className={`text-sm flex items-center gap-1.5 transition-colors ${isDark ? 'text-slate-300' : 'text-zinc-600'}`}>
+                <Calendar size={12} className="text-slate-500" />
                 {new Date(conf.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                 {conf.end_date && conf.end_date !== conf.start_date && (
                   <> – {new Date(conf.end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</>
@@ -596,16 +609,18 @@ const PresenterDashboard = ({ conf, onBack }) => {
         {!loading && papers.length > 0 && (
           <div className="grid grid-cols-3 gap-4">
             {[
-              { label: 'Total Submissions', value: papers.length, color: 'text-slate-200', icon: FileText },
+              { label: 'Total Submissions', value: papers.length, color: isDark ? 'text-slate-200' : 'text-zinc-800', icon: FileText },
               { label: 'Accepted',          value: accepted,       color: 'text-emerald-400', icon: CheckCircle },
               { label: 'Slides Uploaded',   value: withSlides,     color: 'text-blue-400', icon: Presentation },
             ].map(({ label, value, color, icon: Icon }) => (
-              <div key={label} className="bg-[#0d1117] border border-white/6 rounded-xl p-4">
+              <div key={label} className={`border rounded-xl p-4 transition-all duration-300 ${
+                isDark ? 'bg-[#0d1117] border-white/6' : 'bg-white border-zinc-200 shadow-sm'
+              }`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] text-slate-600 uppercase tracking-wider font-bold">{label}</span>
+                  <span className="text-[10px] text-slate-500 uppercase tracking-wider font-extrabold">{label}</span>
                   <Icon size={14} className={cls(color, 'opacity-60')} />
                 </div>
-                <div className={cls('text-2xl font-bold', color)}>{value}</div>
+                <div className={cls('text-2xl font-black transition-colors', color)}>{value}</div>
               </div>
             ))}
           </div>
@@ -680,8 +695,10 @@ const PresenterDashboard = ({ conf, onBack }) => {
 
         {/* ── Guide section ── */}
         {!loading && papers.length > 0 && (
-          <div className="bg-[#0d1117] border border-white/6 rounded-2xl p-5">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Presenter Checklist</h4>
+          <div className={`border rounded-2xl p-5 transition-all duration-300 ${
+            isDark ? 'bg-[#0d1117] border-white/6' : 'bg-white border-zinc-200 shadow-sm'
+          }`}>
+            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Presenter Checklist</h4>
             <div className="space-y-2.5">
               {[
                 { done: papers.length > 0,                label: 'Submit your research paper',           sub: 'Paper received by the conference' },
@@ -706,9 +723,11 @@ const PresenterDashboard = ({ conf, onBack }) => {
           </div>
         )}
 
-      </div>
+        </div>
+      </main>
     </div>
-  );
+  </div>
+);
 };
 
 export default PresenterDashboard;

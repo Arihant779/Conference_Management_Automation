@@ -8,15 +8,14 @@ import MemberDashboard from './MemberDashboard';
 import ConferencePage from './ConferencePage';
 
 const RoleBasedDashboard = ({ conf, role: propRole, onBack, onSwitchView }) => {
-  const { user, permissions, userRoles, loadingPermissions } = useApp();
-
-
+  const { user, permissions, userRoles, loadingPermissions, theme } = useApp();
+  const isDark = theme === 'dark';
 
   // Handle loading state from AppContext
   if (loadingPermissions) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#080b11]">
-        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      <div className={`flex items-center justify-center min-h-screen transition-colors duration-500 ${isDark ? 'bg-[#080b11]' : 'bg-[#F8FAFC]'}`}>
+        <div className={`w-8 h-8 border-2 border-t-transparent rounded-full animate-spin ${isDark ? 'border-amber-500' : 'border-amber-600'}`} />
       </div>
     );
   }
