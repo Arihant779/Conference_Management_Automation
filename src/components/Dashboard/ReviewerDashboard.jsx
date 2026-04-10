@@ -7,6 +7,8 @@ import FeedbackForm from './FeedbackForm';
 import Sidebar from './Organizer/components/Sidebar';
 import AmbientBackground from '../Common/AmbientBackground';
 
+const cls = (...c) => c.filter(Boolean).join(' ');
+
 const ReviewerDashboard = ({ conf, onBack }) => {
   const { user, theme } = useApp();
   const isDark = theme === 'dark';
@@ -28,7 +30,6 @@ const ReviewerDashboard = ({ conf, onBack }) => {
   const [submitting, setSubmitting] = useState(null);
   const [section, setSection] = useState('papers');
 
-  const cls = (...c) => c.filter(Boolean).join(' ');
 
   const nav = [
     { id: 'papers', label: 'Review Papers', icon: FileText, badge: pendingPapers.length || null },
@@ -257,7 +258,8 @@ const ReviewerDashboard = ({ conf, onBack }) => {
                       <label className="text-xs text-slate-500 font-semibold mb-1.5 block">Reviewer Expertise Description</label>
                       <textarea
                         placeholder="Describe your areas of expertise..."
-                        className="w-full bg-white border border-white/20 rounded-xl p-3.5 text-sm h-24 focus:border-indigo-500 outline-none resize-none text-black font-medium"
+                        className={cls("w-full border rounded-xl p-3.5 text-sm h-24 focus:border-indigo-500 outline-none resize-none font-medium transition-all", 
+                          isDark ? "bg-white/5 border-white/20 text-white" : "bg-white border-zinc-200 text-zinc-900 shadow-sm focus:ring-4 focus:ring-indigo-500/5")}
                         value={localExpertise}
                         onChange={e => setLocalExpertise(e.target.value)}
                       />
@@ -269,16 +271,17 @@ const ReviewerDashboard = ({ conf, onBack }) => {
                         <p className="text-[10px] text-slate-600 mt-0.5">How many papers at most?</p>
                       </div>
                       <div className="flex items-center gap-3">
-                        <button onClick={() => setMaxPapers(m => Math.max(1, m - 1))} className={`w-8 h-8 rounded-lg border transition-all ${isDark ? 'bg-white/5 border-white/10 text-slate-400 hover:text-white' : 'bg-zinc-50 border-zinc-200 text-zinc-500 hover:text-zinc-900'}`}>-</button>
-                        <span className={`font-bold text-lg w-6 text-center transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>{maxPapers}</span>
-                        <button onClick={() => setMaxPapers(m => Math.min(20, m + 1))} className={`w-8 h-8 rounded-lg border transition-all ${isDark ? 'bg-white/5 border-white/10 text-slate-400 hover:text-white' : 'bg-zinc-50 border-zinc-200 text-zinc-500 hover:text-zinc-900'}`}>+</button>
+                        <button onClick={() => setMaxPapers(m => Math.max(1, m - 1))} className={cls("w-8 h-8 rounded-lg border transition-all", isDark ? "bg-white/5 border-white/10 text-slate-400 hover:text-white" : "bg-zinc-50 border-zinc-200 text-zinc-500 hover:text-zinc-900")}>-</button>
+                        <span className={cls("font-bold text-lg w-6 text-center transition-colors", isDark ? "text-white" : "text-zinc-900")}>{maxPapers}</span>
+                        <button onClick={() => setMaxPapers(m => Math.min(20, m + 1))} className={cls("w-8 h-8 rounded-lg border transition-all", isDark ? "bg-white/5 border-white/10 text-slate-400 hover:text-white" : "bg-zinc-50 border-zinc-200 text-zinc-500 hover:text-zinc-900")}>+</button>
                       </div>
                     </div>
 
                     <div className="flex gap-3">
                       {expertise && (
                         <button
-                          className="flex-1 py-2.5 bg-white/5 border border-white/10 rounded-xl text-slate-300 hover:text-white"
+                          className={cls("flex-1 py-2.5 border rounded-xl font-bold text-xs transition-all", 
+                            isDark ? "bg-white/5 border-white/10 text-slate-300 hover:text-white" : "bg-white border-zinc-200 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50")}
                           onClick={() => { setLocalExpertise(expertise); setIsEditing(false); }}
                         >
                           Cancel
@@ -287,7 +290,8 @@ const ReviewerDashboard = ({ conf, onBack }) => {
                       <button
                         onClick={savePrefs}
                         disabled={savingPrefs}
-                        className="flex-[2] py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                        className={cls("flex-[2] py-2.5 rounded-xl text-xs font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2", 
+                          isDark ? "bg-indigo-600 hover:bg-indigo-500 text-white" : "bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20 active:scale-95")}
                       >
                         {savingPrefs ? "Saving..." : "Apply Preferences"}
                       </button>
@@ -305,7 +309,7 @@ const ReviewerDashboard = ({ conf, onBack }) => {
                 <div className="space-y-6">
                   {pendingPapers.length > 0 && (
                     <div className="space-y-4">
-                      <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Pending Review</h3>
+                      <h3 className={cls("text-xs font-bold uppercase tracking-widest", isDark ? "text-slate-500" : "text-zinc-400")}>Pending Review</h3>
                       {pendingPapers.map(paper => (
                         <PaperCard
                           key={paper.id}
@@ -322,7 +326,7 @@ const ReviewerDashboard = ({ conf, onBack }) => {
 
                   {reviewedPapers.length > 0 && (
                     <div className="space-y-4">
-                      <h3 className="text-xs font-bold uppercase tracking-widest text-slate-600">Completed Reviews</h3>
+                      <h3 className={cls("text-xs font-bold uppercase tracking-widest", isDark ? "text-slate-600" : "text-zinc-500")}>Completed Reviews</h3>
                       {reviewedPapers.map(paper => (
                         <PaperCard
                           key={paper.id}
@@ -339,7 +343,7 @@ const ReviewerDashboard = ({ conf, onBack }) => {
                   )}
                 </div>
               ) : (
-                <div className="py-24 text-center border-2 border-dashed border-white/6 rounded-2xl text-slate-500">
+                <div className={cls("py-24 text-center border-2 border-dashed rounded-2xl text-slate-500", isDark ? "border-white/6" : "border-zinc-200")}>
                   No papers pending review.
                 </div>
               )}
@@ -452,7 +456,8 @@ const PaperCard = ({ paper, isExpanded, onToggle, submitting, onReview, isReview
           )}
         </div>
       </div>
-        <div className={`border-t p-5 space-y-5 transition-colors ${isDark ? 'border-white/5 bg-black/20' : 'border-zinc-100 bg-zinc-50'}`}>
+      {isExpanded && (
+        <div className={cls("border-t p-5 space-y-5 transition-colors", isDark ? "border-white/5 bg-black/20" : "border-zinc-100 bg-zinc-50")}>
           {paper.abstract && (
             <div className="animate-in fade-in slide-in-from-top-1">
               <div className="text-[10px] text-slate-500 uppercase tracking-wider font-extrabold mb-2">Abstract</div>
@@ -484,14 +489,28 @@ const PaperCard = ({ paper, isExpanded, onToggle, submitting, onReview, isReview
             <button
               onClick={() => onReview(paper.id, 'accepted', paper.paperId, localScore, localFeedback)}
               disabled={submitting}
-              className={`flex-1 py-2.5 rounded-xl border text-sm font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 ${paper.status === 'accepted' ? 'bg-emerald-600 text-white border-emerald-500 shadow-lg shadow-emerald-500/20' : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/20'}`}
+              className={cls(
+                "flex-1 py-2.5 rounded-xl border text-sm font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50",
+                paper.status === 'accepted' 
+                  ? "bg-emerald-600 text-white border-emerald-500 shadow-lg shadow-emerald-500/20" 
+                  : isDark 
+                    ? "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/20" 
+                    : "bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border-emerald-100"
+              )}
             >
               <CheckCircle size={16} /> {isReviewed && paper.status === 'accepted' ? 'Confirmed Accept' : 'Accept Paper'}
             </button>
             <button
               onClick={() => onReview(paper.id, 'rejected', paper.paperId, localScore, localFeedback)}
               disabled={submitting}
-              className={`flex-1 py-2.5 rounded-xl border text-sm font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 ${paper.status === 'rejected' ? 'bg-red-600 text-white border-red-500 shadow-lg shadow-red-500/20' : 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/20'}`}
+              className={cls(
+                "flex-1 py-2.5 rounded-xl border text-sm font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50",
+                paper.status === 'rejected' 
+                  ? "bg-red-600 text-white border-red-500 shadow-lg shadow-red-500/20" 
+                  : isDark 
+                    ? "bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/20" 
+                    : "bg-red-50 hover:bg-red-100 text-red-600 border-red-100"
+              )}
             >
               <XCircle size={16} /> {isReviewed && paper.status === 'rejected' ? 'Confirmed Reject' : 'Reject Paper'}
             </button>
