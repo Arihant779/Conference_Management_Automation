@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import {
   Send, X, ChevronDown, ChevronUp,
   Sparkles, Eye, Edit3, Check, AlertCircle,
@@ -725,15 +726,16 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
         </div>
       )}
 
-      {/* ── Certificate Editor Modal ── */}
-      {showCertEditor && (
+      {/* ── Certificate Editor Modal (rendered via portal to escape parent transforms) ── */}
+      {showCertEditor && ReactDOM.createPortal(
         <CertificateEditor
           onSave={(config) => {
             setCertConfig(config);
             setShowCertEditor(false);
           }}
           onClose={() => setShowCertEditor(false)}
-        />
+        />,
+        document.body
       )}
     </div>
   );

@@ -533,45 +533,39 @@ const CertificateEditor = ({ onSave, onClose }) => {
       style={{ fontFamily: "'DM Sans', sans-serif" }}
     >
       {/* ── Top bar ── */}
-      <div className="flex items-center justify-between px-5 py-3 bg-[#0d1117]/95 border-b border-white/8 shrink-0">
+      <div className="flex items-center justify-between px-6 py-3.5 bg-[#0d1117]/95 border-b border-white/8 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-            <Type size={15} className="text-white" />
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <Type size={16} className="text-white" />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-white">Certificate Editor</h2>
+            <h2 className="text-sm font-bold text-white tracking-tight">Certificate Editor</h2>
             <p className="text-[10px] text-slate-500">Upload template · Place name · Add text · Add signature</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {templateImg && (
-            <>
-              <button
-                onClick={handleDiscard}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-500/25 text-red-400 hover:bg-red-500/10 transition-all"
-              >
-                <Trash2 size={11} /> Discard
-              </button>
-              <button
-                onClick={handleAttach}
-                disabled={!canAttach}
-                className={cls(
-                  'flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold transition-all',
-                  canAttach
-                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                    : 'bg-white/5 text-slate-600 cursor-not-allowed',
-                )}
-              >
-                <Check size={11} /> Attach to Email
-              </button>
-            </>
-          )}
+        <div className="flex items-center gap-3">
+          {/* Discard — clears everything & closes */}
           <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-all"
+            onClick={() => { handleDiscard(); onClose(); }}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 transition-all active:scale-95"
           >
-            <X size={16} />
+            <Trash2 size={14} /> Discard
+          </button>
+
+          {/* Done — saves certificate config & closes */}
+          <button
+            onClick={handleAttach}
+            disabled={!canAttach}
+            className={cls(
+              'flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg active:scale-95',
+              canAttach
+                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-500/25'
+                : 'bg-white/5 text-slate-600 cursor-not-allowed shadow-none',
+            )}
+            title={!canAttach ? 'Upload a template and position the name first' : 'Save certificate and return to email'}
+          >
+            <Check size={14} /> Done
           </button>
         </div>
       </div>
