@@ -9,7 +9,8 @@ const cls = (...c) => c.filter(Boolean).join(' ');
    FeedbackForm — respondent view for filling out feedback
 ═════════════════════════════════════════════════════════════════ */
 const FeedbackForm = ({ conf }) => {
-  const { user } = useApp();
+  const { user, theme } = useApp();
+  const isDark = theme === 'dark';
   const confId = conf.conference_id || conf.id;
 
   const [form, setForm] = useState(null);
@@ -20,38 +21,77 @@ const FeedbackForm = ({ conf }) => {
   const [submitted, setSubmitted] = useState(false);
   const [alreadyDone, setAlreadyDone] = useState(false);
 
+  const cls = (...c) => c.filter(Boolean).join(' ');
+
   /* ── fetch published form ── */
   const fetchForm = useCallback(async () => {
     setLoading(true);
-
-    const { data: f } = await supabase
-      .from('feedback_forms')
-      .select('*')
-      .eq('conference_id', confId)
-      .eq('is_published', true)
-      .maybeSingle();
-
-    if (!f) { setLoading(false); return; }
-    setForm(f);
-
-    const { data: qs } = await supabase
-      .from('feedback_questions')
-      .select('*')
-      .eq('form_id', f.id)
-      .order('sort_order', { ascending: true });
-    setQuestions(qs || []);
-
-    // check if already submitted
-    if (user) {
-      const { data: existing } = await supabase
-        .from('feedback_responses')
-        .select('id')
-        .eq('form_id', f.id)
-        .eq('user_id', user.id)
+    try {
+      const { data: forms, error: formError } = await supabase
+        .from('feedback_forms')
+        .select('*')
+        .eq('conference_id', confId)
+        .eq('is_published', true)
+        .order('created_at', { ascending: true })
         .limit(1);
-      if (existing && existing.length > 0) {
-        setAlreadyDone(true);
+
+      if (formError) {
+        console.error('[FeedbackForm] Fetch form error:', formError);
+        setLoading(false);
+        return;
       }
+
+      if (!forms || forms.length === 0) { 
+        console.log('[FeedbackForm] No published form found for confId:', confId);
+        
+        // Let's check if ANY form exists for this conference (even unpublished)
+        const { data: anyForms } = await supabase
+          .from('feedback_forms')
+          .select('id, is_published')
+          .eq('conference_id', confId)
+          .limit(1);
+        
+        if (anyForms && anyForms.length > 0) {
+          console.log('[FeedbackForm] An unpublished form exists:', anyForms[0].id);
+          setForm({ ...anyForms[0], _is_unpublished: true });
+        }
+        
+        setLoading(false); 
+        return; 
+      }
+      
+      const f = forms[0];
+      console.log('[FeedbackForm] Found published form:', f.id, 'for confId:', confId);
+      setForm(f);
+
+      const { data: qs, error: qError } = await supabase
+        .from('feedback_questions')
+        .select('*')
+        .eq('form_id', f.id)
+        .order('sort_order', { ascending: true });
+      
+      if (qError) {
+        console.error('[FeedbackForm] Fetch questions error:', qError);
+      }
+      setQuestions(qs || []);
+
+      // check if already submitted
+      if (user) {
+        const { data: existing, error: eError } = await supabase
+          .from('feedback_responses')
+          .select('id')
+          .eq('form_id', f.id)
+          .eq('user_id', user.id)
+          .limit(1);
+        
+        if (eError) console.error('[FeedbackForm] Check submission error:', eError);
+        
+        if (existing && existing.length > 0) {
+          setAlreadyDone(true);
+        }
+      }
+    } catch (err) {
+      console.error('[FeedbackForm] Unexpected error:', err);
     }
 
     setLoading(false);
@@ -98,22 +138,68 @@ const FeedbackForm = ({ conf }) => {
   if (loading) {
     return (
       <div className="space-y-3 max-w-3xl mx-auto px-6 py-8">
-        {[...Array(3)].map((_, i) => <div key={i} className="h-16 bg-white/3 border border-white/5 rounded-xl animate-pulse" />)}
+        {[...Array(3)].map((_, i) => <div key={i} className={cls("h-16 border rounded-xl animate-pulse", isDark ? "bg-white/3 border-white/5" : "bg-zinc-50 border-zinc-100")} />)}
       </div>
     );
   }
 
-  if (!form || questions.length === 0) return null; // no published form
+  if (!form || (questions.length === 0 && !form._is_unpublished)) {
+    return (
+      <div className="max-w-3xl mx-auto px-6 py-12">
+        <div className={cls("border-2 border-dashed rounded-[2rem] p-12 text-center transition-all", isDark ? "bg-white/2 border-white/5" : "bg-zinc-50 border-zinc-200 shadow-xl")}>
+          <Star size={48} className={cls("mx-auto mb-4 opacity-20", isDark ? "text-white" : "text-zinc-400")} />
+          <h3 className={cls("text-lg font-bold mb-2", isDark ? "text-white" : "text-zinc-800")}>No Feedback Form Active</h3>
+          <p className={cls("text-sm max-w-md mx-auto mb-8 leading-relaxed", isDark ? "text-slate-500" : "text-zinc-500")}>
+            The organizers haven't activated a feedback questionnaire for this event yet.
+          </p>
+          <button 
+            onClick={() => fetchForm()}
+            className={cls("px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-lg", 
+              isDark ? "bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20" : "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20")}
+          >
+            Check for Updates
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (form._is_unpublished) {
+    return (
+      <div className="max-w-3xl mx-auto px-6 py-12">
+        <div className={cls("border-2 border-dashed rounded-[3rem] p-12 text-center transition-all relative overflow-hidden", isDark ? "bg-amber-500/5 border-amber-500/20" : "bg-amber-50 border-amber-200")}>
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+            <Star size={120} className="text-amber-500" />
+          </div>
+          <div className={cls("w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl", isDark ? "bg-amber-500/20 text-amber-400" : "bg-white text-amber-600")}>
+            <Star size={32} />
+          </div>
+          <h3 className={cls("text-2xl font-black mb-3 tracking-tight", isDark ? "text-white" : "text-zinc-900")}>Form is Offline</h3>
+          <p className={cls("text-sm max-w-md mx-auto mb-8 font-medium leading-relaxed", isDark ? "text-amber-200/50" : "text-amber-700/70")}>
+            We found a feedback form for this conference, but the organizer hasn't **Activated** it yet. 
+            Reviewers and attendees cannot see the questions until the form is live.
+          </p>
+          <button 
+            onClick={() => fetchForm()}
+            className={cls("px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:scale-105 active:scale-95 shadow-xl", 
+              isDark ? "bg-amber-500 hover:bg-amber-400 text-white shadow-amber-500/20" : "bg-white hover:bg-amber-50 text-amber-600 shadow-amber-600/10 border border-amber-200")}
+          >
+            Retry Connection
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (submitted || alreadyDone) {
     return (
       <div className="max-w-3xl mx-auto px-6 py-8">
-        <div className="bg-emerald-500/8 border border-emerald-500/20 rounded-2xl p-8 text-center">
-          <CheckCircle size={40} className="text-emerald-400 mx-auto mb-3" />
-          <h3 className="text-lg font-bold text-white mb-1">
+        <div className={cls("border rounded-2xl p-8 text-center transition-all", isDark ? "bg-emerald-500/8 border-emerald-500/20" : "bg-emerald-50 border-emerald-100")}>
+          <CheckCircle size={40} className="text-emerald-500 mx-auto mb-3" />
+          <h3 className={cls("text-lg font-bold mb-1", isDark ? "text-white" : "text-emerald-800")}>
             {alreadyDone && !submitted ? 'Feedback Already Submitted' : 'Thank You!'}
           </h3>
-          <p className="text-sm text-emerald-300/70">
+          <p className={cls("text-sm", isDark ? "text-emerald-300/70" : "text-emerald-600")}>
             {alreadyDone && !submitted
               ? 'You have already submitted your feedback for this conference.'
               : 'Your feedback has been recorded successfully.'}
@@ -129,11 +215,12 @@ const FeedbackForm = ({ conf }) => {
     <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-indigo-500/10 border border-indigo-500/15 rounded-xl flex items-center justify-center text-indigo-400">
+        <div className={cls("w-10 h-10 border rounded-xl flex items-center justify-center transition-all", 
+          isDark ? "bg-indigo-500/10 border-indigo-500/15 text-indigo-400" : "bg-indigo-50 border-indigo-100 text-indigo-600 shadow-sm")}>
           <MessageSquare size={20} />
         </div>
         <div>
-          <h3 className="text-lg font-bold text-white">Conference Feedback</h3>
+          <h3 className={cls("text-lg font-bold transition-colors", isDark ? "text-white" : "text-zinc-900")}>Conference Feedback</h3>
           <p className="text-xs text-slate-500">{questions.length} question{questions.length !== 1 ? 's' : ''} · {answeredCount} answered</p>
         </div>
       </div>
@@ -141,10 +228,10 @@ const FeedbackForm = ({ conf }) => {
       {/* Questions */}
       <div className="space-y-4">
         {questions.map((q, idx) => (
-          <div key={q.id} className="bg-[#0d1117] border border-white/6 rounded-xl p-5 hover:border-white/10 transition-all">
+          <div key={q.id} className={cls("border rounded-xl p-5 transition-all", isDark ? "bg-[#0d1117] border-white/6 hover:border-white/10" : "bg-white border-zinc-200 shadow-sm hover:border-zinc-300")}>
             <div className="flex items-start gap-3 mb-3">
               <span className="text-xs text-slate-600 font-bold mt-0.5">{idx + 1}.</span>
-              <h4 className="text-sm font-medium text-white flex-1">{q.question_text}</h4>
+              <h4 className={cls("text-sm font-medium flex-1 transition-colors", isDark ? "text-white" : "text-zinc-800")}>{q.question_text}</h4>
             </div>
 
             {/* Yes / No */}
@@ -156,7 +243,7 @@ const FeedbackForm = ({ conf }) => {
                     'px-6 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all',
                     answers[q.id] === true
                       ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400'
-                      : 'border-white/8 text-slate-500 hover:text-emerald-400 hover:border-emerald-500/40'
+                      : isDark ? 'border-white/8 text-slate-500 hover:text-emerald-400 hover:border-emerald-500/40' : 'border-zinc-200 text-zinc-400 hover:text-emerald-600 hover:border-emerald-500/30'
                   )}
                 >
                   Yes
@@ -167,7 +254,7 @@ const FeedbackForm = ({ conf }) => {
                     'px-6 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all',
                     answers[q.id] === false
                       ? 'bg-red-500/15 border-red-500 text-red-400'
-                      : 'border-white/8 text-slate-500 hover:text-red-400 hover:border-red-500/40'
+                      : isDark ? 'border-white/8 text-slate-500 hover:text-red-400 hover:border-red-500/40' : 'border-zinc-200 text-zinc-400 hover:text-red-600 hover:border-red-500/30'
                   )}
                 >
                   No
@@ -190,7 +277,7 @@ const FeedbackForm = ({ conf }) => {
                         'transition-colors',
                         (answers[q.id] || 0) >= s
                           ? 'text-amber-400 fill-amber-400'
-                          : 'text-slate-700 hover:text-amber-400/50'
+                          : isDark ? 'text-slate-700 hover:text-amber-400/50' : 'text-zinc-200 hover:text-amber-400/40'
                       )}
                     />
                   </button>
@@ -205,7 +292,8 @@ const FeedbackForm = ({ conf }) => {
             {q.question_type === 'descriptive' && (
               <div className="ml-6">
                 <textarea
-                  className="w-full bg-white/4 border border-white/8 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none resize-none h-24 text-white placeholder-slate-600 transition-colors"
+                  className={cls("w-full border rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none resize-none h-24 transition-all", 
+                    isDark ? "bg-white/4 border-white/8 text-white placeholder-slate-600" : "bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:ring-4 focus:ring-indigo-500/5")}
                   placeholder="Write your response..."
                   value={answers[q.id] || ''}
                   onChange={e => setAnswer(q.id, e.target.value)}
@@ -220,7 +308,8 @@ const FeedbackForm = ({ conf }) => {
       <button
         onClick={handleSubmit}
         disabled={submitting || answeredCount === 0}
-        className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold transition-all flex items-center justify-center gap-2"
+        className={cls("w-full py-3 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed text-sm font-bold transition-all flex items-center justify-center gap-2", 
+          isDark ? "bg-indigo-600 hover:bg-indigo-500 text-white" : "bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20 active:scale-95")}
       >
         {submitting ? (
           <>

@@ -201,6 +201,7 @@ def allocate_papers():
         # --- Papers ---
         paper_texts = []
         paper_names = []
+        paper_names = []
 
         # Option A: uploaded PDFs
         files = request.files.getlist("papers[]") or request.files.getlist("papers")

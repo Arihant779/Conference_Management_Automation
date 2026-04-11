@@ -9,6 +9,13 @@ export const AppProvider = ({ children }) => {
   const [conferences, setConferences] = useState([]); // list of conferences
   const [loading, setLoading] = useState(true);     // initial auth check in progress
   const [activeConfId, setActiveConfId] = useState(null);
+  const [theme, setTheme] = useState(() => localStorage.getItem('confhub-theme') || 'dark');
+
+  useEffect(() => {
+    localStorage.setItem('confhub-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
 
   const { permissions, roles: userRoles, loading: loadingPermissions } = usePermissions(activeConfId, user?.id);
 
@@ -101,6 +108,8 @@ export const AppProvider = ({ children }) => {
       userRoles,
       setActiveConfId,
       loadingPermissions,
+      theme,
+      toggleTheme,
     }}>
       {children}
     </AppContext.Provider>
