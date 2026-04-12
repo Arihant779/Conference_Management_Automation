@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Users, Mail, Copy, Check, Loader2 } from 'lucide-react';
+import { Users, Mail, Copy, Check, Loader2, Send } from 'lucide-react';
 import { Field, Input, Sel, Btn } from '../common/Primitives';
 import { useApp } from '../../../../../context/AppContext';
+import InviteSpeakerModal from '../Modals/InviteSpeakerModal';
 
 const SpeakersSection = ({
   spTopic, setSpTopic, spLimit, setSpLimit, spSource, setSpSource,
@@ -13,6 +14,8 @@ const SpeakersSection = ({
   const [emails, setEmails] = useState({}); // { [index]: email }
   const [emailLoading, setEmailLoading] = useState({}); // { [index]: boolean }
   const [copiedIndex, setCopiedIndex] = useState(null);
+  const [invitingSpeaker, setInvitingSpeaker] = useState(null);
+  const [sentInvites, setSentInvites] = useState(new Set());
 
   // Reset emails when results change
   React.useEffect(() => {
@@ -147,18 +150,41 @@ const SpeakersSection = ({
                       )}
                     </button>
                   ) : (
-                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium ${
-                      isDark ? 'bg-amber-500/5 border-amber-500/20 text-amber-200' : 'bg-amber-50 border-amber-200 text-amber-700'
-                    }`}>
-                      <Mail size={12} className="text-amber-500" />
-                      {emails[i]}
-                      {emails[i] !== 'Not found' && emails[i] !== 'Error' && (
-                        <button 
-                          onClick={() => copyToClipboard(emails[i], i)}
-                          className="ml-1 p-1 hover:bg-black/5 rounded transition-all"
-                        >
-                          {copiedIndex === i ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} className="opacity-60" />}
-                        </button>
+                    <div className="flex items-center gap-2">
+                      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium ${
+                        isDark ? 'bg-amber-500/5 border-amber-500/20 text-amber-200' : 'bg-amber-50 border-amber-200 text-amber-700'
+                      }`}>
+                        <Mail size={12} className="text-amber-500" />
+                        {emails[i]}
+                        {emails[i] !== 'Not found' && emails[i] !== 'Error' && (
+                          <button 
+                            onClick={() => copyToClipboard(emails[i], i)}
+                            className="ml-1 p-1 hover:bg-black/5 rounded transition-all"
+                          >
+                            {copiedIndex === i ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} className="opacity-60" />}
+                          </button>
+                        )}
+                      </div>
+
+                      {emails[i] && emails[i] !== 'Not found' && emails[i] !== 'Error' && (
+                        sentInvites.has(emails[i]) ? (
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] font-bold uppercase tracking-wider">
+                            <Check size={12} />
+                            Invite Sent
+                          </div>
+                        ) : (
+                          <button 
+                            onClick={() => setInvitingSpeaker({ ...speaker, email: emails[i] })}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all ${
+                              isDark 
+                                ? 'bg-amber-500/10 border-amber-500/30 text-amber-500 hover:bg-amber-500/20' 
+                                : 'bg-amber-500 text-black border-amber-500 hover:bg-amber-600 shadow-sm'
+                            }`}
+                          >
+                            <Send size={12} />
+                            Invite
+                          </button>
+                        )
                       )}
                     </div>
                   )}
@@ -167,6 +193,16 @@ const SpeakersSection = ({
             </div>
           ))}
         </div>
+      )}
+      {invitingSpeaker && (
+        <InviteSpeakerModal 
+          speaker={invitingSpeaker}
+          conference={{ id: 1, title: 'Global AI Summit 2024' }} // Fallback/Placeholder if conf not passed
+          onClose={() => setInvitingSpeaker(null)}
+          onInviteSent={(invite) => {
+            setSentInvites(prev => new Set([...prev, invite.speaker_email]));
+          }}
+        />
       )}
     </div>
   );

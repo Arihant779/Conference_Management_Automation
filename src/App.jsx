@@ -5,15 +5,19 @@ import CreateConference from './components/Conference/CreateConference';
 import ConferenceView from './components/Conference/ConferenceView';
 import UserDashboard from './components/Dashboard/UserDashboard';
 import { supabase } from './Supabase/supabaseclient';
+import InvitationThankYou from './components/Public/InvitationThankYou';
 
 // ─── URL helpers ─────────────────────────────────────────────────────────────
 const getConfIdFromURL = () => new URLSearchParams(window.location.search).get('conf');
 const getIntentFromURL = () => new URLSearchParams(window.location.search).get('intent');
+const getViewFromURL = () => new URLSearchParams(window.location.search).get('view');
 
 const clearURLParams = () => {
   const url = new URL(window.location.href);
   url.searchParams.delete('conf');
   url.searchParams.delete('intent');
+  url.searchParams.delete('view');
+  url.searchParams.delete('status');
   window.history.replaceState({}, '', url.toString());
 };
 
@@ -40,6 +44,13 @@ const App = () => {
     const init = async () => {
       const urlConfId = getConfIdFromURL();
       const urlIntent = getIntentFromURL();
+      const urlView   = getViewFromURL();
+
+      if (urlView === 'invitation-thank-you') {
+        setView('invitation-thank-you');
+        setLoading(false);
+        return;
+      }
 
       if (urlConfId) {
         clearURLParams();
@@ -115,6 +126,10 @@ const App = () => {
         <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
+  }
+
+  if (view === 'invitation-thank-you') {
+    return <InvitationThankYou />;
   }
 
   // ── Guest: show public conference page without login ──────────────────────

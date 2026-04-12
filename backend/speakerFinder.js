@@ -31,6 +31,9 @@ const GROQ_URL       = "https://api.groq.com/openai/v1/chat/completions";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Simple in-memory cache to prevent redundant API calls
+const _FINDER_CACHE = new Map();
+
 /* ═══════════════════════════════════════════════════════════════
    SHARED UTILITIES
 ═══════════════════════════════════════════════════════════════ */
@@ -517,8 +520,8 @@ function inferDomain(institution) {
 }
 
 function generateEmailPatterns(fullName, domain) {
-  if (!domain) return [];
-  const parts  = fullName.trim().toLowerCase().replace(/[^a-z ]/g, "").split(/\s+/);
+  if (!domain || !fullName) return [];
+  const parts = fullName.toString().trim().toLowerCase().replace(/[^a-z ]/g, "").split(/\s+/);
   if (parts.length < 2) return [];
   const first  = parts[0];
   const last   = parts[parts.length - 1];
@@ -722,87 +725,92 @@ async function _emailStrategy_pattern(name, institution) {
  *   @param {boolean} skipPatternInference - Skip low-confidence pattern guesses (default false)
  *   @param {number}  maxStrategies        - How many strategies to try max (default 6)
  */
-async function findSpeakerEmail(name, institution, options = {}) {
-  const {
-    verbose             = true,
-    skipPatternInference = true, // DISABLED BY DEFAULT NOW
-    maxStrategies       = 6,
-  } = options;
+async function findSpeakerEmail(name, institution = "", options = {}) {
+  const { verbose = true, skipPatternInference = true } = options;
+  if (!name) return { name: "Unknown", institution, email: null, confidence: null, source: "error", note: "Missing name." };
 
-  if (!SERPER_API_KEY && !GROQ_API_KEY) {
-    throw new Error("Set at least GROQ_API_KEY or SERPER_API_KEY in your .env");
+  // 1. Check Cache
+  const cacheKey = `${name.toLowerCase()}|${institution?.toLowerCase()}`;
+  if (_FINDER_CACHE.has(cacheKey)) {
+    if (verbose) console.log(`   📦 Found ${name} in cache.`);
+    return _FINDER_CACHE.get(cacheKey);
   }
 
   if (verbose) console.log(`\n🔍 Finding email: ${name} @ ${institution}`);
 
-  // Step 0: OpenAlex Affiliation Discovery (Source of Truth)
+  // Step 0: OpenAlex & Scholar Verification (Context Building)
   const alex = await _queryOpenAlex(name, institution);
-  if (verbose && alex?.last_institution) console.log(`   📚 OpenAlex Affiliation: ${alex.last_institution}`);
-  
-  // Step 1: Get Verified Domain from Google Scholar
-  let verifiedDomain = await _getVerifiedDomainFromScholar(name, institution);
-  if (verbose && verifiedDomain) console.log(`   🎓 Scholar Verified Domain: ${verifiedDomain}`);
-  
+  const verifiedDomain = await _getVerifiedDomainFromScholar(name, institution);
   const domain = verifiedDomain || inferDomain(alex?.last_institution || institution);
-  if (verbose && !verifiedDomain && domain) console.log(`   📧 Contextual Domain: ${domain}`);
 
-  const strategies = [
-    // 1. PDF CV Scraping (The Gold Standard)
-    { label: "CV/PDF Scraping",    fn: () => _emailStrategy_cv_pdf(name, institution, domain)       },
+  if (verbose) {
+    if (alex?.last_institution) console.log(`   📚 OpenAlex Affiliation: ${alex.last_institution}`);
+    if (verifiedDomain) console.log(`   🎓 Scholar Verified Domain: ${verifiedDomain}`);
+    if (domain && !verifiedDomain) console.log(`   📧 Contextual Domain: ${domain}`);
+  }
 
-    // 2. Scholar-Targeted Search (If verified domain found)
-    { 
-      label: "Scholar-Targeted Search", 
-      fn: async () => {
-        if (!verifiedDomain) return null;
-        const { raw } = await _serperSearch(`site:${verifiedDomain} "${name}" email address`, 5);
-        const e = await _extractEmailWithGroq(name, institution, raw, verifiedDomain);
-        return e ? { email: e, source: "scholar_domain_locked" } : null;
-      }
-    },
-    
-    // 3. Scientific Paper Correspondence (High Precision)
-    { label: "Scientific Correspondence", fn: () => _emailStrategy_scientific_papers(name, institution, verifiedDomain) },
-    
-    // 4. Official Faculty/Lab Pages
-    { label: "Faculty Page",      fn: () => _emailStrategy_facultyPage(name, institution, domain) },
-    { label: "Lab/Group Page",    fn: () => _emailStrategy_lab(name, institution)                  },
-    
-    // 5. Personal/Personal Sites
-    { label: "Personal Site",     fn: () => _emailStrategy_personal(name)                          },
-    
-    // 6. Groq Knowledge Fallback (Lower priority)
-    { label: "AI Knowledge",      fn: () => _emailStrategy_groqKnowledge(name, institution)        },
-    
-    // 7. Pattern Inference (ENABLED ONLY if skipPatternInference is false)
-    { label: "Pattern Inference", fn: () => skipPatternInference ? null : _emailStrategy_pattern(name, institution) },
-  ].slice(0, maxStrategies + 7); // adjusting slice for total strategies
+  // Step 1: Evidence Gathering (The "Observer" Phase)
+  // We collect raw text from multiple targeted searches without calling AI yet.
+  let allRawText = "";
+  const collectorStrategies = [
+    { label: "CV/PDF Search", query: `site:${domain || ""} "${name}" filetype:pdf (CV OR resume OR biography)` },
+    { label: "Scientific Index", query: `"${name}" "${institution}" "corresponding author" OR email OR contact` },
+    { label: "Faculty/Lab Profiles", query: `"${name}" "${institution}" (faculty OR professor OR group OR lab) email address` },
+    { label: "Scholar Profile", query: `site:scholar.google.com/citations "${name}" "${institution}"` },
+  ];
 
-  for (const s of strategies) {
-    if (verbose) process.stdout.write(`   [${s.label}]... `);
-    try {
-      const result = await s.fn();
-      if (result?.email) {
-        const lowConf = result.confidence === "low";
-        if (verbose) console.log(`✅ ${result.email}${lowConf ? " (low confidence)" : ""}`);
-        return {
-          name,
-          institution,
-          email:        result.email,
-          confidence:   result.confidence || "high",
-          source:       result.source,
-          alternatives: result.alternatives || [],
-          note:         result.note || null,
+  for (const s of collectorStrategies) {
+    if (verbose) process.stdout.write(`   [Collector: ${s.label}]... `);
+    const { results, raw } = await _serperSearch(s.query, 4);
+    allRawText += `\n--- SOURCE: ${s.label} ---\n${raw}\n`;
+    if (verbose) console.log("Done");
+    await sleep(500); // Respect Serper limits
+  }
+
+  // Step 2: Consolidated AI Review (The "Thinker" Phase)
+  // Instead of calling AI for each source, we do one comprehensive evaluation.
+  if (verbose) process.stdout.write(`   ⚖️  Performing AI Multi-Source Review... `);
+  const foundEmail = await _extractEmailWithGroq(name, institution, allRawText, domain);
+  
+  let finalResult;
+  if (foundEmail) {
+    if (verbose) console.log(`✅ ${foundEmail}`);
+    finalResult = {
+      name,
+      institution,
+      email:        foundEmail,
+      confidence:   "high",
+      source:       "multi_source_consolidated",
+      alternatives: [],
+      note:         null,
+    };
+  } else {
+    // Step 3: Pattern Inference Fallback (Low priority)
+    if (verbose) console.log("—");
+    if (!skipPatternInference && domain) {
+      if (verbose) process.stdout.write(`   [Pattern Inference]... `);
+      const patternResult = await _emailStrategy_pattern(name, institution);
+      if (patternResult?.email) {
+        if (verbose) console.log(`✅ ${patternResult.email} (inferred)`);
+        finalResult = {
+          name, institution,
+          email: patternResult.email,
+          confidence: "low",
+          source: "pattern_inference",
+          note: "Email generated based on institutional patterns."
         };
       }
-      if (verbose) console.log("—");
-    } catch (e) {
-      if (verbose) console.log(`⚠️  ${e.message}`);
     }
   }
 
-  if (verbose) console.log(`   ❌ Not found`);
-  return { name, institution, email: null, confidence: null, source: "not_found", note: "No email found." };
+  if (!finalResult) {
+    if (verbose) console.log(`   ❌ Not found`);
+    finalResult = { name, institution, email: null, confidence: null, source: "not_found", note: "No verified email found." };
+  }
+
+  // Save to Cache
+  _FINDER_CACHE.set(cacheKey, finalResult);
+  return finalResult;
 }
 
 /**
@@ -840,4 +848,5 @@ export {
   findEmailsForSpeakers,
   generateEmailPatterns,
   inferDomain,
+  _serperSearch,
 };

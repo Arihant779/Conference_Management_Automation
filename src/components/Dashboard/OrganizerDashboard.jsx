@@ -26,6 +26,7 @@ import NotificationsSection from './Organizer/components/sections/NotificationsS
 import SpeakersSection from './Organizer/components/sections/SpeakersSection';
 import SubmissionSettingsSection from './Organizer/components/sections/SubmissionSettingsSection';
 import ChatSection from './Organizer/components/sections/ChatSection';
+import InvitationTrackerSection from './Organizer/components/sections/InvitationTrackerSection';
 
 import RateMemberModal from './Organizer/components/Modals/RateMemberModal';
 import AddMemberModal from './Organizer/components/Modals/AddMemberModal';
@@ -39,7 +40,8 @@ import DeleteConferenceModal from './Organizer/components/Modals/DeleteConferenc
    MAIN ORGANIZER DASHBOARD — State Orchestrator
 ═══════════════════════════════════════════════════════════════════════════ */
 const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
-  const { user, permissions, userRoles } = useApp();
+  const { user, permissions, userRoles, theme } = useApp();
+  const isDark = theme === 'dark';
   const confId = conf.conference_id || conf.id;
 
   const [section, setSection] = useState('overview');
@@ -425,6 +427,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     { id: 'notifications', label: 'Notifications',    icon: Bell,        badge: null,                                      permission: 'view_notifications' },
     { id: 'emails',        label: 'Emails',           icon: Send,        badge: null,                                      permission: 'view_emails' },
     { id: 'speakers',      label: 'Find Speakers',    icon: Users,       badge: null,                                      permission: 'find_speakers' },
+    { id: 'invitations',   label: 'Invitation Tracker', icon: Clock,      badge: null,                                      permission: 'find_speakers' },
     { id: 'chat',          label: 'Team Chat',        icon: MessageSquare, badge: null,                                    permission: 'view_teams' },
     { id: 'allocation',    label: 'Paper Allocation', icon: FileText,    badge: null,                                      permission: 'allocate_papers' },
     { id: 'submission_rules', label: 'Submission Rules', icon: Settings2,   badge: null,                                      permission: 'manage_papers' },
@@ -511,10 +514,15 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
 
           {section === 'speakers' && (
             <SpeakersSection
+              conf={conf}
               spTopic={spTopic} setSpTopic={setSpTopic} spLimit={spLimit} setSpLimit={setSpLimit}
               spSource={spSource} setSpSource={setSpSource} spLoading={spLoading}
               spResults={spResults} spError={spError} findSpeakers={findSpeakers}
             />
+          )}
+
+          {section === 'invitations' && (
+            <InvitationTrackerSection conference={conf} isDark={isDark} />
           )}
 
           {section === 'feedback' && <FeedbackManager conf={conf} />}
