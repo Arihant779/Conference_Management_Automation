@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Trash2, Upload, CheckCircle, AlertCircle } from 'lucide-react';
+import { PlusCircle, Trash2, Upload, CheckCircle, AlertCircle, FileCheck, XCircle } from 'lucide-react';
 import { supabase } from '../../../Supabase/supabaseclient';
 import { useApp } from '../../../context/AppContext';
+import { validatePaper } from '../../../utils/paperValidation';
 
 /* ─── constants ─────────────────────────────────────────────────────────── */
 
@@ -93,6 +94,9 @@ const [isReviewer, setIsReviewer] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [existingPapers, setExistingPapers] = useState([]);
+  const [settings, setSettings] = useState(null);
+  const [validation, setValidation] = useState(null);
+  const [validating, setValidating] = useState(false);
 
   const confId = conf?.conference_id ?? conf?.id ?? null;
 
@@ -121,9 +125,25 @@ const [isReviewer, setIsReviewer] = useState(false);
       .eq('conference_id', confId)
       .eq('user_id', user.id)
       .maybeSingle();
-    if (membership?.role === 'reviewer') setIsReviewer(true);
-  })();
-}, [confId, user?.id]);
+      if (membership?.role === 'reviewer') setIsReviewer(true);
+      
+      // Fetch Conference Validation Settings
+      const { data: confData } = await supabase.from('conference').select('submission_settings').eq('conference_id', confId).single();
+      if (confData?.submission_settings) setSettings(confData.submission_settings);
+      else setSettings({ allowed_extensions: ['.pdf', '.docx'], max_file_size_mb: 10, require_indentation: false });
+    })();
+  }, [confId, user?.id]);
+
+  useEffect(() => {
+    if (!file || !settings) return;
+    const runValidation = async () => {
+      setValidating(true);
+      const res = await validatePaper(file, settings);
+      setValidation(res);
+      setValidating(false);
+    };
+    runValidation();
+  }, [file, settings]);
 
   const updateForm = (field) => (e) => setForm((prev) => ({ ...prev, [field]: e.target.value }));
   const updateAuthor = (idx, field) => (e) =>
@@ -146,6 +166,12 @@ const [isReviewer, setIsReviewer] = useState(false);
     const userId = user?.id;
     if (!userId) {
       setError('You must be logged in to submit a paper.');
+      return;
+    }
+
+    // Guard: validation must pass
+    if (validation && !validation.valid) {
+      setError('Please fix the formatting/rule violations before submitting your paper.');
       return;
     }
 
@@ -367,7 +393,54 @@ const [isReviewer, setIsReviewer] = useState(false);
               onChange={(e) => setFile(e.target.files[0] ?? null)}
               className={inputCls}
             />
-            {file && (
+            
+            {validating && <p className="text-xs text-indigo-400 mt-2 italic flex items-center gap-1"><FileCheck size={11} className="animate-pulse" /> Validating formatting...</p>}
+            
+            {validation && !validating && (
+              <div className={`mt-3 p-4 rounded-xl border transition-all duration-300 ${
+                validation.valid ? 'bg-emerald-500/5 border-emerald-500/10' : 'bg-red-500/5 border-red-500/10'
+              }`}>
+                <div className="flex items-center gap-2 mb-2">
+                   {validation.valid 
+                     ? <CheckCircle size={14} className="text-emerald-500" />
+                     : <XCircle size={14} className="text-red-500" />
+                   }
+                   <span className={`text-xs font-bold uppercase tracking-wider ${validation.valid ? 'text-emerald-500' : 'text-red-500'}`}>
+                     {validation.valid ? 'Rules Satisfied' : 'Submission Blocked'}
+                   </span>
+                </div>
+                
+                {validation.errors.length > 0 && (
+                  <ul className="space-y-1 mt-2">
+                    {validation.errors.map((e, idx) => (
+                      <li key={idx} className="text-[11px] text-red-500 flex items-start gap-1.5 leading-relaxed">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0 mt-1" />
+                        {e}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                
+                {validation.warnings.length > 0 && (
+                  <ul className="space-y-1 mt-2 border-t border-white/5 pt-2">
+                    {validation.warnings.map((w, idx) => (
+                      <li key={idx} className="text-[11px] text-amber-500/80 flex items-start gap-1.5 leading-relaxed italic">
+                        <AlertCircle size={10} className="shrink-0 mt-0.5" />
+                        {w}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {!validation.valid && (
+                  <p className="text-[10px] text-slate-500 mt-2 font-medium italic">
+                    The paper must pass all conference rules before you can submit.
+                  </p>
+                )}
+              </div>
+            )}
+            
+            {file && !validation && !validating && (
               <p className="text-xs text-emerald-400 mt-1.5 flex items-center gap-1">
                 <CheckCircle size={11} /> {file.name} ({(file.size / 1024).toFixed(0)} KB)
               </p>
@@ -530,7 +603,7 @@ const [isReviewer, setIsReviewer] = useState(false);
           {/* ── Submit ── */}
           <button
             type="submit"
-            disabled={loading || !confId}
+            disabled={loading || !confId || validating || (validation && !validation.valid)}
             className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed py-3.5 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-colors shadow-lg shadow-indigo-600/20"
           >
             <Upload size={17} />

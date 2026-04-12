@@ -1,5 +1,5 @@
-import React from 'react';
-import { Users } from 'lucide-react';
+import React, { useState } from 'react';
+import { Users, Mail, Copy, Check, Loader2 } from 'lucide-react';
 import { Field, Input, Sel, Btn } from '../common/Primitives';
 import { useApp } from '../../../../../context/AppContext';
 
@@ -9,6 +9,49 @@ const SpeakersSection = ({
 }) => {
   const { theme } = useApp();
   const isDark = theme === 'dark';
+  
+  const [emails, setEmails] = useState({}); // { [index]: email }
+  const [emailLoading, setEmailLoading] = useState({}); // { [index]: boolean }
+  const [copiedIndex, setCopiedIndex] = useState(null);
+
+  // Reset emails when results change
+  React.useEffect(() => {
+    setEmails({});
+    setEmailLoading({});
+  }, [spResults]);
+
+  const fetchEmail = async (index, name, org) => {
+    setEmailLoading(prev => ({ ...prev, [index]: true }));
+    try {
+      const baseUrl = "http://localhost:4000"; 
+      const res = await fetch(`${baseUrl}/api/speakers/email?name=${encodeURIComponent(name)}&org=${encodeURIComponent(org || '')}`);
+      
+      if (!res.ok) {
+        throw new Error(`Server returned ${res.status}`);
+      }
+
+      const data = await res.json();
+      // data.email might be an object containing { name, institution, email, ... } or just a string
+      const emailStr = typeof data.email === 'object' ? data.email.email : data.email;
+      
+      if (emailStr) {
+        setEmails(prev => ({ ...prev, [index]: emailStr }));
+      } else {
+        setEmails(prev => ({ ...prev, [index]: 'Not found' }));
+      }
+    } catch (err) {
+      console.error("Failed to find email:", err);
+      setEmails(prev => ({ ...prev, [index]: 'Not found' }));
+    } finally {
+      setEmailLoading(prev => ({ ...prev, [index]: false }));
+    }
+  };
+
+  const copyToClipboard = (email, index) => {
+    navigator.clipboard.writeText(email);
+    setCopiedIndex(index);
+    setTimeout(() => setCopiedIndex(null), 2000);
+  };
 
   return (
     <div className="space-y-6">
@@ -76,7 +119,51 @@ const SpeakersSection = ({
                 )}
               </div>
               {speaker.profile && <p className={`text-sm leading-relaxed mb-4 transition-colors duration-500 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{speaker.profile}</p>}
-              {speaker.linkedin && <a href={speaker.linkedin} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-500 hover:text-amber-600 transition-colors">View LinkedIn →</a>}
+              
+              <div className="flex flex-wrap items-center gap-4">
+                {speaker.linkedin && <a href={speaker.linkedin} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-500 hover:text-amber-600 transition-colors">View LinkedIn →</a>}
+                
+                <div className="flex items-center gap-2">
+                  {!emails[i] ? (
+                    <button 
+                      onClick={() => fetchEmail(i, speaker.name, speaker.organization || speaker.institution)}
+                      disabled={emailLoading[i]}
+                      className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border transition-all ${
+                        isDark 
+                          ? 'border-white/10 text-slate-300 hover:bg-white/5 disabled:opacity-50' 
+                          : 'border-zinc-200 text-slate-600 hover:bg-zinc-50 disabled:opacity-50'
+                      }`}
+                    >
+                      {emailLoading[i] ? (
+                        <>
+                          <Loader2 size={12} className="animate-spin text-amber-500" />
+                          Finding...
+                        </>
+                      ) : (
+                        <>
+                          <Mail size={12} className="text-amber-500" />
+                          Find Email
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium ${
+                      isDark ? 'bg-amber-500/5 border-amber-500/20 text-amber-200' : 'bg-amber-50 border-amber-200 text-amber-700'
+                    }`}>
+                      <Mail size={12} className="text-amber-500" />
+                      {emails[i]}
+                      {emails[i] !== 'Not found' && emails[i] !== 'Error' && (
+                        <button 
+                          onClick={() => copyToClipboard(emails[i], i)}
+                          className="ml-1 p-1 hover:bg-black/5 rounded transition-all"
+                        >
+                          {copiedIndex === i ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} className="opacity-60" />}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           ))}
         </div>

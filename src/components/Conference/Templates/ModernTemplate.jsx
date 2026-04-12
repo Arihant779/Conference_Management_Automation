@@ -401,6 +401,7 @@ const ModernTemplate = ({
   isGuest = false,
   onRequireAuthForRegister = null,
   autoOpenRegister = false,
+  onSwitchToTab = null,
 }) => {
   const [conf, setConf] = useState(initialConf);
   const [isEditing, setIsEditing] = useState(false);
@@ -976,16 +977,29 @@ const ModernTemplate = ({
                     We invite researchers to submit original work under the theme <strong className="text-amber-400 font-bold">"{conf.theme}"</strong>. Selected submissions will be published in our proceedings.
                   </p>
                   <div className="space-y-3 mb-10">
-                    {['Original unpublished research', 'Full papers (8–12 pages)', 'Extended abstracts (2–4 pages)', 'Poster submissions'].map(item => (
+                    {(conf.submission_settings ? [
+                      'Original unpublished research',
+                      `Accepted Formats: ${conf.submission_settings.allowed_extensions.map(e => e.replace('.', '').toUpperCase()).join(', ')}`,
+                      conf.submission_settings.require_indentation ? 'Strict Paragraph Indentation Required' : null,
+                      conf.submission_settings.check_font_size ? `Minimum Font Size: ${conf.submission_settings.min_font_size}pt` : null,
+                      `Maximum File Size: ${conf.submission_settings.max_file_size_mb}MB`
+                    ].filter(Boolean) : [
+                      'Original unpublished research', 
+                      'Full papers (8–12 pages)', 
+                      'Extended abstracts (2–4 pages)', 
+                      'Poster submissions'
+                    ]).map(item => (
                       <div key={item} className="flex items-center gap-3 text-slate-300">
                         <div className="w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(251,191,36,0.8)]" style={{ background: '#fbbf24' }} />
-                        {item}
+                        <span className="text-sm">{item}</span>
                       </div>
                     ))}
                   </div>
-                  <button className="w-full font-black py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-black"
+                  <button 
+                    onClick={() => onSwitchToTab && onSwitchToTab('submitPaper')}
+                    className="w-full font-black py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-black hover:scale-[1.02] active:scale-[0.98]"
                     style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)' }}>
-                    Submit Guidelines <ChevronRight size={18} />
+                    Submit Paper Now <ChevronRight size={18} />
                   </button>
                 </div>
               </div>

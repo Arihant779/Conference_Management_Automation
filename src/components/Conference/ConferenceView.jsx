@@ -194,6 +194,7 @@ const ConferenceView = ({
     isGuest,
     onRequireAuthForRegister: handleRequireAuthForRegister,
     autoOpenRegister,
+    onSwitchToTab: handleTabClick,
   };
 
   return (

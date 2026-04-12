@@ -7,6 +7,7 @@
     "framer-motion": "^12.38.0",
     "jspdf": "^4.2.1",
     "lucide-react": "^0.263.1",
+    "pdfjs-dist": "^5.1.91",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

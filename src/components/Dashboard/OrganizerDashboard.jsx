@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   BarChart2, FileText, Users, CheckSquare, Bell, Send,
-  Layers, Clock, Sparkles, Star, Check,
+  Layers, Clock, Sparkles, Star, Check, Settings2, MessageSquare,
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
@@ -24,6 +24,8 @@ import TeamsSection from './Organizer/components/sections/TeamsSection';
 import TasksSection from './Organizer/components/sections/TasksSection';
 import NotificationsSection from './Organizer/components/sections/NotificationsSection';
 import SpeakersSection from './Organizer/components/sections/SpeakersSection';
+import SubmissionSettingsSection from './Organizer/components/sections/SubmissionSettingsSection';
+import ChatSection from './Organizer/components/sections/ChatSection';
 
 import RateMemberModal from './Organizer/components/Modals/RateMemberModal';
 import AddMemberModal from './Organizer/components/Modals/AddMemberModal';
@@ -58,6 +60,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   const isOrganizer     = isGlobalHead || (userRoles && userRoles.includes('organizer'));
   const myHeadedTeamIds = teams.filter(t => t.head_id === myMemberId).map(t => t.id);
   const isTeamHead      = !isOrganizer && myHeadedTeamIds.length > 0;
+  const myTeamIds       = teams.filter(t => t.memberList?.some(m => m.user_id === user.id)).map(t => t.id);
 
   const FALLBACK_PERMS = {
     organizer: ['view_dashboard','view_emails','send_emails','view_papers','manage_papers','allocate_papers','view_members','manage_members','view_teams','manage_teams','view_tasks','manage_tasks','view_notifications','send_notifications','find_speakers','view_feedback','manage_feedback','view_attendees'],
@@ -109,6 +112,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   const [spLoading, setSpLoading] = useState(false);
   const [spResults, setSpResults] = useState([]);
   const [spError, setSpError] = useState('');
+  const [activeChatTeamId, setActiveChatTeamId] = useState(null);
 
   const [confPapers, setConfPapers] = useState([]);
   const [loadingPapers, setLP] = useState(true);
@@ -421,7 +425,9 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     { id: 'notifications', label: 'Notifications',    icon: Bell,        badge: null,                                      permission: 'view_notifications' },
     { id: 'emails',        label: 'Emails',           icon: Send,        badge: null,                                      permission: 'view_emails' },
     { id: 'speakers',      label: 'Find Speakers',    icon: Users,       badge: null,                                      permission: 'find_speakers' },
+    { id: 'chat',          label: 'Team Chat',        icon: MessageSquare, badge: null,                                    permission: 'view_teams' },
     { id: 'allocation',    label: 'Paper Allocation', icon: FileText,    badge: null,                                      permission: 'allocate_papers' },
+    { id: 'submission_rules', label: 'Submission Rules', icon: Settings2,   badge: null,                                      permission: 'manage_papers' },
     { id: 'feedback',      label: 'Feedback',         icon: Star,        badge: null,                                      permission: 'view_feedback' },
     { id: 'site_preview',  label: 'Site Preview',     icon: Sparkles,    badge: null },
   ].filter(item => !item.permission || can(item.permission));
@@ -481,11 +487,12 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
             />
           )}
 
-          {section === 'teams' && (
+           {section === 'teams' && (
             <TeamsSection
               teams={teams} members={members} isOrganizer={isOrganizer} myMemberId={myMemberId}
               loadingTeams={loadingTeams} setModal={setModal} setTmForm={setTmForm}
               openEditTeam={openEditTeam} deleteTeam={deleteTeam} setSection={setSection} can={can}
+              setActiveChatTeamId={setActiveChatTeamId}
             />
           )}
 
@@ -514,6 +521,14 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
           {section === 'emails' && <EmailComposer conf={conf} senderRole="organizer" onOpenEmailSettings={() => setSection('emailSettings')} />}
           {section === 'emailSettings' && <EmailSettings conf={conf} />}
           {section === 'allocation' && <PaperAllocation conf={conf} />}
+          {section === 'submission_rules' && <SubmissionSettingsSection conf={conf} />}
+          
+          {section === 'chat' && (
+            <ChatSection
+              confId={confId} teams={teams} isOrganizer={isOrganizer} myTeamIds={myTeamIds}
+              activeChatTeamId={activeChatTeamId} setActiveChatTeamId={setActiveChatTeamId}
+            />
+          )}
 
         </main>
       </div>
