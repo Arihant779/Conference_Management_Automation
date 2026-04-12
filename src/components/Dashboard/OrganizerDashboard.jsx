@@ -181,7 +181,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     setLT(true);
     const { data: td } = await supabase.from('conference_teams').select('*').eq('conference_id', confId).order('created_at', { ascending: true });
     if (td) {
-      const { data: tmData } = await supabase.from('team_members').select('team_id,user_id,conference_user_id').in('team_id', td.map(t => t.id));
+      const { data: tmData } = await supabase.from('team_members').select('team_id,user_id,conference_user_id,status').in('team_id', td.map(t => t.id));
       const map = {};
       (tmData || []).forEach(tm => { (map[tm.team_id] = map[tm.team_id] || []).push(tm); });
       setTeams(td.map(t => ({ ...t, memberList: map[t.id] || [] })));
@@ -246,23 +246,56 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   };
 
   /* ── team CRUD ── */
-  const createTeam = async () => {
+  const createTeam = async (pendingAdds = []) => {
     if (!tmForm.name.trim()) return; setSaving(true);
     const { data: newTeam, error } = await supabase.from('conference_teams').insert([{ conference_id: confId, name: tmForm.name.trim(), description: tmForm.description.trim(), color: tmForm.color, head_id: tmForm.head_id || null, created_at: new Date().toISOString() }]).select().single();
-    if (!error && newTeam && tmForm.head_id && tmForm.type && tmForm.type !== 'custom') {
-      await supabase.from('conference_user_roles_mapping').upsert({ conference_user_id: tmForm.head_id, role_name: tmForm.type }, { onConflict: 'conference_user_id,role_name' });
+    
+    if (!error && newTeam) {
+      // Handle Team Head (Directly accepted)
+      if (tmForm.head_id && tmForm.type && tmForm.type !== 'custom') {
+        await supabase.from('conference_user_roles_mapping').upsert({ conference_user_id: tmForm.head_id, role_name: tmForm.type }, { onConflict: 'conference_user_id,role_name' });
+      }
+      
+      // Handle Team Members (Invitation pending)
+      if (pendingAdds.length > 0) {
+        const inserts = pendingAdds.filter(id => id !== tmForm.head_id).map(confUserId => {
+          const m = members.find(mem => mem.id === confUserId);
+          return { conference_id: confId, team_id: newTeam.id, user_id: m?.user_id, conference_user_id: confUserId, status: 'pending' };
+        });
+        if (inserts.length > 0) await supabase.from('team_members').insert(inserts);
+      }
     }
+    
     setSaving(false);
     if (!error) { setModal(null); setTmForm({ name: '', type: '', description: '', color: '#f5c518', head_id: '' }); fetchTeams(); } else alert(error.message);
   };
 
-  const saveTeam = async () => {
+  const saveTeam = async (pendingAdds = [], pendingRemoves = []) => {
     if (!tmForm.name.trim()) return; setSaving(true);
     const { error } = await supabase.from('conference_teams').update({ name: tmForm.name.trim(), description: tmForm.description.trim(), color: tmForm.color, head_id: tmForm.head_id || null }).eq('id', modalData.id);
-    if (!error && tmForm.head_id) {
-      if (tmForm.type !== tmForm.originalType && tmForm.originalType && tmForm.originalType !== 'custom') { await supabase.from('conference_user_roles_mapping').delete().eq('conference_user_id', tmForm.head_id).eq('role_name', tmForm.originalType); }
-      if (tmForm.type && tmForm.type !== 'custom') { await supabase.from('conference_user_roles_mapping').upsert({ conference_user_id: tmForm.head_id, role_name: tmForm.type }, { onConflict: 'conference_user_id,role_name' }); }
+    
+    if (!error) {
+      // Sync Roles
+      if (tmForm.head_id) {
+        if (tmForm.type !== tmForm.originalType && tmForm.originalType && tmForm.originalType !== 'custom') { await supabase.from('conference_user_roles_mapping').delete().eq('conference_user_id', tmForm.head_id).eq('role_name', tmForm.originalType); }
+        if (tmForm.type && tmForm.type !== 'custom') { await supabase.from('conference_user_roles_mapping').upsert({ conference_user_id: tmForm.head_id, role_name: tmForm.type }, { onConflict: 'conference_user_id,role_name' }); }
+      }
+
+      // Sync Member Removes
+      if (pendingRemoves.length > 0) {
+        await supabase.from('team_members').delete().eq('team_id', modalData.id).in('conference_user_id', pendingRemoves);
+      }
+
+      // Sync Member Adds (Invitation pending)
+      if (pendingAdds.length > 0) {
+        const inserts = pendingAdds.map(confUserId => {
+          const m = members.find(mem => mem.id === confUserId);
+          return { conference_id: confId, team_id: modalData.id, user_id: m?.user_id, conference_user_id: confUserId, status: 'pending' };
+        });
+        await supabase.from('team_members').insert(inserts);
+      }
     }
+    
     setSaving(false); setModal(null); fetchTeams();
   };
 
@@ -274,7 +307,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     const team = teams.find(t => t.id === teamId);
     if (team?.memberList.some(tm => tm.conference_user_id === confUserId)) { alert('Already in team.'); return; }
     setSaving(true);
-    const { error } = await supabase.from('team_members').insert([{ conference_id: confId, team_id: teamId, user_id: member.user_id, conference_user_id: confUserId }]);
+    const { error } = await supabase.from('team_members').insert([{ conference_id: confId, team_id: teamId, user_id: member.user_id, conference_user_id: confUserId, status: 'pending' }]);
     setSaving(false);
     if (error) alert(`Add error: ${error.message}`); else fetchTeams();
   };

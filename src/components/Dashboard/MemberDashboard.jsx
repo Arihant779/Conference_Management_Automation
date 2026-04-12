@@ -158,7 +158,7 @@ const MemberDashboard = ({ conf, onBack }) => {
   const myMember = members.find(m => m.user_id === user?.id);
   const myMemberId = myMember?.id;
 
-  const myTeams = teams.filter(t => t.memberList.some(m => m.conference_user_id === myMemberId || m.user_id === user?.id));
+  const myTeams = teams.filter(t => t.memberList.some(m => (m.conference_user_id === myMemberId || m.user_id === user?.id) && m.status === 'accepted'));
   const myTeamNames = myTeams.map(t => t.name.toLowerCase());
 
   const can = (feature) => {

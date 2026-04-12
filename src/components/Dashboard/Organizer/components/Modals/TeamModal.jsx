@@ -167,10 +167,11 @@ const TeamModal = ({
                 if (!m) return null;
                 const isNew = pendingAdds.has(confUserId) && !existingMemberIds.has(confUserId);
                 const isMarkedForRemoval = pendingRemoves.has(confUserId);
+                const isPending = m.status === 'pending' || (modalData?.memberList?.find(tm => tm.conference_user_id === confUserId)?.status === 'pending');
 
                 return (
                   <div key={m.id}
-                    className={cls('flex items-center gap-3 rounded-xl p-2 group transition-all', isMarkedForRemoval && 'opacity-40')}
+                    className={cls('flex items-center gap-3 rounded-xl p-2 group transition-all', (isMarkedForRemoval || (isPending && !isNew)) && 'opacity-70')}
                     style={{
                       background: isNew ? 'rgba(16,185,129,0.08)' : (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)'),
                       border: isNew ? '1px solid rgba(16,185,129,0.25)' : `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
@@ -185,7 +186,13 @@ const TeamModal = ({
                         {isNew && (
                           <span className="text-[8px] px-1.5 py-0.5 rounded font-black uppercase"
                             style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' }}>
-                            New
+                            Inviting
+                          </span>
+                        )}
+                        {isPending && !isNew && (
+                          <span className="text-[8px] px-1.5 py-0.5 rounded font-black uppercase"
+                            style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)' }}>
+                            Pending
                           </span>
                         )}
                       </div>

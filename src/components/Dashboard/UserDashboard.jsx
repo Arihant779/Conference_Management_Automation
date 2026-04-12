@@ -596,7 +596,7 @@ const getRoleBadgeStyle = (role, isDark) => {
   return styles[role] || styles.member;
 };
 
-const ConfCard = ({ conf, role, onSelectConf, theme = 'dark' }) => {
+const ConfCard = ({ conf, role, hasPendingInvite, onSelectConf, theme = 'dark' }) => {
   const isDark = theme === 'dark';
   const dateLabel = conf.start_date
     ? new Date(conf.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
@@ -692,14 +692,16 @@ const ConfCard = ({ conf, role, onSelectConf, theme = 'dark' }) => {
 
           {/* CTA Button */}
           <MagneticButton
-            onClick={() => onSelectConf(conf, role)}
-            className={`w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-300 ${role
-              ? (isDark ? 'bg-white text-zinc-900 hover:bg-zinc-100 shadow-sm' : 'bg-amber-500 text-white hover:bg-amber-600 shadow-sm shadow-amber-500/20 active:scale-95')
-              : (isDark ? 'bg-white/[0.05] text-zinc-300 hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/[0.12] hover:text-white' : 'bg-zinc-900/[0.04] text-zinc-600 hover:bg-zinc-900/[0.06] border border-zinc-900/[0.08] hover:border-zinc-900/[0.12] hover:text-amber-600')
+            onClick={() => !hasPendingInvite && onSelectConf(conf, role)}
+            className={`w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-300 ${hasPendingInvite
+              ? (isDark ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30 cursor-not-allowed' : 'bg-amber-500/10 text-amber-600 border border-amber-500/20 cursor-not-allowed')
+              : role
+                ? (isDark ? 'bg-white text-zinc-900 hover:bg-zinc-100 shadow-sm' : 'bg-amber-500 text-white hover:bg-amber-600 shadow-sm shadow-amber-500/20 active:scale-95')
+                : (isDark ? 'bg-white/[0.05] text-zinc-300 hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/[0.12] hover:text-white' : 'bg-zinc-900/[0.04] text-zinc-600 hover:bg-zinc-900/[0.06] border border-zinc-900/[0.08] hover:border-zinc-900/[0.12] hover:text-amber-600')
             }`}
           >
-            {role ? 'Open Dashboard' : 'View Conference'}
-            <ChevronRight size={15} className="group-hover:translate-x-1 transition-transform" />
+            {hasPendingInvite ? 'Response Required' : role ? 'Open Dashboard' : 'View Conference'}
+            {!hasPendingInvite && <ChevronRight size={15} className="group-hover:translate-x-1 transition-transform" />}
           </MagneticButton>
         </div>
       </div>
@@ -808,6 +810,8 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
   const [volunteerPrefs, setVolunteerPrefs] = useState(null);
   const [searchFocused, setSearchFocused] = useState(false);
   const [notifs, setNotifs] = useState([]);
+  const [invites, setInvites] = useState([]);
+  const [loadingInvites, setLI] = useState(true);
   const [lastReadAt, setLastReadAt] = useState(() => localStorage.getItem('conf_manager_notif_last_read') || new Date(0).toISOString());
 
   const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
@@ -822,16 +826,35 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
   const buildRoleMap = async () => {
     setLoadingRoles(true);
     const map = {};
+    
+    // 1. Get all basic conference memberships
     const { data: memberships, error } = await supabase.from('conference_user').select('id, conference_id, role').eq('user_id', user.id);
+    
+    // 2. Get all functional team memberships (to verify 'member' status)
+    const { data: teamMemberships } = await supabase.from('team_members').select('conference_id, status').eq('user_id', user.id);
+    const acceptedConfIds = new Set((teamMemberships || []).filter(tm => tm.status === 'accepted').map(tm => tm.conference_id));
+
     if (!error && memberships) {
-      memberships.forEach(({ conference_id, role }) => { map[conference_id] = role; });
+      memberships.forEach(({ conference_id, role }) => { 
+        // Only grant 'member' role if they actually have an accepted team invitation
+        if (role === 'member') {
+          if (acceptedConfIds.has(conference_id)) map[conference_id] = role;
+        } else {
+          map[conference_id] = role; 
+        }
+      });
+      
       const cuIds = memberships.map(m => m.id);
       if (cuIds.length > 0) {
+        // 3. Check if user is a Team Head (Directly accepted)
         const { data: headTeams } = await supabase.from('conference_teams').select('conference_id, name').in('head_id', cuIds);
         if (headTeams) { headTeams.forEach(team => { map[team.conference_id] = team.name; }); }
       }
     }
+    
+    // 4. Check if user is the Global Organizer
     conferences.forEach((c) => { if (c.conference_head_id === user.id) { map[c.conference_id] = 'Organizer'; } });
+    
     setRoleMap(map);
     setLoadingRoles(false);
   };
@@ -842,7 +865,53 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
       const { data } = await supabase.from('users').select('volunteer_domains, volunteer_roles').eq('user_id', user.id).single();
       if (data) setVolunteerPrefs(data);
     })();
+    fetchGlobalInvites();
   }, [user]);
+
+  const fetchGlobalInvites = async () => {
+    if (!user) return;
+    setLI(true);
+    const { data, error } = await supabase.from('team_members').select('*, conference_teams(name, color), conference(title)').eq('user_id', user.id).eq('status', 'pending');
+    if (!error) setInvites(data || []);
+    setLI(false);
+  };
+
+  const handleInviteAction = async (inviteId, action) => {
+    const invite = invites.find(i => i.id === inviteId);
+    if (!invite) return;
+
+    if (action === 'accept') {
+      await supabase.from('team_members').update({ status: 'accepted' }).eq('id', inviteId);
+    } else {
+      await supabase.from('team_members').delete().eq('id', inviteId);
+      
+      // Cleanup conference_user if they have no other roles in this conference
+      const confId = invite.conference_id;
+      const { data: otherTeams } = await supabase.from('team_members').select('id').eq('user_id', user.id).eq('conference_id', confId).limit(1);
+      
+      if (!otherTeams || otherTeams.length === 0) {
+        // No other teams, check if their conference_user role is just 'member'
+        const { data: confUser } = await supabase.from('conference_user').select('id, role').eq('user_id', user.id).eq('conference_id', confId).maybeSingle();
+        if (confUser && confUser.role === 'member') {
+          await supabase.from('conference_user').delete().eq('id', confUser.id);
+        }
+      }
+    }
+
+    // Send notification to organizer
+    const userName = user.user_metadata?.full_name || user.email;
+    const teamName = invite.conference_teams?.name || 'a team';
+    await supabase.from('notifications').insert([{
+      conference_id: invite.conference_id,
+      title: `Team Invite ${action === 'accept' ? 'Accepted' : 'Declined'}`,
+      message: `${userName} has ${action === 'accept' ? 'accepted' : 'declined'} the invitation to join the ${teamName}.`,
+      target_role: 'organizer',
+      created_at: new Date().toISOString()
+    }]);
+
+    fetchGlobalInvites();
+    buildRoleMap();
+  };
 
   useEffect(() => {
     if (!user || loadingRoles) return;
@@ -1113,6 +1182,42 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
                 </div>
               </GlowCard>
 
+              {/* Team Invitations */}
+              <AnimatePresence>
+                {invites.length > 0 && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+                    <GlowCard 
+                      theme={theme}
+                      glowColor="rgba(251,191,36,0.3)"
+                      className={`backdrop-blur-xl border rounded-2xl p-5 transition-all duration-300 ${isDark ? 'bg-amber-500/5 border-amber-500/20' : 'bg-amber-50 border-amber-500/30'}`}
+                    >
+                      <div className="relative z-10">
+                        <div className="flex items-center gap-2.5 mb-4">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-amber-500/20`}>
+                            <Bell size={14} className="text-amber-500" />
+                          </div>
+                          <h3 className={`text-sm font-bold transition-colors ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>Team Invitations</h3>
+                        </div>
+                        <div className="space-y-4">
+                          {invites.map(invite => (
+                            <div key={invite.id} className={`p-3 rounded-xl border transition-all ${isDark ? 'bg-black/20 border-white/5' : 'bg-white border-amber-500/20 shadow-sm'}`}>
+                              <div className="mb-2">
+                                <p className={`text-[10px] uppercase font-bold tracking-wider ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>{invite.conference?.title}</p>
+                                <p className={`text-xs font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>{invite.conference_teams?.name}</p>
+                              </div>
+                              <div className="flex gap-1.5">
+                                <button onClick={() => handleInviteAction(invite.id, 'accept')} className="flex-1 py-1.5 bg-amber-500 text-black text-[10px] font-black rounded-lg hover:bg-amber-400 transition-all">ACCEPT</button>
+                                <button onClick={() => handleInviteAction(invite.id, 'reject')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg border ${isDark ? 'border-white/10 text-zinc-400 hover:text-white' : 'border-zinc-200 text-zinc-600 hover:bg-zinc-50'}`}>DECLINE</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </GlowCard>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* Quick actions */}
               {/* Quick actions */}
               <GlowCard 
@@ -1206,7 +1311,13 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
                         exit={{ opacity: 0, scale: 0.95, filter: "blur(8px)" }}
                         transition={{ type: "spring", stiffness: 300, damping: 25, delay: i * 0.05 }}
                       >
-                        <ConfCard conf={c} role={roleMap[c.conference_id] ?? null} onSelectConf={onSelectConf} theme={theme} />
+                        <ConfCard 
+                          conf={c} 
+                          role={roleMap[c.conference_id] ?? null} 
+                          hasPendingInvite={invites.some(inv => inv.conference_id === c.conference_id)}
+                          onSelectConf={onSelectConf} 
+                          theme={theme} 
+                        />
                       </motion.div>
                     ))
                   ) : (

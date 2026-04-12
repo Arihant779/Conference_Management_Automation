@@ -32,7 +32,10 @@ const TeamsSection = ({
         : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {teams.filter(t => isOrganizer || myTeamIds.includes(t.id)).map((team, i) => {
-              const teamMembers = team.memberList.map(tm => members.find(m => m.id === tm.conference_user_id || m.user_id === tm.user_id)).filter(Boolean);
+              const teamMembers = team.memberList
+                .filter(tm => tm.status === 'accepted')
+                .map(tm => members.find(m => m.id === tm.conference_user_id || m.user_id === tm.user_id))
+                .filter(Boolean);
               const head = team.head_id ? members.find(m => m.id === team.head_id) : null;
               return (
                 <AnimatedSection key={team.id} delay={0.05 * i} className="h-full">
