@@ -112,13 +112,15 @@ BODY:
 
 /* ── Send Invitation & Save to DB ── */
 router.post("/speakers/invite", async (req, res) => {
-  const { conference_id, speaker_name, speaker_email, speaker_profile, subject, body } = req.body;
+  const { conference_id, speaker_name, speaker_email, speaker_profile, subject, body, scheduledAt } = req.body;
 
   if (!speaker_email || !subject || !body) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
   try {
+    const isScheduled = !!scheduledAt;
+    
     // 1. Create record in DB
     const { data: invite, error: dbError } = await supabase
       .from("speaker_invitations")
@@ -127,15 +129,23 @@ router.post("/speakers/invite", async (req, res) => {
         speaker_name,
         speaker_email,
         speaker_profile,
+        invitation_subject: subject,
         invitation_body: body,
-        status: "pending"
+        status: isScheduled ? "scheduled" : "pending",
+        scheduled_at: scheduledAt || null,
+        is_scheduled: isScheduled
       }])
       .select()
       .single();
 
     if (dbError) throw dbError;
 
-    // 2. Prepare Magic Links
+    // 2. If scheduled, we are done
+    if (isScheduled) {
+      return res.json({ success: true, invite, scheduled: true });
+    }
+
+    // 3. Otherwise, Prepare Magic Links and Send Now
     const backendUrl = process.env.BACKEND_URL || "http://localhost:4000";
     const acceptLink = `${backendUrl}/api/speakers/respond?id=${invite.id}&status=accepted`;
     const declineLink = `${backendUrl}/api/speakers/respond?id=${invite.id}&status=declined`;
@@ -165,6 +175,127 @@ router.get("/speakers/invitations", async (req, res) => {
     if (error) throw error;
     res.json(data || []);
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ── Follow-up Helper Logic (Shared) ── */
+async function runFollowUpForInvite(invite, scheduledAt = null) {
+  // 1. Generate Follow-up Nudge via AI
+  const nudgePrompt = `
+You previously sent a conference invitation to a researcher. They haven't responded yet. 
+Write a short, professional, and very polite 2-sentence "nudge" to follow up.
+Tone: Respectful of their busy schedule, but emphasizing that we'd be honored to have them.
+
+Original Subject: ${invite.speaker_name}, exclusive invitation to speak
+Speaker: ${invite.speaker_name}
+
+Response format:
+SUBJECT: <follow-up subject>
+BODY: <short 2-sentence nudge body>
+`;
+
+  const raw = await callLLM(nudgePrompt);
+  const subjectMatch = raw.match(/^SUBJECT:\s*(.+)/im);
+  const bodyMatch = raw.match(/^BODY:\s*([\s\S]+)/im);
+
+  const nudgeBody = bodyMatch?.[1]?.trim() || raw;
+  const subject = subjectMatch?.[1]?.trim() || `Following up: Speaking at our conference`;
+
+  const isScheduled = !!scheduledAt;
+
+  // 2. Update DB
+  const { data: updated, error: updateErr } = await supabase
+    .from("speaker_invitations")
+    .update({
+      invitation_subject: isScheduled ? subject : invite.invitation_subject,
+      invitation_body: isScheduled ? nudgeBody : invite.invitation_body,
+      status: isScheduled ? "scheduled" : invite.status,
+      scheduled_at: scheduledAt || null,
+      is_scheduled: isScheduled,
+      follow_up_count: isScheduled ? invite.follow_up_count : (invite.follow_up_count || 0) + 1,
+      last_follow_up_at: isScheduled ? invite.last_follow_up_at : new Date().toISOString()
+    })
+    .eq("id", invite.id)
+    .select()
+    .single();
+
+  if (updateErr) throw updateErr;
+
+  // 3. If NOT scheduled, Send Now
+  if (!isScheduled) {
+    const backendUrl = process.env.BACKEND_URL || "http://localhost:4000";
+    const acceptLink = `${backendUrl}/api/speakers/respond?id=${invite.id}&status=accepted`;
+    const declineLink = `${backendUrl}/api/speakers/respond?id=${invite.id}&status=declined`;
+    const fullTrackingBody = `${nudgeBody}\n\n---\nPlease respond using the links below:\n[Accept](${acceptLink})\n[Decline](${declineLink})`;
+    
+    await sendEmailsToRecipients([invite.speaker_email], subject, fullTrackingBody);
+    console.log(`[Follow-up] Sent nudge to ${invite.speaker_email}`);
+  } else {
+    console.log(`[Follow-up] Scheduled nudge for ${invite.speaker_email} at ${scheduledAt}`);
+  }
+
+  return updated;
+}
+
+/* ── Individual Follow-up ── */
+router.post("/speakers/follow-up", async (req, res) => {
+  const { invite_id, scheduledAt } = req.body;
+  if (!invite_id) return res.status(400).json({ error: "Invite ID is required" });
+
+  try {
+    const { data: invite, error: fetchErr } = await supabase
+      .from("speaker_invitations")
+      .select("*")
+      .eq("id", invite_id)
+      .single();
+
+    if (fetchErr || !invite) throw new Error("Original invitation not found");
+
+    const updated = await runFollowUpForInvite(invite, scheduledAt);
+    res.json({ success: true, invite: updated });
+  } catch (err) {
+    console.error("Follow-up error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ── Bulk Follow-up ── */
+router.post("/speakers/bulk-follow-up", async (req, res) => {
+  const { conference_id, scheduledAt } = req.body;
+  if (!conference_id) return res.status(400).json({ error: "Conference ID is required" });
+
+  try {
+    // 1. Fetch all pending invites
+    const { data: pendingInvites, error } = await supabase
+      .from("speaker_invitations")
+      .select("*")
+      .eq("conference_id", conference_id)
+      .eq("status", "pending");
+
+    if (error) throw error;
+    if (!pendingInvites || pendingInvites.length === 0) {
+      return res.json({ success: true, count: 0, message: "No pending invitations found" });
+    }
+
+    console.log(`[Bulk Follow-up] Found ${pendingInvites.length} pending invites for conference ${conference_id}`);
+
+    // 2. Process each (sequentially to avoid LLM rate limits)
+    const results = [];
+    for (const invite of pendingInvites) {
+      try {
+        console.log(`  Processing ${invite.speaker_email}...`);
+        const updated = await runFollowUpForInvite(invite, scheduledAt);
+        results.push(updated);
+      } catch (err) {
+        console.error(`  Failed nudge for ${invite.speaker_email}:`, err.message);
+      }
+    }
+
+    console.log(`[Bulk Follow-up] Successfully processed ${results.length} / ${pendingInvites.length} nudges.`);
+    res.json({ success: true, count: results.length, total: pendingInvites.length });
+  } catch (err) {
+    console.error("Bulk follow-up error:", err);
     res.status(500).json({ error: err.message });
   }
 });

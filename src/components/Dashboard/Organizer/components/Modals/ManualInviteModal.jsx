@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserPlus, Loader2, Send, X, Sparkles, Check, Globe, Mail } from 'lucide-react';
+import { UserPlus, Loader2, Send, X, Sparkles, Check, Globe, Mail, Clock } from 'lucide-react';
 import { Field, Input, Btn } from '../common/Primitives';
 
 const ManualInviteModal = ({ conference, onClose, onInviteSent }) => {
@@ -9,6 +9,8 @@ const ManualInviteModal = ({ conference, onClose, onInviteSent }) => {
   const [institution, setInstitution] = useState('');
   const [profileBio, setProfileBio] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isScheduling, setIsScheduling] = useState(false);
+  const [scheduledAt, setScheduledAt] = useState('');
   const [speakerData, setSpeakerData] = useState(null);
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
@@ -82,7 +84,8 @@ const ManualInviteModal = ({ conference, onClose, onInviteSent }) => {
           speaker_email: email,
           speaker_profile: profileBio,
           subject,
-          body
+          body,
+          scheduledAt: isScheduling && scheduledAt ? new Date(scheduledAt).toISOString() : null
         })
       });
       const data = await res.json();
@@ -215,23 +218,61 @@ const ManualInviteModal = ({ conference, onClose, onInviteSent }) => {
                   onChange={e => setBody(e.target.value)}
                 />
               </Field>
+
+              {/* Scheduling Options */}
+              <div className="pt-4 border-t border-white/5 space-y-4">
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 hover:bg-white/[0.07] transition-colors cursor-pointer" onClick={() => setIsScheduling(!isScheduling)}>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isScheduling ? 'bg-indigo-500 text-black' : 'bg-white/5 text-slate-400'}`}>
+                      <Clock size={20} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-white">Schedule Dispatch</div>
+                      <div className="text-[10px] text-slate-500">Pick a specific time to send this invite</div>
+                    </div>
+                  </div>
+                  <div className={`w-12 h-6 rounded-full transition-colors relative ${isScheduling ? 'bg-indigo-600' : 'bg-slate-700'}`}>
+                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${isScheduling ? 'right-1' : 'left-1'}`} />
+                  </div>
+                </div>
+
+                {isScheduling && (
+                  <div className="px-4 animate-in slide-in-from-top-2 duration-300">
+                    <Field label="Dispatch Date & Time">
+                      <input 
+                        type="datetime-local" 
+                        value={scheduledAt}
+                        onChange={(e) => setScheduledAt(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                        min={new Date().toISOString().slice(0, 16)}
+                      />
+                    </Field>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        {step === 2 && (
-          <div className="p-6 border-t border-white/5 bg-black/20 flex gap-3">
-            <Btn onClick={() => setStep(1)} variant="ghost" className="flex-1 justify-center py-3">Back</Btn>
-            <Btn 
-              onClick={handleSend}
-              disabled={loading || !email.trim()}
-              className="flex-1 justify-center py-3 bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-500/10"
-            >
-              {loading ? <Loader2 className="animate-spin" size={18} /> : <><Mail size={18} className="mr-2" /> Send & Track</>}
+        <div className="p-6 border-t border-white/5 bg-black/20 flex gap-4">
+          {step === 2 && (
+            <Btn onClick={() => setStep(1)} variant="ghost" className="flex-1 text-slate-400 hover:text-white justify-center">
+              Back
             </Btn>
-          </div>
-        )}
+          )}
+          <Btn 
+            onClick={step === 1 ? handleDiscovery : handleSend} 
+            disabled={loading || !name.trim() || (step === 2 && isScheduling && !scheduledAt)}
+            className={`flex-[2] justify-center py-4 text-sm font-bold shadow-xl ${step === 1 ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+          >
+            {loading ? (
+              <><Loader2 className="animate-spin mr-2" size={18} /> Working...</>
+            ) : (
+              step === 1 ? <>AI Discovery <Sparkles className="ml-2" size={16} /></> : (isScheduling ? <>Schedule Dispatch <Clock className="ml-2" size={16} /></> : <>Send & Track <Send className="ml-2" size={16} /></>)
+            )}
+          </Btn>
+        </div>
       </div>
     </div>
   );

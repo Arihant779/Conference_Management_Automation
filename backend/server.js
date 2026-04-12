@@ -4,6 +4,7 @@ import cors from "cors";
 
 import emailRoutes from "./routes/email.js";
 import speakerRoutes from "./routes/speakers.js";
+import { initScheduler } from "./services/schedulerService.js";
 import { GROQ_API_KEY, GROQ_MODEL } from "./services/llmService.js";
 import { DEFAULT_SENDER } from "./config/email.js";
 
@@ -37,4 +38,7 @@ app.listen(PORT, () => {
   console.log(`   Default sender:  ${DEFAULT_SENDER.email || "NOT SET"}`);
   console.log(`   Gmail client:    ${DEFAULT_SENDER.clientId ? "set" : "NOT SET"}`);
   console.log(`   Refresh token:   ${DEFAULT_SENDER.refreshToken ? "set" : "NOT SET"}`);
+  
+  // Start the background scheduler
+  initScheduler();
 });
