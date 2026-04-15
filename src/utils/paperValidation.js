@@ -17,7 +17,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs
 export const validatePaper = async (file, settings) => {
   const errors = [];
   const warnings = [];
-  const { allowed_extensions, max_file_size_mb, require_indentation, indentation_px, check_font_size, min_font_size } = settings;
+  const { allowed_extensions, max_file_size_mb, require_indentation, indentation_cm, check_font_size, min_font_size } = settings;
 
   // 1. Basic checks
   const fileExt = '.' + file.name.split('.').pop().toLowerCase();
@@ -41,19 +41,17 @@ export const validatePaper = async (file, settings) => {
       const pdf = await loadingTask.promise;
       
       const numPages = Math.min(pdf.numPages, 3); // Analyze first 3 pages
-      let indentationScore = 0;
-      let totalLinesChecked = 0;
-      let fontSizes = [];
+      const xCounts = {};
+      const xPositions = [];
+      const fontSizes = [];
 
       for (let i = 1; i <= numPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
         
-        // Analyze x-coordinates (margins) and fonts
         const items = textContent.items;
         if (items.length === 0) continue;
 
-        // Group items by y-coordinate (lines)
         const lines = {}; 
         items.forEach(item => {
           const y = Math.round(item.transform[5]);
@@ -61,22 +59,16 @@ export const validatePaper = async (file, settings) => {
           lines[y].push(item);
         });
 
-        const sortedLines = Object.keys(lines).sort((a, b) => b - a); // Top to bottom
+        const sortedLines = Object.keys(lines).sort((a, b) => b - a);
 
         sortedLines.forEach(y => {
           const lineItems = lines[y].sort((a, b) => a.transform[4] - b.transform[4]);
           const firstItem = lineItems[0];
           
           if (firstItem && firstItem.str.trim().length > 0) {
-            const x = firstItem.transform[4];
-            
-            // Heuristic for indentation: if x is significantly offset from typical left margin
-            // Standard left margin is usually between 50-100 points
-            if (require_indentation && x > 95 && x < 150) { 
-              indentationScore++;
-            }
-            
-            totalLinesChecked++;
+            const x = Math.round(firstItem.transform[4]);
+            xPositions.push(x);
+            xCounts[x] = (xCounts[x] || 0) + 1;
             
             if (check_font_size && firstItem.height) {
               fontSizes.push(firstItem.height);
@@ -85,12 +77,38 @@ export const validatePaper = async (file, settings) => {
         });
       }
 
-      // Verification logic
-      if (require_indentation) {
-        // Expect at least some percentage of lines to be indented if required (paragraphs)
-        const indentRatio = indentationScore / totalLinesChecked;
-        if (indentRatio < 0.05) { // If less than 5% of lines are indented, it's likely missing paragraph indentation
-          errors.push(`Missing required paragraph indentation. Please ensure your paper follows the conference style guide.`);
+      // 3. Analyze Coordinates
+      if (xPositions.length > 0) {
+        // Find the dominant left margin (mode)
+        let baseMargin = 0;
+        let maxCount = 0;
+        Object.entries(xCounts).forEach(([x, count]) => {
+          if (count > maxCount) {
+            maxCount = count;
+            baseMargin = parseInt(x);
+          }
+        });
+
+        const cmToPt = 28.35; // 1cm = 72/2.54 points
+        const threshold = (indentation_cm || 0.5) * cmToPt;
+        const totalLines = xPositions.length;
+        let indentedLines = 0;
+
+        xPositions.forEach(x => {
+          // A line is indented if it starts significantly to the right of the base margin
+          // but not so far as to be centered or part of a nested structure (heuristic < 200)
+          if (x >= baseMargin + threshold && x < baseMargin + 150) {
+            indentedLines++;
+          }
+        });
+
+        if (require_indentation) {
+          const indentRatio = indentedLines / totalLines;
+          // Most academic papers have paragraphs. If less than 3% of lines are indented, it's suspicious.
+          if (indentRatio < 0.03) {
+            const detectedMarginCm = (baseMargin / cmToPt).toFixed(2);
+            errors.push(`Missing paragraph indentation. Detected base margin at ${detectedMarginCm}cm, but found insufficient indented lines. Please ensure paragraphs are indented by at least ${indentation_cm}cm.`);
+          }
         }
       }
 

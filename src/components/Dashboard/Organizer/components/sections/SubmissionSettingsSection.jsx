@@ -13,7 +13,7 @@ const SubmissionSettingsSection = ({ conf }) => {
   const [settings, setSettings] = useState({
     allowed_extensions: ['.pdf', '.docx'],
     require_indentation: false,
-    indentation_px: 20,
+    indentation_cm: 0.5,
     max_file_size_mb: 10,
     check_font_size: false,
     min_font_size: 10
@@ -167,11 +167,12 @@ const SubmissionSettingsSection = ({ conf }) => {
 
               {settings.require_indentation && (
                 <div className="mt-2 animate-in fade-in slide-in-from-top-1">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Minimum Indentation (px)</label>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Minimum Indentation (cm)</label>
                   <input 
                     type="number"
-                    value={settings.indentation_px}
-                    onChange={e => setSettings({ ...settings, indentation_px: parseInt(e.target.value) })}
+                    step="0.1"
+                    value={settings.indentation_cm}
+                    onChange={e => setSettings({ ...settings, indentation_cm: parseFloat(e.target.value) })}
                     className={`w-full p-3 rounded-xl border bg-transparent text-sm focus:border-amber-500 outline-none transition-all ${
                       isDark ? 'border-white/10 text-white' : 'border-zinc-200 text-zinc-900'
                     }`}
