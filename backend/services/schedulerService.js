@@ -36,7 +36,7 @@ export function initScheduler() {
             const declineLink = `${backendUrl}/api/speakers/respond?id=${invite.id}&status=declined`;
             
             const subject = invite.invitation_subject || `Invitation to Speak`;
-            const body = invite.invitation_body;
+            const body = invite.invitation_body || "We would be honored to have you as a speaker.";
             const trackedBody = `${body}\n\n---\nPlease respond using the links below:\n[Accept](${acceptLink})\n[Decline](${declineLink})`;
 
             // Send Email

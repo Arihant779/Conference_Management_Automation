@@ -208,12 +208,12 @@ BODY: <short 2-sentence nudge body>
   const { data: updated, error: updateErr } = await supabase
     .from("speaker_invitations")
     .update({
-      invitation_subject: isScheduled ? subject : invite.invitation_subject,
-      invitation_body: isScheduled ? nudgeBody : invite.invitation_body,
+      invitation_subject: subject,
+      invitation_body: nudgeBody,
       status: isScheduled ? "scheduled" : invite.status,
       scheduled_at: scheduledAt || null,
       is_scheduled: isScheduled,
-      follow_up_count: isScheduled ? invite.follow_up_count : (invite.follow_up_count || 0) + 1,
+      follow_up_count: (invite.follow_up_count || 0) + (isScheduled ? 0 : 1),
       last_follow_up_at: isScheduled ? invite.last_follow_up_at : new Date().toISOString()
     })
     .eq("id", invite.id)

@@ -1,12 +1,6 @@
+import "dotenv/config";
 import path from "path";
 import { fileURLToPath } from "url";
-import dotenv from "dotenv";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Explicitly load .env from the backend directory
-dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 import express from "express";
 import cors from "cors";
@@ -15,6 +9,9 @@ import emailRoutes from "./routes/email.js";
 import speakerRoutes from "./routes/speakers.js";
 import teamRoutes from "./routes/teams.js";
 import paperRoutes from "./routes/papers.js";
+import conferenceRoutes from "./routes/conferences.js";
+import dashboardRoutes from "./routes/dashboards.js";
+import authRoutes from "./routes/auth.js";
 
 import { initScheduler } from "./services/schedulerService.js";
 import { GROQ_API_KEY, GROQ_MODEL } from "./services/llmService.js";
@@ -32,6 +29,9 @@ app.use("/api", emailRoutes);
 app.use("/api", speakerRoutes);
 app.use("/api/teams", teamRoutes);
 app.use("/api/papers", paperRoutes);
+app.use("/api/conferences", conferenceRoutes);
+app.use("/api/dashboards", dashboardRoutes);
+app.use("/api/auth", authRoutes);
 
 /* ── Health check ── */
 app.get("/health", (req, res) => {
