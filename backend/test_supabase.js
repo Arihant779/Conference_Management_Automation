@@ -8,7 +8,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function test() {
   console.log("Testing Supabase connection...");
-  const { data, error } = await supabase.from("speaker_invitations").select("*").limit(1);
+  const { data, error } = await supabase.from("paper").select("*").limit(1);
   if (error) {
     console.error("Supabase Error:", error);
   } else {

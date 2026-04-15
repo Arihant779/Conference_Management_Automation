@@ -14,6 +14,7 @@ import cors from "cors";
 import emailRoutes from "./routes/email.js";
 import speakerRoutes from "./routes/speakers.js";
 import teamRoutes from "./routes/teams.js";
+import paperRoutes from "./routes/papers.js";
 
 import { initScheduler } from "./services/schedulerService.js";
 import { GROQ_API_KEY, GROQ_MODEL } from "./services/llmService.js";
@@ -30,6 +31,7 @@ app.use(express.json({ limit: "50mb" }));
 app.use("/api", emailRoutes);
 app.use("/api", speakerRoutes);
 app.use("/api/teams", teamRoutes);
+app.use("/api/papers", paperRoutes);
 
 /* ── Health check ── */
 app.get("/health", (req, res) => {
