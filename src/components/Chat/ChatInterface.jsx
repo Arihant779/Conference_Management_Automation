@@ -124,7 +124,7 @@ const ChatInterface = ({ conferenceId, teamId, chatType, title }) => {
                 isDark ? 'bg-white/5 border-white/8' : 'bg-zinc-50 border-zinc-200'
             }`}>
                 <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${chatType === 'team' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-violet-500/10 text-violet-400'}`}>
+                    <div className={`p-2 rounded-lg ${chatType === 'team' ? 'bg-amber-500/10 text-amber-400' : 'bg-orange-500/10 text-orange-400'}`}>
                         {chatType === 'team' ? <Users size={18} /> : <Shield size={18} />}
                     </div>
                     <div>
@@ -141,7 +141,7 @@ const ChatInterface = ({ conferenceId, teamId, chatType, title }) => {
             <div className="flex-1 overflow-y-auto p-6 space-y-4 scroll-smooth custom-scrollbar">
                 {loading ? (
                     <div className="flex flex-col items-center justify-center h-full gap-3 py-10 opacity-50">
-                        <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                        <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
                         <span className="text-xs text-zinc-500 font-medium">Loading messages...</span>
                     </div>
                 ) : messages.length === 0 ? (
@@ -174,7 +174,7 @@ const ChatInterface = ({ conferenceId, teamId, chatType, title }) => {
                                 )}
                                 <div
                                     className={`max-w-[85%] px-4 py-2 rounded-2xl text-sm leading-relaxed ${isMe
-                                            ? 'bg-indigo-600 text-white rounded-tr-none shadow-lg'
+                                            ? 'bg-amber-600 text-white rounded-tr-none shadow-lg'
                                             : isDark 
                                                 ? 'bg-white/5 text-zinc-200 border border-white/8 rounded-tl-none'
                                                 : 'bg-zinc-100 text-zinc-800 border border-zinc-200 rounded-tl-none'
@@ -193,7 +193,7 @@ const ChatInterface = ({ conferenceId, teamId, chatType, title }) => {
             <form onSubmit={handleSendMessage} className={`p-4 border-t ${isDark ? 'bg-white/4 border-white/8' : 'bg-zinc-50/50 border-zinc-200'}`}>
                 <div className="relative flex items-center gap-3">
                     <input
-                        className={`flex-1 border rounded-xl px-5 py-3 text-sm placeholder-zinc-500 outline-none focus:border-indigo-500 transition-all ${
+                        className={`flex-1 border rounded-xl px-5 py-3 text-sm placeholder-zinc-500 outline-none focus:border-amber-500 transition-all ${
                             isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-zinc-200 text-zinc-900'
                         }`}
                         placeholder="Type your message..."
@@ -203,7 +203,7 @@ const ChatInterface = ({ conferenceId, teamId, chatType, title }) => {
                     <button
                         type="submit"
                         disabled={!newMessage.trim() || sending}
-                        className="p-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl shadow-lg transition-all"
+                        className="p-3 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white rounded-xl shadow-lg transition-all"
                     >
                         <Send size={18} />
                     </button>

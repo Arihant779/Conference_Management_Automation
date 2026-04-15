@@ -53,9 +53,9 @@ const RESEARCH_AREAS = [
 
 /* ─── style helpers ─────────────────────────────────────────────────────── */
 const inputCls =
-  'w-full p-3 rounded-lg bg-black border border-white/10 text-slate-200 outline-none focus:border-indigo-500 transition-colors';
+  'w-full p-3 rounded-lg bg-black border border-white/10 text-slate-200 outline-none focus:border-amber-500 transition-colors';
 const smallInputCls =
-  'w-full p-2 rounded-lg bg-black border border-white/10 text-slate-200 text-sm outline-none focus:border-indigo-500 transition-colors';
+  'w-full p-2 rounded-lg bg-black border border-white/10 text-slate-200 text-sm outline-none focus:border-amber-500 transition-colors';
 
 const FormField = ({ label, hint, children }) => (
   <div>
@@ -281,7 +281,7 @@ const [isReviewer, setIsReviewer] = useState(false);
 
       <h2 className="text-3xl font-bold text-white mb-2">Research Paper Submission</h2>
       <p className="text-slate-500 text-sm mb-8">
-        Submitting to: <span className="text-indigo-400 font-semibold">{conf?.title ?? 'Unknown Conference'}</span>
+        Submitting to: <span className="text-amber-400 font-semibold">{conf?.title ?? 'Unknown Conference'}</span>
       </p>
 
       {/* Existing submissions warning */}
@@ -394,7 +394,7 @@ const [isReviewer, setIsReviewer] = useState(false);
               className={inputCls}
             />
             
-            {validating && <p className="text-xs text-indigo-400 mt-2 italic flex items-center gap-1"><FileCheck size={11} className="animate-pulse" /> Validating formatting...</p>}
+            {validating && <p className="text-xs text-amber-400 mt-2 italic flex items-center gap-1"><FileCheck size={11} className="animate-pulse" /> Validating formatting...</p>}
             
             {validation && !validating && (
               <div className={`mt-3 p-4 rounded-xl border transition-all duration-300 ${
@@ -467,7 +467,7 @@ const [isReviewer, setIsReviewer] = useState(false);
               <button
                 type="button"
                 onClick={addAuthor}
-                className="flex items-center gap-2 text-sm text-indigo-400 hover:text-indigo-300 transition-colors font-semibold"
+                className="flex items-center gap-2 text-sm text-amber-400 hover:text-amber-300 transition-colors font-semibold"
               >
                 <PlusCircle size={15} /> Add Author
               </button>
@@ -480,7 +480,7 @@ const [isReviewer, setIsReviewer] = useState(false);
                     <span className="text-sm font-bold text-slate-300">
                       Author #{idx + 1}
                       {idx === 0 && (
-                        <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 uppercase tracking-wider">
+                        <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 uppercase tracking-wider">
                           Corresponding
                         </span>
                       )}
@@ -604,7 +604,7 @@ const [isReviewer, setIsReviewer] = useState(false);
           <button
             type="submit"
             disabled={loading || !confId || validating || (validation && !validation.valid)}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed py-3.5 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-colors shadow-lg shadow-indigo-600/20"
+            className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 disabled:opacity-50 disabled:cursor-not-allowed py-3.5 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all shadow-lg shadow-amber-600/40"
           >
             <Upload size={17} />
             {loading ? 'Submitting…' : 'Submit Research Paper'}

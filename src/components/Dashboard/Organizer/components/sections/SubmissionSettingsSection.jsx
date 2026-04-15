@@ -93,7 +93,7 @@ const SubmissionSettingsSection = ({ conf }) => {
             isDark ? 'bg-slate-900/40 border-white/5' : 'bg-white border-zinc-200 shadow-sm'
           }`}>
             <div className="flex items-center gap-3 mb-6">
-              <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20">
+              <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20">
                 <FileText size={20} />
               </div>
               <h3 className={`font-bold tracking-tight ${isDark ? 'text-white' : 'text-zinc-900'}`}>Accepted File Formats</h3>
@@ -106,13 +106,13 @@ const SubmissionSettingsSection = ({ conf }) => {
                   onClick={() => toggleExt(ext)}
                   className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
                     settings.allowed_extensions.includes(ext)
-                      ? 'border-blue-500/40 bg-blue-500/5'
+                      ? 'border-amber-500/40 bg-amber-500/5'
                       : 'border-white/5 bg-transparent'
                   }`}
                 >
-                  <span className={`text-sm font-semibold ${settings.allowed_extensions.includes(ext) ? (isDark ? 'text-blue-300' : 'text-blue-600') : 'text-slate-500'}`}>{ext.toUpperCase()}</span>
+                  <span className={`text-sm font-semibold ${settings.allowed_extensions.includes(ext) ? (isDark ? 'text-amber-300' : 'text-amber-600') : 'text-slate-500'}`}>{ext.toUpperCase()}</span>
                   <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
-                    settings.allowed_extensions.includes(ext) ? 'bg-blue-500 border-blue-500' : 'border-slate-700'
+                    settings.allowed_extensions.includes(ext) ? 'bg-amber-500 border-amber-500' : 'border-slate-700'
                   }`}>
                     {settings.allowed_extensions.includes(ext) && <CheckCircle size={12} className="text-white" />}
                   </div>
@@ -126,7 +126,7 @@ const SubmissionSettingsSection = ({ conf }) => {
                 type="number"
                 value={settings.max_file_size_mb}
                 onChange={e => setSettings({ ...settings, max_file_size_mb: parseInt(e.target.value) })}
-                className={`w-full p-3 rounded-xl border bg-transparent text-sm focus:border-blue-500 outline-none transition-all ${
+                className={`w-full p-3 rounded-xl border bg-transparent text-sm focus:border-amber-500 outline-none transition-all ${
                   isDark ? 'border-white/10 text-white' : 'border-zinc-200 text-zinc-900'
                 }`}
               />
@@ -219,10 +219,10 @@ const SubmissionSettingsSection = ({ conf }) => {
       </div>
       
       <div className={`p-4 rounded-xl border flex items-start gap-3 ${
-        isDark ? 'bg-blue-500/5 border-blue-500/20' : 'bg-blue-50 border-blue-200'
+        isDark ? 'bg-amber-500/5 border-amber-500/20' : 'bg-amber-50 border-amber-200'
       }`}>
-        <AlertCircle size={18} className="text-blue-500 shrink-0 mt-0.5" />
-        <p className="text-xs text-blue-500/80 leading-relaxed italic">
+        <AlertCircle size={18} className="text-amber-500 shrink-0 mt-0.5" />
+        <p className="text-xs text-amber-500/80 leading-relaxed italic">
           These rules are enforced during the submission process. If a paper violates these rules, the author will receive a warning and will be prevented from submitting until corrected.
         </p>
       </div>

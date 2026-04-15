@@ -8,11 +8,11 @@ const StatusBadge = ({ status, scheduledAt }) => {
     pending: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
     accepted: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
     declined: 'bg-rose-500/10 text-rose-500 border-rose-500/20',
-    scheduled: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20',
+    scheduled: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
   };
 
   return (
-    <div className={`px-3 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wider flex flex-col items-center gap-1 ${styles[status] || styles.pending}`}>
+    <div className={`px-3 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wider flex flex-col items-center gap-1 ${styles[status] || styles.pending} transition-all duration-300`}>
       {status}
       {status === 'scheduled' && scheduledAt && (
         <span className="text-[8px] opacity-70 lowercase font-medium">
@@ -57,14 +57,14 @@ const FollowUpButton = ({ inviteId, onSuccess, isDark }) => {
         onClick={() => handleFollowUp(false)} 
         disabled={loading}
         variant="ghost" 
-        className={`text-[9px] h-7 px-3 border border-dashed ${isDark ? 'border-white/10' : 'border-zinc-200'} hover:border-indigo-500/50 hover:bg-indigo-500/10 hover:text-indigo-400 transition-all`}
+        className={`text-[9px] h-7 px-3 border border-dashed ${isDark ? 'border-white/10' : 'border-zinc-200'} hover:border-amber-500/50 hover:bg-amber-500/10 hover:text-amber-400 transition-all`}
       >
         {loading ? <Loader2 className="animate-spin" size={12} /> : 'Nudge Now'}
       </Btn>
       
       <button 
         onClick={() => setShowScheduler(!showScheduler)}
-        className="text-[8px] font-bold text-slate-500 hover:text-indigo-400 uppercase tracking-tighter transition-colors"
+        className="text-[8px] font-bold text-slate-500 hover:text-amber-400 uppercase tracking-tighter transition-colors"
       >
         {showScheduler ? 'Cancel' : 'Schedule Nudge'}
       </button>
@@ -81,7 +81,7 @@ const FollowUpButton = ({ inviteId, onSuccess, isDark }) => {
           <Btn 
             onClick={() => handleFollowUp(true)}
             disabled={loading || !scheduledAt}
-            className="h-6 text-[8px] bg-indigo-600 hover:bg-indigo-700 py-0"
+            className="h-6 text-[8px] bg-amber-600 hover:bg-amber-700 py-0"
           >
             {loading ? <Loader2 className="animate-spin" size={10} /> : 'Confirm'}
           </Btn>
@@ -126,13 +126,13 @@ const BulkFollowUpAction = ({ conference, pendingCount, onComplete, isDark }) =>
   };
 
   return (
-    <div className={`p-4 border-b ${isDark ? 'border-white/5 bg-indigo-500/5' : 'bg-indigo-50 border-indigo-100'} flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in slide-in-from-top-4 duration-300`}>
+    <div className={`p-4 border-b ${isDark ? 'border-white/5 bg-amber-500/5' : 'bg-amber-50 border-amber-100'} flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in slide-in-from-top-4 duration-300`}>
       <div className="flex items-center gap-3">
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isDark ? 'bg-indigo-500 text-black' : 'bg-indigo-600 text-white'}`}>
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isDark ? 'bg-amber-500 text-black' : 'bg-amber-600 text-white'}`}>
           <RefreshCcw size={16} className={loading ? 'animate-spin' : ''} />
         </div>
         <div>
-          <div className="text-sm font-bold text-indigo-400">{pendingCount} Speakers Pending</div>
+          <div className="text-sm font-bold text-amber-500 uppercase tracking-tight">{pendingCount} Speakers Pending</div>
           <div className="text-[10px] text-slate-500">Send personalized nudges to everyone together</div>
         </div>
       </div>
@@ -150,7 +150,7 @@ const BulkFollowUpAction = ({ conference, pendingCount, onComplete, isDark }) =>
           )}
           <button 
             onClick={() => setShowScheduler(!showScheduler)}
-            className="text-[10px] font-bold text-slate-500 hover:text-indigo-400 uppercase tracking-widest px-2"
+            className="text-[10px] font-bold text-slate-500 hover:text-amber-500 uppercase tracking-widest px-2"
           >
             {showScheduler ? 'Cancel' : 'Schedule Bulk Nudge'}
           </button>
@@ -160,7 +160,7 @@ const BulkFollowUpAction = ({ conference, pendingCount, onComplete, isDark }) =>
           onClick={() => handleBulkFollowUp(showScheduler)} 
           disabled={loading || (showScheduler && !scheduledAt)}
           variant="primary" 
-          className="bg-indigo-600 hover:bg-indigo-700 text-xs px-6 py-2.5"
+          className="bg-amber-600 hover:bg-amber-700 text-xs px-6 py-2.5 border-0"
         >
           {loading ? (
             <><Loader2 className="animate-spin mr-2" size={14} /> Processing...</>
@@ -210,7 +210,7 @@ const InvitationTrackerSection = ({ conference, isDark }) => {
           <p className={`text-sm mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Monitor speaker outreach and track responses in real-time</p>
         </div>
         <div className="flex items-center gap-2">
-          <Btn onClick={() => setShowManualModal(true)} variant="primary" className="text-xs bg-indigo-600 hover:bg-indigo-700">
+          <Btn onClick={() => setShowManualModal(true)} variant="primary" className="text-xs bg-amber-600 hover:bg-amber-700 border-0">
             <UserPlus size={14} className="mr-2" />
             Manual Invite
           </Btn>
@@ -293,7 +293,7 @@ const InvitationTrackerSection = ({ conference, isDark }) => {
                     <td className="px-6 py-4">
                       <div className="flex flex-col items-center justify-center gap-2">
                         {invite.follow_up_count > 0 && (
-                          <span className="text-[10px] font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">
+                          <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
                             Nudge x{invite.follow_up_count}
                           </span>
                         )}
@@ -322,13 +322,13 @@ const InvitationTrackerSection = ({ conference, isDark }) => {
         </div>
       </div>
 
-      <div className="p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 flex items-start gap-4">
-        <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0 border border-indigo-500/20">
-          <RefreshCcw className="text-indigo-400" size={18} />
+      <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 flex items-start gap-4">
+        <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0 border border-amber-500/20">
+          <RefreshCcw className="text-amber-500" size={18} />
         </div>
         <div>
-          <h4 className="text-sm font-bold text-indigo-200">Real-time status tracking active</h4>
-          <p className="text-xs text-indigo-200/60 leading-relaxed mt-1">
+          <h4 className="text-sm font-bold text-amber-200">Real-time status tracking active</h4>
+          <p className="text-xs text-amber-200/60 leading-relaxed mt-1">
             The status is updated automatically whenever a speaker clicks the magic response link in their invitation email. You can also manually refresh the list using the button above.
           </p>
         </div>

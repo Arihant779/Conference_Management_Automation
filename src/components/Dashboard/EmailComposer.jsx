@@ -14,12 +14,12 @@ import { jsPDF } from 'jspdf';
 const cls = (...c) => c.filter(Boolean).join(' ');
 
 const RECIPIENT_GROUPS = [
-  { key: 'all', label: 'All Members', color: 'text-indigo-400', bg: 'bg-indigo-500/10 border-indigo-500/25' },
-  { key: 'organizer', label: 'Organizers', color: 'text-violet-400', bg: 'bg-violet-500/10 border-violet-500/25' },
-  { key: 'reviewer', label: 'Reviewers', color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/25' },
-  { key: 'presenter', label: 'Presenters', color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/25' },
+  { key: 'all', label: 'All Members', color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/25' },
+  { key: 'organizer', label: 'Organizers', color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/25' },
+  { key: 'reviewer', label: 'Reviewers', color: 'text-yellow-400', bg: 'bg-yellow-500/10 border-yellow-500/25' },
+  { key: 'presenter', label: 'Presenters', color: 'text-amber-500', bg: 'bg-amber-500/10 border-amber-500/25' },
   { key: 'member', label: 'Guests', color: 'text-slate-400', bg: 'bg-slate-500/10 border-slate-500/25' },
-  { key: 'custom', label: 'Custom', color: 'text-pink-400', bg: 'bg-pink-500/10 border-pink-500/25' },
+  { key: 'custom', label: 'Custom', color: 'text-orange-300', bg: 'bg-orange-500/10 border-orange-500/25' },
 ];
 
 const TONE_OPTIONS = [
@@ -54,7 +54,7 @@ const Input = ({ className, isDark, ...props }) => (
   <input {...props} className={cls(
     'w-full rounded-xl px-4 py-2.5 text-sm transition-all duration-200 outline-none border',
     isDark
-      ? 'bg-white/5 border-white/8 text-white placeholder-slate-600 focus:border-indigo-500 focus:bg-white/10'
+      ? 'bg-white/5 border-white/8 text-white placeholder-slate-600 focus:border-amber-500 focus:bg-white/10'
       : 'bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:border-amber-500 focus:bg-white',
     className,
   )} />
@@ -495,7 +495,7 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
           <p className={cls("text-sm mb-1", isDark ? "text-slate-400" : "text-zinc-500")}>
             Delivered to <span className={cls("font-semibold", isDark ? "text-white" : "text-zinc-800")}>{sentCount}</span> recipient{sentCount !== 1 ? 's' : ''}
           </p>
-          <button onClick={reset} className={cls("mt-8 px-7 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-lg active:scale-95", isDark ? "bg-indigo-600 hover:bg-indigo-500 text-white" : "bg-amber-500 hover:bg-amber-600 text-white")}>
+          <button onClick={reset} className={cls("mt-8 px-7 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-lg active:scale-95", isDark ? "bg-amber-600 hover:bg-amber-500 text-white" : "bg-amber-500 hover:bg-amber-600 text-white")}>
             Compose Another
           </button>
         </div>
@@ -543,7 +543,7 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
                 <Field label="What do you want to communicate?" isDark={isDark}>
                   <textarea
                     className={cls(
-                      "w-full rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none resize-none transition-all border h-28",
+                      "w-full rounded-xl px-4 py-3 text-sm focus:border-amber-500 outline-none resize-none transition-all border h-28",
                       isDark ? "bg-white/5 border-white/8 text-white placeholder-slate-600" : "bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400"
                     )}
                     placeholder="Describe the email purpose…"
@@ -601,7 +601,7 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
                         className={cls(
                           "w-full flex items-center gap-2.5 px-4 py-3 rounded-xl border border-dashed text-xs font-bold transition-all",
                           isDark
-                            ? "border-white/15 hover:border-indigo-500/40 hover:bg-indigo-500/5 text-slate-500 hover:text-indigo-300"
+                            ? "border-white/15 hover:border-amber-500/40 hover:bg-amber-500/5 text-slate-500 hover:text-amber-300"
                             : "border-zinc-300 hover:border-amber-400 hover:bg-amber-50 text-zinc-500 hover:text-amber-600"
                         )}
                       >
@@ -619,7 +619,7 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
                     disabled={generating || !intent.trim() || resolvedRecipients.length === 0}
                     className={cls(
                       "flex items-center gap-2 px-8 py-3 rounded-xl font-bold text-sm transition-all shadow-xl active:scale-95 disabled:opacity-40",
-                      isDark ? "bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20" : "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20"
+                      isDark ? "bg-amber-600 hover:bg-amber-500 text-white shadow-amber-500/20" : "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20"
                     )}
                   >
                     {generating ? <RefreshCw size={16} className="animate-spin" /> : <Sparkles size={16} />}
@@ -633,8 +633,8 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
               <div className={cls("rounded-2xl p-6 space-y-6 border transition-all", isDark ? "bg-[#0d1117]/80 border-white/6" : "bg-white border-zinc-200 shadow-sm")}>
                 <div className={cls("flex items-center justify-between pb-4 border-b", isDark ? "border-white/5" : "border-zinc-100")}>
                   <div className="flex items-center gap-3">
-                    <div className={cls("w-10 h-10 rounded-xl flex items-center justify-center", isDark ? "bg-indigo-500/10" : "bg-indigo-50")}>
-                      <ChevronUp size={20} className="text-indigo-500" />
+                    <div className={cls("w-10 h-10 rounded-xl flex items-center justify-center", isDark ? "bg-amber-500/10" : "bg-amber-50")}>
+                      <ChevronUp size={20} className="text-amber-500" />
                     </div>
                     <div>
                       <h4 className={cls("text-sm font-bold", isDark ? "text-white" : "text-zinc-900")}>Draft Review</h4>
@@ -660,7 +660,7 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
 
                   {/* Certificate progress */}
                   {certSendProgress && (
-                    <div className={cls("flex items-center gap-2 rounded-xl px-4 py-3 text-sm", isDark ? "bg-indigo-500/10 border border-indigo-500/20 text-indigo-300" : "bg-indigo-50 border border-indigo-200 text-indigo-600")}>
+                    <div className={cls("flex items-center gap-2 rounded-xl px-4 py-3 text-sm", isDark ? "bg-amber-500/10 border border-amber-500/20 text-amber-300" : "bg-amber-50 border border-amber-200 text-amber-600")}>
                       <Loader2 size={14} className="animate-spin shrink-0" /> {certSendProgress}
                     </div>
                   )}
@@ -713,8 +713,8 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
               </div>
             </div>
 
-            <div className={cls("rounded-2xl p-6 border transition-all", isDark ? "bg-indigo-500/5 border-indigo-500/15" : "bg-amber-50 border-amber-100")}>
-              <h4 className={cls("text-[10px] uppercase tracking-widest font-black mb-3", isDark ? "text-indigo-400" : "text-amber-700")}>Pro Tips</h4>
+            <div className={cls("rounded-2xl p-6 border transition-all", isDark ? "bg-amber-500/5 border-amber-500/15" : "bg-amber-50 border-amber-100")}>
+              <h4 className={cls("text-[10px] uppercase tracking-widest font-black mb-3", isDark ? "text-amber-400" : "text-amber-700")}>Pro Tips</h4>
               <ul className={cls("text-[10px] leading-relaxed space-y-2", isDark ? "text-slate-500" : "text-zinc-600")}>
                 <li>• Use specific names in your intent for <b>Personalized AI</b> results.</li>
                 <li>• You can always <b>edit the body</b> manually before clicking send.</li>

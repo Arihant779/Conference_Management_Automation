@@ -14,8 +14,8 @@ const Btn = ({ variant = 'primary', children, className, isDark, ...props }) => 
   const base = 'px-4 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 justify-center disabled:opacity-40 disabled:cursor-not-allowed';
   const v = {
     primary: isDark 
-      ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' 
-      : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20',
+      ? 'bg-gradient-to-br from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-lg shadow-amber-500/20' 
+      : 'bg-gradient-to-br from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-lg shadow-amber-600/20',
     secondary: isDark 
       ? 'border border-white/10 text-slate-400 hover:text-white hover:bg-white/5' 
       : 'border border-zinc-200 text-zinc-600 hover:bg-zinc-50 hover:border-zinc-300',
@@ -371,7 +371,7 @@ const PaperAllocation = ({ conf, onRefresh }) => {
             className={cls(
               'px-5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2',
               activeTab === k 
-                ? isDark ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-white text-indigo-600 shadow-sm'
+                ? isDark ? 'bg-amber-600 text-white shadow-lg shadow-amber-500/20' : 'bg-white text-amber-600 shadow-sm'
                 : isDark ? 'text-slate-500 hover:text-slate-200' : 'text-zinc-500 hover:text-zinc-800',
               k === 'results' && !result && !confirmed && 'opacity-30 cursor-not-allowed'
             )}
@@ -401,8 +401,8 @@ const PaperAllocation = ({ conf, onRefresh }) => {
           <div className={cls("rounded-[2rem] p-8 border", isDark ? "bg-[#0d1117] border-white/6" : "bg-white border-zinc-200 shadow-xl shadow-zinc-500/5")}>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className={cls("w-10 h-10 rounded-xl flex items-center justify-center", isDark ? "bg-indigo-500/15" : "bg-indigo-50")}>
-                  <FileText size={20} className="text-indigo-500" />
+                <div className={cls("w-10 h-10 rounded-xl flex items-center justify-center", isDark ? "bg-amber-500/15" : "bg-amber-50")}>
+                  <FileText size={20} className="text-amber-500" />
                 </div>
                 <div>
                   <h3 className={cls("text-lg font-bold truncate", isDark ? "text-white" : "text-zinc-900")}>Submission Repository</h3>
@@ -422,8 +422,8 @@ const PaperAllocation = ({ conf, onRefresh }) => {
             <input ref={fileInputRef} type="file" accept=".pdf" multiple className="hidden" onChange={e => { addFiles(e.target.files); e.target.value = ''; }} />
 
             {showPaperDbSelector && (
-              <div className={cls("mb-6 border rounded-2xl p-4 animate-in slide-in-from-top-4", isDark ? "bg-indigo-500/5 border-indigo-500/10" : "bg-zinc-50 border-zinc-100")}>
-                <div className={cls("text-[10px] font-bold uppercase tracking-[0.2em] mb-4", isDark ? "text-indigo-400" : "text-indigo-600")}>CONF. DATABASE PAPERS</div>
+              <div className={cls("mb-6 border rounded-2xl p-4 animate-in slide-in-from-top-4", isDark ? "bg-amber-500/5 border-amber-500/10" : "bg-zinc-50 border-zinc-100")}>
+                <div className={cls("text-[10px] font-bold uppercase tracking-[0.2em] mb-4", isDark ? "text-amber-400" : "text-amber-600")}>CONF. DATABASE PAPERS</div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                   {dbPapers.length === 0 ? (
                     <div className="col-span-full py-8 text-center text-xs italic text-slate-500">Empty repository for this conference.</div>
@@ -434,12 +434,12 @@ const PaperAllocation = ({ conf, onRefresh }) => {
                         <div key={p.id} onClick={() => toggleDbPaper(p)} className={cls(
                             "group flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all active:scale-95",
                             isSelected 
-                              ? isDark ? "bg-indigo-600/20 border-indigo-500/50 text-indigo-100 shadow-lg" : "bg-white border-indigo-500 text-indigo-700 shadow-md"
+                              ? isDark ? "bg-amber-600/20 border-amber-500/50 text-amber-100 shadow-lg" : "bg-white border-amber-500 text-amber-700 shadow-md"
                               : isDark ? "bg-white/3 border-white/6 text-slate-400 hover:bg-white/5" : "bg-white border-zinc-200 text-zinc-500 hover:border-zinc-300"
                           )}>
                           <div className={cls(
                             "w-5 h-5 rounded-md border flex items-center justify-center transition-all",
-                            isSelected ? "bg-indigo-500 border-indigo-500" : isDark ? "bg-black/20 border-white/10" : "bg-zinc-100 border-zinc-200"
+                            isSelected ? "bg-amber-500 border-amber-500" : isDark ? "bg-black/20 border-white/10" : "bg-zinc-100 border-zinc-200"
                           )}> {isSelected && <CheckCircle size={10} className="text-white" />} </div>
                           <span className="text-xs font-bold truncate flex-1">{p.name}</span>
                           <span className={cls("text-[9px] font-black uppercase px-2 py-0.5 rounded", isDark ? "bg-black/30 text-slate-600" : "bg-zinc-50 text-zinc-400")}>ID-{p.id.slice(0,4)}</span>
@@ -452,19 +452,19 @@ const PaperAllocation = ({ conf, onRefresh }) => {
             )}
 
             <div className={cls(
-              "border-2 border-dashed rounded-[2rem] p-10 text-center transition-all hover:border-indigo-500/40 group relative overflow-hidden",
+              "border-2 border-dashed rounded-[2rem] p-10 text-center transition-all hover:border-amber-500/40 group relative overflow-hidden",
               isDark ? "bg-white/2 border-white/8 hover:bg-white/3" : "bg-zinc-50 border-zinc-200 hover:bg-white"
             )} onClick={() => fileInputRef.current?.click()}>
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <Upload size={32} className={cls("mx-auto mb-4 transition-transform group-hover:-translate-y-1", isDark ? "text-slate-600" : "text-zinc-300")} />
-              <p className={cls("text-sm font-bold", isDark ? "text-slate-400" : "text-zinc-600")}>Drag & drop PDFs or <span className="text-indigo-500 hover:underline">browse files</span></p>
+              <p className={cls("text-sm font-bold", isDark ? "text-slate-400" : "text-zinc-600")}>Drag & drop PDFs or <span className="text-amber-500 hover:underline">browse files</span></p>
               <p className={cls("text-[11px] mt-2 italic", isDark ? "text-slate-700" : "text-zinc-400")}>Multi-select supported for batch processing</p>
 
               {papers.length > 0 && (
                 <div className="mt-8 flex flex-wrap gap-2 justify-center max-h-[200px] overflow-y-auto">
                   {papers.map((p, i) => (
                     <div key={i} className={cls("group/item flex items-center gap-2 px-3 py-1.5 rounded-full border text-[10px] font-bold animate-in zoom-in-95", isDark ? "bg-black/40 border-white/10 text-slate-300" : "bg-white border-zinc-200 text-zinc-700 shadow-sm")}>
-                      <FileText size={10} className="text-indigo-400" />
+                      <FileText size={10} className="text-amber-400" />
                       <span className="max-w-[120px] truncate">{p.name}</span>
                       <button onClick={(e) => { e.stopPropagation(); removeFile(i); }} className="hover:text-red-500 transition-colors"><X size={10} /></button>
                     </div>
@@ -526,7 +526,7 @@ const PaperAllocation = ({ conf, onRefresh }) => {
                <div className={cls("py-12 flex flex-col items-center border-2 border-dashed rounded-[2rem]", isDark ? "border-white/5 bg-white/2" : "border-zinc-100 bg-zinc-50/50")}>
                   <Users size={32} className={isDark ? "text-slate-700" : "text-zinc-300"} />
                   <p className={cls("text-sm mt-4 italic", isDark ? "text-slate-600" : "text-zinc-400")}>Assign at least {reviewersPerPaper} reviewers to begin</p>
-                  <button onClick={addReviewer} className="mt-4 text-indigo-500 font-bold hover:underline transition-all">Add Manual Reviewer →</button>
+                  <button onClick={addReviewer} className="mt-4 text-amber-500 font-bold hover:underline transition-all">Add Manual Reviewer →</button>
                </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -541,7 +541,7 @@ const PaperAllocation = ({ conf, onRefresh }) => {
                          </div>
                          <div className="flex-1 min-w-0">
                             <input
-                              className={cls("w-full bg-transparent border-b outline-none font-bold text-sm transition-all pb-1", isDark ? "border-white/10 focus:border-indigo-500 text-white placeholder-slate-700" : "border-zinc-200 focus:border-indigo-500 text-zinc-900 placeholder-zinc-300")}
+                              className={cls("w-full bg-transparent border-b outline-none font-bold text-sm transition-all pb-1", isDark ? "border-white/10 focus:border-amber-500 text-white placeholder-slate-700" : "border-zinc-200 focus:border-amber-500 text-zinc-900 placeholder-zinc-300")}
                               placeholder="Member name"
                               value={r.name}
                               onChange={e => updateReviewer(i, 'name', e.target.value)}
@@ -549,11 +549,11 @@ const PaperAllocation = ({ conf, onRefresh }) => {
                          </div>
                          <div className={cls("flex items-center gap-2 px-3 py-1.5 rounded-xl border shrink-0", isDark ? "bg-black/30 border-white/5" : "bg-white border-zinc-100")}>
                             <span className={cls("text-[9px] font-black uppercase text-slate-500", isDark ? "text-slate-500" : "text-zinc-400")}>CAPACITY:</span>
-                            <input type="number" min="1" max="50" className={cls("w-8 bg-transparent text-xs font-black text-center outline-none", isDark ? "text-indigo-400" : "text-indigo-600")} value={r.capacity || 3} onChange={e => updateReviewer(i, 'capacity', e.target.value)} />
+                            <input type="number" min="1" max="50" className={cls("w-8 bg-transparent text-xs font-black text-center outline-none", isDark ? "text-amber-400" : "text-amber-600")} value={r.capacity || 3} onChange={e => updateReviewer(i, 'capacity', e.target.value)} />
                          </div>
                       </div>
                       <textarea
-                        className={cls("w-full rounded-2xl p-4 text-xs resize-none outline-none transition-all h-[80px] border", isDark ? "bg-black/20 border-white/5 focus:border-indigo-500 text-slate-300 placeholder-slate-700" : "bg-white border-zinc-100 focus:border-indigo-500 text-zinc-600 placeholder-zinc-300 shadow-inner")}
+                        className={cls("w-full rounded-2xl p-4 text-xs resize-none outline-none transition-all h-[80px] border", isDark ? "bg-black/20 border-white/5 focus:border-amber-500 text-slate-300 placeholder-slate-700" : "bg-white border-zinc-100 focus:border-amber-500 text-zinc-600 placeholder-zinc-300 shadow-inner")}
                         placeholder="Paste or type expertise tags (AI, ML, Crypto...)"
                         value={r.expertise}
                         onChange={e => updateReviewer(i, 'expertise', e.target.value)}
@@ -564,12 +564,12 @@ const PaperAllocation = ({ conf, onRefresh }) => {
             )}
           </div>
 
-          {/* Settings & Action */}
+          {/* Intensity & Run */}
           <div className="flex flex-col md:flex-row gap-6">
             <div className={cls("flex-1 rounded-[2rem] p-8 border flex items-center justify-between", isDark ? "bg-[#0d1117] border-white/6" : "bg-white border-zinc-200 shadow-lg")}>
               <div className="flex items-center gap-4">
-                 <div className={cls("w-12 h-12 rounded-2xl flex items-center justify-center", isDark ? "bg-indigo-500/10" : "bg-indigo-50")}>
-                    <Scale size={24} className="text-indigo-500" />
+                 <div className={cls("w-12 h-12 rounded-2xl flex items-center justify-center", isDark ? "bg-amber-500/10" : "bg-amber-50")}>
+                    <Scale size={24} className="text-amber-500" />
                  </div>
                  <div>
                     <div className={cls("text-sm font-black uppercase tracking-widest", isDark ? "text-white" : "text-zinc-900")}>Review Intensity</div>
@@ -583,7 +583,7 @@ const PaperAllocation = ({ conf, onRefresh }) => {
               </div>
             </div>
 
-            <Btn onClick={apiRunAllocation} disabled={loading} isDark={isDark} className="h-auto md:w-[350px] py-8 rounded-[2rem] text-lg font-black tracking-tight" variant="primary">
+            <Btn onClick={apiRunAllocation} disabled={loading} isDark={isDark} className="h-auto md:w-[350px] py-8 rounded-[2rem] text-lg font-black tracking-tight bg-gradient-to-r from-amber-500 to-orange-600 text-white border-0 shadow-lg shadow-amber-500/20 hover:scale-[1.02] transition-transform" variant="primary">
               {loading ? (
                 <div className="flex flex-col items-center gap-2">
                    <RefreshCw size={24} className="animate-spin" />
@@ -595,7 +595,7 @@ const PaperAllocation = ({ conf, onRefresh }) => {
                       <Play size={20} fill="currentColor" />
                       <span>START AI ALLOCATION</span>
                    </div>
-                   <span className={cls("text-[10px] font-medium tracking-wide normal-case", isDark ? "text-indigo-300/60" : "text-indigo-200")}>Semantic engine will match {papers.length} papers</span>
+                   <span className={cls("text-[10px] font-medium tracking-wide normal-case", isDark ? "text-amber-200/60" : "text-amber-200")}>Semantic engine will match {papers.length} papers</span>
                 </div>
               )}
             </Btn>
@@ -612,9 +612,9 @@ const PaperAllocation = ({ conf, onRefresh }) => {
             "rounded-[2rem] p-8 flex flex-col md:flex-row items-center gap-6 border transition-all",
             confirmed 
               ? isDark ? "bg-emerald-950/20 border-emerald-500/20" : "bg-emerald-50 border-emerald-200"
-              : isDark ? "bg-indigo-950/20 border-indigo-500/20" : "bg-indigo-50 border-indigo-200 shadow-xl shadow-indigo-500/10"
+              : isDark ? "bg-amber-950/20 border-amber-500/20" : "bg-amber-50 border-amber-200 shadow-xl shadow-amber-500/10"
           )}>
-            <div className={cls("w-16 h-16 rounded-3xl flex items-center justify-center shrink-0 shadow-2xl animate-pulse", confirmed ? "bg-emerald-500/20 text-emerald-400" : "bg-indigo-500/20 text-indigo-400")}>
+            <div className={cls("w-16 h-16 rounded-3xl flex items-center justify-center shrink-0 shadow-2xl animate-pulse", confirmed ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-400")}>
               {confirmed ? <CheckCircle size={32} /> : <Zap size={32} />}
             </div>
             <div className="flex-1 text-center md:text-left">
@@ -646,7 +646,7 @@ const PaperAllocation = ({ conf, onRefresh }) => {
           {/* Summary Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                  { label: 'MatcheS', value: result.summary.total_assignments, icon: <Users size={16} />, color: isDark ? 'text-indigo-400' : 'text-indigo-600' },
+                  { label: 'MatcheS', value: result.summary.total_assignments, icon: <Users size={16} />, color: isDark ? 'text-amber-400' : 'text-amber-600' },
                   { label: 'Avg Affinity', value: result.summary.avg_similarity, icon: <TrendingUp size={16} />, color: isDark ? 'text-emerald-400' : 'text-emerald-700' },
                   { label: 'Precision', value: result.summary.min_similarity, icon: <Scale size={16} />, color: isDark ? 'text-amber-400' : 'text-amber-500' },
                   { label: 'Peak Match', value: result.summary.max_similarity, icon: <Zap size={16} />, color: isDark ? 'text-blue-400' : 'text-blue-600' },
@@ -679,7 +679,7 @@ const PaperAllocation = ({ conf, onRefresh }) => {
                       <tr key={i} className={cls("transition-colors group", isDark ? "hover:bg-white/2" : "hover:bg-zinc-50")}>
                         <td className="px-8 py-4">
                            <div className="flex items-center gap-3">
-                              <div className={cls("w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold border", isDark ? "bg-indigo-500/10 border-indigo-500/20 text-indigo-400" : "bg-indigo-50 border-indigo-100 text-indigo-600")}>
+                              <div className={cls("w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold border", isDark ? "bg-amber-500/10 border-amber-500/20 text-amber-400" : "bg-amber-50 border-amber-100 text-amber-600")}>
                                  {i + 1}
                               </div>
                               <span className={cls("font-bold truncate max-w-[280px]", isDark ? "text-slate-300" : "text-zinc-900")}>{a.paper_name}</span>
@@ -741,7 +741,7 @@ const PaperAllocation = ({ conf, onRefresh }) => {
                               <div
                                 className={cls(
                                   'w-12 h-10 rounded-xl flex items-center justify-center text-[10px] font-black transition-all hover:scale-110 cursor-help',
-                                  isAssigned && (isDark ? 'ring-2 ring-indigo-400 ring-offset-2 ring-offset-[#0d1117]' : 'ring-4 ring-indigo-500/20 border-2 border-indigo-500 shadow-lg')
+                                  isAssigned && (isDark ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-[#0d1117]' : 'ring-4 ring-amber-500/20 border-2 border-amber-500 shadow-lg')
                                 )}
                                 title={`P${p} × R${r}: ${(val*100).toFixed(1)}% match`}
                                 style={{
@@ -767,7 +767,7 @@ const PaperAllocation = ({ conf, onRefresh }) => {
                 <span className="flex items-center gap-2"> <span className="w-3 h-3 rounded bg-emerald-500 shadow-lg shadow-emerald-500/20" /> EXPERT (&gt;0.5) </span>
                 <span className="flex items-center gap-2"> <span className="w-3 h-3 rounded bg-amber-500 shadow-lg shadow-amber-500/20" /> QUALIFIED (0.3–0.5) </span>
                 <span className="flex items-center gap-2"> <span className="w-3 h-3 rounded bg-slate-500" /> OUTSIDE SCOPE </span>
-                <span className={cls("flex items-center gap-2 px-3 py-1 rounded-lg border", isDark ? "border-indigo-500 text-indigo-400 bg-indigo-500/10" : "border-indigo-600 text-indigo-600 bg-indigo-50")}> <CheckCircle size={12} /> ASSIGNED ROW </span>
+                <span className={cls("flex items-center gap-2 px-3 py-1 rounded-lg border", isDark ? "border-amber-500 text-amber-400 bg-amber-500/10" : "border-amber-600 text-amber-600 bg-amber-50")}> <CheckCircle size={12} /> ASSIGNED ROW </span>
               </div>
             </div>
           )}
@@ -794,8 +794,8 @@ const PaperAllocation = ({ conf, onRefresh }) => {
                           className={cls(
                             'h-full rounded-full transition-all duration-1000 delay-500',
                             rw.utilisation_pct >= 90 ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' :
-                            rw.utilisation_pct >= 60 ? 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : 
-                            'bg-indigo-500 shadow-[0_0_10px_rgba(79,70,229,0.5)]'
+                            rw.utilisation_pct >= 60 ? 'bg-orange-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : 
+                            'bg-amber-500 shadow-[0_0_10px_rgba(251,191,36,0.5)]'
                           )}
                           style={{ width: `${Math.min(rw.utilisation_pct, 100)}%` }}
                         />

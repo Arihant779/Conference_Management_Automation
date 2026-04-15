@@ -14,8 +14,8 @@ const Btn = ({ variant = 'primary', children, className, isDark, ...props }) => 
   const base = 'px-4 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 justify-center disabled:opacity-40 disabled:cursor-not-allowed';
   const v = {
     primary: isDark 
-      ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' 
-      : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20',
+      ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-500/20' 
+      : 'bg-amber-600 hover:bg-amber-700 text-white shadow-lg shadow-amber-600/20',
     secondary: isDark 
       ? 'border border-white/10 text-slate-400 hover:text-white hover:bg-white/5' 
       : 'border border-zinc-200 text-zinc-600 hover:bg-zinc-50 hover:border-zinc-300',
@@ -30,7 +30,7 @@ const Btn = ({ variant = 'primary', children, className, isDark, ...props }) => 
 const QUESTION_TYPES = [
   { value: 'yes_no', label: 'Yes / No', icon: ToggleLeft, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
   { value: 'rating', label: 'Rating (★ 1-5)', icon: Star, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
-  { value: 'descriptive', label: 'Descriptive', icon: AlignLeft, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20' },
+  { value: 'descriptive', label: 'Descriptive', icon: AlignLeft, color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20' },
 ];
 
 /* ═════════════════════════════════════════════════════════════════
@@ -208,7 +208,7 @@ const FeedbackManager = ({ conf }) => {
           <p className={cls("text-sm mt-0.5", isDark ? "text-slate-500" : "text-zinc-500")}>
             {questions.length} question{questions.length !== 1 ? 's' : ''}
             {form?.is_published && <span className="text-emerald-500 ml-2 font-bold">· Published</span>}
-            {responseCount > 0 && <span className="text-indigo-500 ml-2 font-bold">· {responseCount} response{responseCount !== 1 ? 's' : ''}</span>}
+            {responseCount > 0 && <span className="text-amber-500 ml-2 font-bold">· {responseCount} response{responseCount !== 1 ? 's' : ''}</span>}
           </p>
         </div>
         <div className="flex gap-2">
@@ -253,7 +253,7 @@ const FeedbackManager = ({ conf }) => {
         <div className={cls("py-20 text-center border-2 border-dashed rounded-[2rem] animate-in zoom-in-95", isDark ? "border-white/5 bg-white/2" : "border-zinc-200 bg-zinc-50")}>
           <AlignLeft size={48} className={cls("mx-auto mb-4 opacity-20", isDark ? "text-white" : "text-zinc-900")} />
           <p className={cls("text-sm font-medium", isDark ? "text-slate-500" : "text-zinc-500")}>Your feedback form is empty.</p>
-          <button onClick={() => setShowAdd(true)} className="mt-4 text-indigo-500 text-sm hover:underline font-bold transition-all">Create your first question →</button>
+          <button onClick={() => setShowAdd(true)} className="mt-4 text-amber-500 text-sm hover:underline font-bold transition-all">Create your first question →</button>
         </div>
       ) : (
         <div className="space-y-3">
@@ -265,7 +265,7 @@ const FeedbackManager = ({ conf }) => {
             return (
               <div key={q.id} className={cls(
                   "rounded-2xl px-6 py-5 border transition-all animate-in slide-in-from-bottom-2 group relative",
-                  isDark ? "bg-[#0d1117] border-white/6 hover:border-indigo-500/30" : "bg-white border-zinc-200 hover:border-indigo-500 shadow-sm shadow-zinc-500/5"
+                  isDark ? "bg-[#0d1117] border-white/6 hover:border-amber-500/30" : "bg-white border-zinc-200 hover:border-amber-500 shadow-sm shadow-zinc-500/5"
                 )}>
                 {isEditing ? (
                   /* ── EDIT MODE ── */
@@ -273,7 +273,7 @@ const FeedbackManager = ({ conf }) => {
                     <input
                       className={cls(
                         "w-full rounded-xl px-5 py-3 text-sm outline-none transition-all font-medium border",
-                        isDark ? "bg-black/40 border-white/10 text-white focus:border-indigo-500 placeholder-slate-700" : "bg-zinc-50 border-zinc-200 text-zinc-900 focus:border-indigo-500 placeholder-zinc-300"
+                        isDark ? "bg-black/40 border-white/10 text-white focus:border-amber-500 placeholder-slate-700" : "bg-zinc-50 border-zinc-200 text-zinc-900 focus:border-amber-500 placeholder-zinc-300"
                       )}
                       value={editText}
                       onChange={e => setEditText(e.target.value)}
@@ -287,7 +287,7 @@ const FeedbackManager = ({ conf }) => {
                           className={cls(
                             'px-4 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2',
                             editType === t.value
-                              ? isDark ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-white border-indigo-500 text-indigo-600 shadow-sm'
+                              ? isDark ? 'bg-amber-600 border-amber-500 text-white shadow-lg shadow-amber-500/20' : 'bg-white border-amber-500 text-amber-600 shadow-sm'
                               : isDark ? 'bg-black/20 border-white/5 text-slate-500 hover:text-slate-300' : 'bg-zinc-50 border-zinc-100 text-zinc-400 hover:bg-white'
                           )}
                         >
@@ -404,12 +404,12 @@ const FeedbackManager = ({ conf }) => {
                         className={cls(
                           'p-5 rounded-3xl border-2 text-center transition-all group/type active:scale-95',
                           isSelected
-                            ? isDark ? 'border-indigo-500 bg-indigo-500/10 shadow-lg shadow-indigo-500/10' : 'border-indigo-500 bg-indigo-50/50 shadow-lg shadow-indigo-500/5'
+                            ? isDark ? 'border-amber-500 bg-amber-500/10 shadow-lg shadow-amber-500/10' : 'border-amber-500 bg-amber-50/50 shadow-lg shadow-amber-500/5'
                             : isDark ? 'border-white/5 hover:border-white/10 bg-white/2' : 'border-zinc-100 hover:border-zinc-200 bg-zinc-50'
                         )}
                       >
-                        <TIcon size={24} className={cls('mx-auto mb-3 transition-transform group-hover/type:scale-110', isSelected ? 'text-indigo-500' : isDark ? 'text-slate-700' : 'text-zinc-300')} />
-                        <div className={cls('text-[10px] font-black uppercase tracking-widest', isSelected ? isDark ? 'text-white' : 'text-indigo-600' : isDark ? 'text-slate-600' : 'text-zinc-400')}>{t.label.split(' ')[0]}</div>
+                        <TIcon size={24} className={cls('mx-auto mb-3 transition-transform group-hover/type:scale-110', isSelected ? 'text-amber-500' : isDark ? 'text-slate-700' : 'text-zinc-300')} />
+                        <div className={cls('text-[10px] font-black uppercase tracking-widest', isSelected ? isDark ? 'text-white' : 'text-amber-600' : isDark ? 'text-slate-600' : 'text-zinc-400')}>{t.label.split(' ')[0]}</div>
                       </button>
                     );
                   })}
@@ -422,7 +422,7 @@ const FeedbackManager = ({ conf }) => {
                 <input
                   className={cls(
                     "w-full rounded-2xl px-6 py-4 text-sm font-bold outline-none transition-all border",
-                    isDark ? "bg-black/40 border-white/8 focus:border-indigo-500 text-white placeholder-slate-800" : "bg-zinc-50 border-zinc-200 text-zinc-900 focus:border-indigo-500 placeholder-zinc-300"
+                    isDark ? "bg-black/40 border-white/8 focus:border-amber-500 text-white placeholder-slate-800" : "bg-zinc-50 border-zinc-200 text-zinc-900 focus:border-amber-500 placeholder-zinc-300"
                   )}
                   placeholder="e.g. How would you rate the keynote presentation?"
                   value={newText}
