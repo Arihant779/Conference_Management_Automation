@@ -121,14 +121,19 @@ const VolunteerPreferencesModal = ({ userId, onClose, onSaved, theme = 'dark' })
     const { data: { session } } = await supabase.auth.getSession();
     const uid = session?.user?.id ?? userId;
     if (!uid) { setSaveError('Not authenticated.'); setSaving(false); return; }
+    
+    // Check if user record exists
     const { data: existing, error: readErr } = await supabase.from('users').select('user_id').eq('user_id', uid).maybeSingle();
     if (readErr) { setSaveError('Could not read your user record: ' + readErr.message); setSaving(false); return; }
-    if (!existing) { setSaveError('Your user row is not visible. Check RLS policies.'); setSaving(false); return; }
+    if (!existing) { setSaveError('Your user record was not found.'); setSaving(false); return; }
+
     const payload = { volunteer_domains: [...selectedDomains], volunteer_roles: [...selectedRoles] };
     const { data, error } = await supabase.from('users').update(payload).eq('user_id', uid).select('user_id, volunteer_domains, volunteer_roles');
+    
     setSaving(false);
     if (error) { setSaveError(error.message || 'Update failed.'); return; }
-    if (!data || data.length === 0) { setSaveError('Update ran but returned no rows. Check UPDATE policy.'); return; }
+    if (!data || data.length === 0) { setSaveError('Update completed but no rows were updated.'); return; }
+    
     onSaved?.({ domains: [...selectedDomains], roles: [...selectedRoles] });
     onClose();
   };
@@ -882,6 +887,12 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
 
     if (action === 'accept') {
       await supabase.from('team_members').update({ status: 'accepted' }).eq('id', inviteId);
+      
+      // Promote 'invited' role in conference_user to 'member'
+      const { data: confUser } = await supabase.from('conference_user').select('id, role').eq('user_id', user.id).eq('conference_id', invite.conference_id).maybeSingle();
+      if (confUser && confUser.role === 'invited') {
+        await supabase.from('conference_user').update({ role: 'member' }).eq('id', confUser.id);
+      }
     } else {
       await supabase.from('team_members').delete().eq('id', inviteId);
       
@@ -890,9 +901,9 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
       const { data: otherTeams } = await supabase.from('team_members').select('id').eq('user_id', user.id).eq('conference_id', confId).limit(1);
       
       if (!otherTeams || otherTeams.length === 0) {
-        // No other teams, check if their conference_user role is just 'member'
+        // No other teams, check if their conference_user role is just 'member' or 'invited'
         const { data: confUser } = await supabase.from('conference_user').select('id, role').eq('user_id', user.id).eq('conference_id', confId).maybeSingle();
-        if (confUser && confUser.role === 'member') {
+        if (confUser && (confUser.role === 'member' || confUser.role === 'invited')) {
           await supabase.from('conference_user').delete().eq('id', confUser.id);
         }
       }

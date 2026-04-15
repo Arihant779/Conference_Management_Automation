@@ -1,9 +1,20 @@
-import "dotenv/config";
+import path from "path";
+import { fileURLToPath } from "url";
+import dotenv from "dotenv";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Explicitly load .env from the backend directory
+dotenv.config({ path: path.resolve(__dirname, ".env") });
+
 import express from "express";
 import cors from "cors";
 
 import emailRoutes from "./routes/email.js";
 import speakerRoutes from "./routes/speakers.js";
+import teamRoutes from "./routes/teams.js";
+
 import { initScheduler } from "./services/schedulerService.js";
 import { GROQ_API_KEY, GROQ_MODEL } from "./services/llmService.js";
 import { DEFAULT_SENDER } from "./config/email.js";
@@ -18,6 +29,7 @@ app.use(express.json({ limit: "50mb" }));
 /* ── Routes ── */
 app.use("/api", emailRoutes);
 app.use("/api", speakerRoutes);
+app.use("/api/teams", teamRoutes);
 
 /* ── Health check ── */
 app.get("/health", (req, res) => {

@@ -252,60 +252,95 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   };
 
   /* ── team CRUD ── */
-  const createTeam = async (pendingAdds = []) => {
+  const createTeam = async (pendingAdds = [], pendingInvites = []) => {
     if (!tmForm.name.trim()) return; setSaving(true);
-    const { data: newTeam, error } = await supabase.from('conference_teams').insert([{ conference_id: confId, name: tmForm.name.trim(), description: tmForm.description.trim(), color: tmForm.color, head_id: tmForm.head_id || null, created_at: new Date().toISOString() }]).select().single();
     
-    if (!error && newTeam) {
-      // Handle Team Head (Directly accepted)
-      if (tmForm.head_id && tmForm.type && tmForm.type !== 'custom') {
-        await supabase.from('conference_user_roles_mapping').upsert({ conference_user_id: tmForm.head_id, role_name: tmForm.type }, { onConflict: 'conference_user_id,role_name' });
-      }
+    // Resolve all member IDs (existing + pending invites)
+    const membersToInvite = [
+      ...pendingAdds.map(id => members.find(m => m.id === id)?.user_id),
+      ...pendingInvites.map(v => v.user_id)
+    ].filter(Boolean);
+
+    try {
+      const res = await fetch('http://localhost:4000/api/teams/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conference_id: confId,
+          name: tmForm.name.trim(),
+          description: tmForm.description.trim(),
+          color: tmForm.color,
+          head_id: tmForm.head_id || null,
+          members: membersToInvite,
+          type: tmForm.type
+        })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
       
-      // Handle Team Members (Invitation pending)
-      if (pendingAdds.length > 0) {
-        const inserts = pendingAdds.filter(id => id !== tmForm.head_id).map(confUserId => {
-          const m = members.find(mem => mem.id === confUserId);
-          return { conference_id: confId, team_id: newTeam.id, user_id: m?.user_id, conference_user_id: confUserId, status: 'pending' };
-        });
-        if (inserts.length > 0) await supabase.from('team_members').insert(inserts);
-      }
+      setModal(null); setTmForm({ name: '', type: '', description: '', color: '#f5c518', head_id: '' });
+      fetchTeams();
+    } catch (err) {
+      alert(`Create error: ${err.message}`);
+    } finally {
+      setSaving(false);
     }
-    
-    setSaving(false);
-    if (!error) { setModal(null); setTmForm({ name: '', type: '', description: '', color: '#f5c518', head_id: '' }); fetchTeams(); } else alert(error.message);
   };
 
-  const saveTeam = async (pendingAdds = [], pendingRemoves = []) => {
+  const saveTeam = async (pendingAdds = [], pendingRemoves = [], pendingInvites = []) => {
     if (!tmForm.name.trim()) return; setSaving(true);
-    const { error } = await supabase.from('conference_teams').update({ name: tmForm.name.trim(), description: tmForm.description.trim(), color: tmForm.color, head_id: tmForm.head_id || null }).eq('id', modalData.id);
     
-    if (!error) {
-      // Sync Roles
-      if (tmForm.head_id) {
-        if (tmForm.type !== tmForm.originalType && tmForm.originalType && tmForm.originalType !== 'custom') { await supabase.from('conference_user_roles_mapping').delete().eq('conference_user_id', tmForm.head_id).eq('role_name', tmForm.originalType); }
-        if (tmForm.type && tmForm.type !== 'custom') { await supabase.from('conference_user_roles_mapping').upsert({ conference_user_id: tmForm.head_id, role_name: tmForm.type }, { onConflict: 'conference_user_id,role_name' }); }
-      }
+    try {
+      // 1. Update Meta
+      const metaRes = await fetch(`http://localhost:4000/api/teams/${modalData.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: tmForm.name.trim(),
+          description: tmForm.description.trim(),
+          color: tmForm.color,
+          head_id: tmForm.head_id || null
+        })
+      });
+      const metaData = await metaRes.json();
+      if (metaData.error) throw new Error(metaData.error);
 
-      // Sync Member Removes
-      if (pendingRemoves.length > 0) {
-        await supabase.from('team_members').delete().eq('team_id', modalData.id).in('conference_user_id', pendingRemoves);
-      }
+      // 2. Sync Members
+      const adds = [
+        ...pendingAdds.map(id => members.find(m => m.id === id)?.user_id),
+        ...pendingInvites.map(v => v.user_id)
+      ].filter(Boolean);
+      
+      const removes = pendingRemoves.map(id => members.find(m => m.id === id)?.user_id).filter(Boolean);
 
-      // Sync Member Adds (Invitation pending)
-      if (pendingAdds.length > 0) {
-        const inserts = pendingAdds.map(confUserId => {
-          const m = members.find(mem => mem.id === confUserId);
-          return { conference_id: confId, team_id: modalData.id, user_id: m?.user_id, conference_user_id: confUserId, status: 'pending' };
+      if (adds.length > 0 || removes.length > 0) {
+        const syncRes = await fetch(`http://localhost:4000/api/teams/${modalData.id}/sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ conference_id: confId, adds, removes })
         });
-        await supabase.from('team_members').insert(inserts);
+        const syncData = await syncRes.json();
+        if (syncData.error) throw new Error(syncData.error);
       }
+
+      setModal(null); fetchTeams();
+    } catch (err) {
+      alert(`Save error: ${err.message}`);
+    } finally {
+      setSaving(false);
     }
-    
-    setSaving(false); setModal(null); fetchTeams();
   };
 
-  const deleteTeam = async (id) => { await supabase.from('team_members').delete().eq('team_id', id); await supabase.from('conference_teams').delete().eq('id', id); fetchTeams(); fetchTasks(); };
+  const deleteTeam = async (id) => { 
+    try {
+      const res = await fetch(`http://localhost:4000/api/teams/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      fetchTeams(); fetchTasks(); 
+    } catch (err) {
+      alert(`Delete error: ${err.message}`);
+    }
+  };
 
   const addToTeam = async (teamId, confUserId) => {
     const member = members.find(m => m.id === confUserId);
@@ -313,21 +348,45 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     const team = teams.find(t => t.id === teamId);
     if (team?.memberList.some(tm => tm.conference_user_id === confUserId)) { alert('Already in team.'); return; }
     setSaving(true);
-    const { error } = await supabase.from('team_members').insert([{ conference_id: confId, team_id: teamId, user_id: member.user_id, conference_user_id: confUserId, status: 'pending' }]);
-    setSaving(false);
-    if (error) alert(`Add error: ${error.message}`); else fetchTeams();
+    try {
+      const res = await fetch(`http://localhost:4000/api/teams/${teamId}/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conference_id: confId, adds: [member.user_id], removes: [] })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      fetchTeams();
+    } catch (err) {
+      alert(`Add to team error: ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const removeFromTeam = async (teamId, confUserId) => {
+    const member = members.find(m => m.id === confUserId);
+    if (!member) return;
     setSaving(true);
-    const { error } = await supabase.from('team_members').delete().eq('team_id', teamId).eq('conference_user_id', confUserId);
-    setSaving(false);
-    if (error) alert(`Remove error: ${error.message}`); else fetchTeams();
+    try {
+      const res = await fetch(`http://localhost:4000/api/teams/${teamId}/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conference_id: confId, adds: [], removes: [member.user_id] })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      fetchTeams();
+    } catch (err) {
+      alert(`Remove from team error: ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleAddVolunteerToConference = async (v) => {
     setSaving(true);
-    const { data, error } = await supabase.from('conference_user').insert([{ conference_id: confId, user_id: v.user_id, email: v.user_email || '', full_name: v.user_name || '', role: 'member', joined_at: new Date().toISOString() }]).select().single();
+    const { data, error } = await supabase.from('conference_user').insert([{ conference_id: confId, user_id: v.user_id, email: v.user_email || '', full_name: v.user_name || '', role: 'invited', joined_at: new Date().toISOString() }]).select().single();
     setSaving(false);
     if (error) { alert(error.message); return null; }
     fetchMembers(); return data.id;
@@ -398,7 +457,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   const teamName     = (id) => teams.find(t => t.id === id)?.name || '—';
   const assigneeName = (id) => { const m = members.find(m => m.id === id || m.user_id === id); return m ? mName(m) : '—'; };
 
-  const filteredMembers = members.filter(m => m.role !== 'attendee' && (!memberSearch || mName(m).toLowerCase().includes(memberSearch.toLowerCase()) || m.email?.toLowerCase().includes(memberSearch.toLowerCase())));
+  const filteredMembers = members.filter(m => m.role !== 'attendee' && m.role !== 'invited' && (!memberSearch || mName(m).toLowerCase().includes(memberSearch.toLowerCase()) || m.email?.toLowerCase().includes(memberSearch.toLowerCase())));
   const attendees         = members.filter(m => m.role === 'attendee');
   const filteredAttendees = attendees.filter(m => !memberSearch || mName(m).toLowerCase().includes(memberSearch.toLowerCase()) || m.email?.toLowerCase().includes(memberSearch.toLowerCase()));
 

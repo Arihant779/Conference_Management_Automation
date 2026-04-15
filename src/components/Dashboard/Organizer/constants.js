@@ -19,6 +19,7 @@ export const ROLE_STYLE = {
   reviewer:  'bg-sky-500/15    text-sky-300    border-sky-500/30',
   presenter: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
   member:    'bg-zinc-500/15   text-zinc-400   border-zinc-500/25',
+  invited:   'bg-zinc-500/10   text-zinc-500   border-zinc-500/20',
 };
 
 export const PRIORITY_STYLE = {

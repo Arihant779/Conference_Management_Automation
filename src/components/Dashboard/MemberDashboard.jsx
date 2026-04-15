@@ -108,7 +108,7 @@ const MemberDashboard = ({ conf, onBack }) => {
     setLT(true);
     const { data: td } = await supabase.from('conference_teams').select('*').eq('conference_id', confId).order('created_at', { ascending: true });
     if (td) {
-      const { data: tmData } = await supabase.from('team_members').select('team_id,user_id,conference_user_id').in('team_id', td.map(t => t.id));
+      const { data: tmData } = await supabase.from('team_members').select('team_id,user_id,conference_user_id,status').in('team_id', td.map(t => t.id));
       const map = {};
       (tmData || []).forEach(tm => { (map[tm.team_id] = map[tm.team_id] || []).push(tm); });
       setTeams(td.map(t => ({ ...t, memberList: map[t.id] || [] })));
@@ -159,6 +159,7 @@ const MemberDashboard = ({ conf, onBack }) => {
   const myMemberId = myMember?.id;
 
   const myTeams = teams.filter(t => t.memberList.some(m => (m.conference_user_id === myMemberId || m.user_id === user?.id) && m.status === 'accepted'));
+  const pendingTeams = teams.filter(t => t.memberList.some(m => (m.conference_user_id === myMemberId || m.user_id === user?.id) && m.status === 'pending'));
   const myTeamNames = myTeams.map(t => t.name.toLowerCase());
 
   const can = (feature) => {
@@ -184,6 +185,21 @@ const MemberDashboard = ({ conf, onBack }) => {
     const s = task.status === 'done' ? 'pending' : 'done';
     const { error } = await supabase.from('conference_tasks').update({ status: s }).eq('id', task.id);
     if (!error) setTasks(ts => ts.map(t => t.id === task.id ? { ...t, status: s } : t));
+  };
+
+  const handleInviteResponse = async (teamId, status) => {
+    try {
+      const res = await fetch('http://localhost:4000/api/teams/invite/respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ team_id: teamId, user_id: user.id, status })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      fetchTeams();
+    } catch (err) {
+      alert(`Response error: ${err.message}`);
+    }
   };
 
   const myTasks = tasks.filter(t => t.assignee_id === myMemberId || myTeams.some(mt => mt.id === t.team_id));
@@ -229,6 +245,29 @@ const MemberDashboard = ({ conf, onBack }) => {
             <h2 className={`text-2xl font-bold transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>My Teams</h2>
             <p className="text-slate-500 text-sm mt-0.5">Teams you are collaborating in</p>
           </div>
+
+          {pendingTeams.length > 0 && (
+            <div className={`p-6 rounded-2xl border animate-in fade-in zoom-in duration-500 ${isDark ? 'bg-amber-500/5 border-amber-500/20' : 'bg-amber-50 border-amber-200'}`}>
+              <div className="flex items-center gap-3 mb-4">
+                <Bell size={18} className="text-amber-500" />
+                <h3 className={`font-bold ${isDark ? 'text-amber-200' : 'text-amber-900'}`}>Team Invitations</h3>
+              </div>
+              <div className="space-y-3">
+                {pendingTeams.map(team => (
+                  <div key={team.id} className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'bg-black/40 border-white/5' : 'bg-white border-amber-100 shadow-sm'}`}>
+                    <div>
+                      <div className={`font-bold text-sm ${isDark ? 'text-white' : 'text-zinc-900'}`}>{team.name}</div>
+                      <div className="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-1">Pending Invitation</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => handleInviteResponse(team.id, 'accepted')} className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold uppercase rounded-lg transition-all">Accept</button>
+                      <button onClick={() => handleInviteResponse(team.id, 'rejected')} className="px-4 py-1.5 bg-rose-600/10 hover:bg-rose-600/20 text-rose-500 text-[10px] font-bold uppercase rounded-lg border border-rose-500/20 transition-all">Decline</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {loadingTeams ? <LoadingRows /> : myTeams.length === 0 ? (
             <Empty icon={Layers} msg="You are not part of any teams yet." isDark={isDark} />
           ) : (

@@ -105,13 +105,15 @@ const MembersSection = ({
                     </button>
                     {isOrganizer ? (
                       <>
-                        <select value={m.role} onChange={e => updateRole(m.id, e.target.value)}
+                         <select value={m.role} onChange={e => updateRole(m.id, e.target.value)}
                           className={cls('text-xs font-black px-3 py-2 rounded-lg border-2 uppercase tracking-widest cursor-pointer outline-none transition-all', 
                             isDark ? 'bg-slate-900 hover:bg-slate-800' : 'bg-white hover:bg-zinc-50 border-zinc-200',
                             ROLE_STYLE[m.role] || ROLE_STYLE.member
                           )}>
-                          {['organizer','reviewer','presenter','member'].map(r => (
-                            <option key={r} value={r} style={{ background: isDark ? '#0B0F1A' : '#fff', color: isDark ? '#fff' : '#000' }} className="normal-case">{r === 'member' ? 'Team Member' : r}</option>
+                          {['organizer','reviewer','presenter','member','invited'].map(r => (
+                            <option key={r} value={r} style={{ background: isDark ? '#0B0F1A' : '#fff', color: isDark ? '#fff' : '#000' }} className="normal-case">
+                              {r === 'member' ? 'Team Member' : (r === 'invited' ? 'Invited' : r)}
+                            </option>
                           ))}
                         </select>
                         <button onClick={() => { setModalData(m); setModal('confirmDelete'); }}
@@ -122,8 +124,8 @@ const MembersSection = ({
                         </button>
                       </>
                     ) : (
-                      <div className={cls('text-[10px] font-black px-3 py-1.5 rounded-lg border-2 uppercase tracking-widest', ROLE_STYLE[m.role] || ROLE_STYLE.member)}>
-                        {m.role === 'member' ? 'Team Member' : m.role}
+                     <div className={cls('text-[10px] font-black px-3 py-1.5 rounded-lg border-2 uppercase tracking-widest', ROLE_STYLE[m.role] || ROLE_STYLE.member)}>
+                        {m.role === 'member' ? 'Team Member' : (m.role === 'invited' ? 'Invited' : m.role)}
                       </div>
                     )}
                   </div>

@@ -12,6 +12,7 @@ const VolunteerCandidatePanel = ({
   allVolunteers, members, teamMembers, teamTypeId,
   confId, onAdd, onAddVolunteer, globalRatings,
   pendingAdds,  // Set<conf_user_id> — items staged for addition
+  pendingInvites, // Map<user_id, object> — volunteers staged for addition to conference
 }) => {
   const { theme } = useApp();
   const isDark = theme === 'dark';
@@ -33,26 +34,38 @@ const VolunteerCandidatePanel = ({
 
   const matchedVolunteers = (allVolunteers || [])
     .filter(u => !alreadyInTeamUserIds.has(u.user_id))
-    .filter(u => !nonMemberUserIds.has(u.user_id))
-    .filter(u => !teamTypeId ? u.volunteer_roles?.length > 0 : u.volunteer_roles?.includes(teamTypeId))
-    .filter(u => { if (!search) return true; const q = search.toLowerCase(); return mName(u).toLowerCase().includes(q) || mEmail(u).toLowerCase().includes(q); });
+    .filter(u => {
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return mName(u).toLowerCase().includes(q) || mEmail(u).toLowerCase().includes(q);
+    })
+    .sort((a, b) => {
+      // Prioritize those matching the team type
+      const aMatch = teamTypeId && a.volunteer_roles?.includes(teamTypeId);
+      const bMatch = teamTypeId && b.volunteer_roles?.includes(teamTypeId);
+      if (aMatch && !bMatch) return -1;
+      if (!aMatch && bMatch) return 1;
+      return 0;
+    });
 
   const nonTeamMembers = members
     .filter(m => !alreadyInTeam.has(m.id))
-    .filter(m => m.role === 'member')
-    .filter(m => { if (!search) return true; const q = search.toLowerCase(); return mName(m).toLowerCase().includes(q) || mEmail(m).toLowerCase().includes(q); });
+    .filter(m => {
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return mName(m).toLowerCase().includes(q) || mEmail(m).toLowerCase().includes(q);
+    });
 
   const candidates = filterMode === 'volunteers' ? matchedVolunteers : nonTeamMembers;
-  const volunteerCount = (allVolunteers || []).filter(u => !alreadyInTeamUserIds.has(u.user_id)).filter(u => !nonMemberUserIds.has(u.user_id)).filter(u => !teamTypeId ? u.volunteer_roles?.length > 0 : u.volunteer_roles?.includes(teamTypeId)).length;
+  const volunteerCount = matchedVolunteers.length;
 
   const handleAdd = async (candidate) => {
     if (adding) return;
     setAdding(candidate.user_id);
     try {
       if (filterMode === 'volunteers' && !memberUserIds.has(candidate.user_id)) {
-        // Volunteer not yet a conference member — invite first, then toggle
-        const confUserId = await onAddVolunteer(candidate);
-        if (confUserId) onAdd(confUserId);
+        // Volunteer not yet a conference member — stage for invitation instead of immediate add
+        onAdd(candidate);
       } else if (filterMode === 'all') {
         onAdd(candidate.id);
       } else {
@@ -62,12 +75,13 @@ const VolunteerCandidatePanel = ({
     } finally { setAdding(null); }
   };
 
-  // Check if a candidate is currently selected (in pendingAdds)
+  // Check if a candidate is currently selected (in pendingAdds or pendingInvites)
   const isSelected = (c) => {
-    if (!pendingAdds) return false;
-    if (filterMode === 'all') return pendingAdds.has(c.id);
+    if (filterMode === 'all') return pendingAdds?.has(c.id);
     const confMember = members.find(m => m.user_id === c.user_id);
-    return confMember ? pendingAdds.has(confMember.id) : false;
+    if (confMember && pendingAdds?.has(confMember.id)) return true;
+    if (pendingInvites?.has(c.user_id)) return true;
+    return false;
   };
 
   return (
