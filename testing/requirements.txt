@@ -1,2 +1,4 @@
 requests==2.32.3
 pytest==8.2.2
+playwright
+pytest-playwright
