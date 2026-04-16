@@ -1,11 +1,17 @@
 import express from "express";
 import { supabase } from "../supabaseClient.js";
+import { createClient } from "@supabase/supabase-js";
 import fetch from "node-fetch";
 
 const router = express.Router();
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+// Create a local admin client for auth operations to avoid polluting the global client session
+const authAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+  auth: { persistSession: false }
+});
 
 /**
  * [TESTING ONLY] Register User (Low-Level Bypass)
@@ -42,13 +48,13 @@ router.post("/register", async (req, res) => {
     const userId = authData.id;
 
     // 2. Create Profile
-    const { error: profileError } = await supabase
+    const { error: profileError } = await authAdmin
       .from("users")
-      .insert({
+      .upsert({
         user_id: userId,
         user_name: name,
         user_email: email
-      });
+      }, { onConflict: "user_email" }); // Use email as conflict check or just user_id
 
     if (profileError) {
       // Cleanup cleanup
@@ -75,9 +81,9 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await authAdmin.auth.signInWithPassword({ email, password });
     if (error) return res.status(401).json({ error: error.message });
-    res.json({ success: true, user: data.user });
+    res.json({ success: true, user: data.user, session: data.session });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

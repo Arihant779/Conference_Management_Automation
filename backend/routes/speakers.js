@@ -3,6 +3,7 @@ import { findConferenceSpeakers, searchLinkedInExperts, findSpeakerEmail, findEm
 import { callLLM } from "../services/llmService.js";
 import { sendEmailsToRecipients } from "../services/emailService.js";
 import { supabase } from "../supabaseClient.js";
+import { authMiddleware } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -162,8 +163,8 @@ router.post("/speakers/invite", async (req, res) => {
   }
 });
 
-/* ── Get all invitations ── */
-router.get("/speakers/invitations", async (req, res) => {
+/* ── Get all invitations (PROTECTED) ── */
+router.get("/speakers/invitations", authMiddleware, async (req, res) => {
   const { conference_id } = req.query;
   try {
     const { data, error } = await supabase

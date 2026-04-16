@@ -12,6 +12,7 @@ import paperRoutes from "./routes/papers.js";
 import conferenceRoutes from "./routes/conferences.js";
 import dashboardRoutes from "./routes/dashboards.js";
 import authRoutes from "./routes/auth.js";
+import { authMiddleware } from "./middleware/authMiddleware.js";
 
 import { initScheduler } from "./services/schedulerService.js";
 import { GROQ_API_KEY, GROQ_MODEL } from "./services/llmService.js";
@@ -27,7 +28,7 @@ app.use(express.json({ limit: "50mb" }));
 /* ── Routes ── */
 app.use("/api", emailRoutes);
 app.use("/api", speakerRoutes);
-app.use("/api/teams", teamRoutes);
+app.use("/api/teams", authMiddleware, teamRoutes);
 app.use("/api/papers", paperRoutes);
 app.use("/api/conferences", conferenceRoutes);
 app.use("/api/dashboards", dashboardRoutes);
