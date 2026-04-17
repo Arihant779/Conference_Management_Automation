@@ -69,21 +69,38 @@ const FeedbackManager = ({ conf }) => {
       .order('created_at', { ascending: true })
       .limit(1);
 
-    if (fetchErr) console.error('[FeedbackManager] fetch form error:', fetchErr);
+    if (fetchErr) {
+      console.error('[FeedbackManager] fetch form error:', fetchErr);
+      alert('Error fetching feedback form configuration: ' + fetchErr.message);
+    }
+    
     let existing = rows && rows.length > 0 ? rows[0] : null;
 
-    if (!existing) {
+    if (!existing && confId) {
       // create one
+      console.log('[FeedbackManager] No form found, creating for conference:', confId);
       const { data: created, error: insertErr } = await supabase
         .from('feedback_forms')
-        .insert([{ conference_id: confId }])
+        .insert([{ conference_id: confId, is_published: false }])
         .select()
         .single();
-      if (insertErr) console.error('[FeedbackManager] insert form error:', insertErr);
-      existing = created;
+      
+      if (insertErr) {
+        console.error('[FeedbackManager] insert form error:', insertErr);
+        // Don't alert here yet, maybe we hit a race condition where it was created in another tab
+        // Let's try one more quick fetch before giving up
+        const { data: retryRows } = await supabase.from('feedback_forms').select('*').eq('conference_id', confId).limit(1);
+        if (retryRows && retryRows.length > 0) {
+           existing = retryRows[0];
+        } else {
+           alert('Failed to initialize feedback form. Please try refreshing the page.');
+        }
+      } else {
+        existing = created;
+      }
     }
 
-    console.log('[FeedbackManager] Current form:', existing?.id, 'for confId:', confId, 'published:', existing?.is_published);
+    console.log('[FeedbackManager] Current form state:', { id: existing?.id, confId, published: existing?.is_published });
     setForm(existing);
 
     if (existing) {
@@ -103,7 +120,12 @@ const FeedbackManager = ({ conf }) => {
 
   /* ── add question ── */
   const addQuestion = async () => {
-    if (!newText.trim() || !form) return;
+    if (!newText.trim()) return;
+    if (!form) {
+      alert('Hardware Error: Feedback form not initialized correctly. Please refresh.');
+      return;
+    }
+    
     setSaving(true);
     const { error } = await supabase.from('feedback_questions').insert([{
       form_id: form.id,
@@ -111,7 +133,11 @@ const FeedbackManager = ({ conf }) => {
       question_type: newType,
       sort_order: questions.length,
     }]);
-    if (error) console.error('[FeedbackManager] add question error:', error);
+    
+    if (error) {
+      console.error('[FeedbackManager] add question error:', error);
+      alert('Failed to save question: ' + error.message);
+    }
     setSaving(false);
     if (!error) {
       setNewText('');

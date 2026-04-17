@@ -10,6 +10,7 @@ const OverviewSection = ({
   pendingCount, accepted, rejected,
   volunteersCount, volunteerMap,
   isGlobalHead, can, setSection, setModal,
+  pendingTeams, onInviteResponse,
 }) => {
   const { theme } = useApp();
   const isDark = theme === 'dark';
@@ -27,6 +28,35 @@ const OverviewSection = ({
           </Btn>
         )}
       </div>
+
+      {/* ── TEAM INVITATIONS ── */}
+      {pendingTeams?.length > 0 && (
+          <div className={`p-6 rounded-[2rem] border animate-in slide-in-from-top-4 duration-500 ${isDark ? 'bg-amber-500/5 border-amber-500/20 shadow-[0_0_30px_rgba(245,158,11,0.05)]' : 'bg-amber-50/50 border-amber-200'}`}>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 flex items-center justify-center border border-amber-500/20">
+               <label className="text-xl">✉️</label>
+            </div>
+            <div>
+              <h3 className={`text-lg font-black tracking-tight ${isDark ? 'text-amber-400' : 'text-amber-900'}`}>Team Invitations</h3>
+              <p className="text-xs font-bold text-amber-500/60 uppercase tracking-widest">You have been invited to collaborate</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {pendingTeams.map(team => (
+              <div key={team.id} className={`flex items-center justify-between p-5 rounded-2xl border transition-all ${isDark ? 'bg-black/40 border-white/5 hover:border-white/10' : 'bg-white border-amber-100 shadow-sm'}`}>
+                <div>
+                  <div className={`font-black text-base ${isDark ? 'text-white' : 'text-zinc-900'}`}>{team.name}</div>
+                  <div className="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-1">Pending Response</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button onClick={() => onInviteResponse(team.id, 'accepted')} className="px-6 py-2 bg-amber-500 hover:bg-amber-400 text-black text-[10px] font-black uppercase rounded-xl transition-all shadow-lg shadow-amber-500/20">Accept</button>
+                  <button onClick={() => onInviteResponse(team.id, 'rejected')} className={`px-4 py-2 text-[10px] font-black uppercase rounded-xl border transition-all ${isDark ? 'border-white/10 text-slate-400 hover:text-white hover:bg-white/5' : 'border-zinc-200 text-zinc-500 hover:bg-zinc-50'}`}>Decline</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">

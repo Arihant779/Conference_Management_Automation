@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   BarChart2, FileText, Users, CheckSquare, Bell, Send,
-  Layers, Clock, Sparkles, Star, Check, Settings2, MessageSquare,
+  Layers, Clock, Sparkles, Star, Check, Settings2, MessageSquare, Zap
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
+import { protectedFetch } from '../../utils/api';
 import { mName, VOLUNTEER_ROLE_LABELS } from './Organizer/constants';
 
 /* ── external dashboard components (unchanged) ── */
@@ -12,6 +13,7 @@ import EmailComposer from './EmailComposer';
 import PaperAllocation from './PaperAllocation';
 import EmailSettings from './EmailSettings';
 import FeedbackManager from './FeedbackManager';
+import EmailAutomationsManager from './EmailAutomationsManager';
 
 /* ── modular sub-components ── */
 import { CinematicBackground } from './Organizer/components/common/Effects';
@@ -60,13 +62,15 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   const myMemberId      = myMember?.id;
   const isGlobalHead    = conf.conference_head_id === user.id;
   const isOrganizer     = isGlobalHead || (userRoles && userRoles.includes('organizer'));
-  const myHeadedTeamIds = teams.filter(t => t.head_id === myMemberId).map(t => t.id);
+  const myHeadedTeamIds = teams.filter(t => t.head_id === user.id).map(t => t.id);
+
+  const pendingTeams = teams.filter(t => t.memberList?.some(m => (m.user_id === user?.id || (myMemberId && m.conference_user_id === myMemberId)) && m.status === 'pending'));
   const isTeamHead      = !isOrganizer && myHeadedTeamIds.length > 0;
   const myTeamIds       = teams.filter(t => t.memberList?.some(m => m.user_id === user.id)).map(t => t.id);
 
   const FALLBACK_PERMS = {
-    organizer: ['view_dashboard','view_emails','send_emails','view_papers','manage_papers','allocate_papers','view_members','manage_members','view_teams','manage_teams','view_tasks','manage_tasks','view_notifications','send_notifications','find_speakers','view_feedback','manage_feedback','view_attendees'],
-    organizer_head: ['view_dashboard','view_emails','send_emails','view_papers','manage_papers','allocate_papers','view_members','manage_members','view_teams','manage_teams','view_tasks','manage_tasks','view_notifications','send_notifications','find_speakers','view_feedback','manage_feedback','view_attendees'],
+    organizer: ['view_dashboard','view_emails','send_emails','manage_emails','view_papers','manage_papers','allocate_papers','view_members','manage_members','view_teams','manage_teams','view_tasks','manage_tasks','view_notifications','send_notifications','find_speakers','view_feedback','manage_feedback','view_attendees'],
+    organizer_head: ['view_dashboard','view_emails','send_emails','manage_emails','view_papers','manage_papers','allocate_papers','view_members','manage_members','view_teams','manage_teams','view_tasks','manage_tasks','view_notifications','send_notifications','find_speakers','view_feedback','manage_feedback','view_attendees'],
     programming_head: ['view_dashboard','view_papers','manage_papers','allocate_papers','view_members','view_notifications'],
     logistics_head: ['view_dashboard','view_teams','manage_teams','view_tasks','manage_tasks','view_notifications','view_attendees','manage_members'],
     outreach_head: ['view_dashboard','view_emails','send_emails','find_speakers','view_members','view_notifications','send_notifications'],
@@ -95,7 +99,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   const [saving, setSaving]           = useState(false);
   const [memberSearch, setMemberSearch] = useState('');
   const [paperFilter, setPaperFilter] = useState('all');
-  const [allVolunteers, setAllVolunteers] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
   const [selectedAttendees, setSelectedAttendees] = useState(new Set());
   const [updatingBulk, setUpdatingBulk] = useState(false);
 
@@ -145,10 +149,10 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     console.warn('Room update skipped: columns missing from schema');
   };
 
-  const fetchAllVolunteers = useCallback(async () => {
+  const fetchAllUsers = useCallback(async () => {
     const { data, error } = await supabase.from('users').select('user_id, user_name, user_email, volunteer_roles, volunteer_domains');
     if (error) { console.error(error); return; }
-    setAllVolunteers((data || []).filter(u => Array.isArray(u.volunteer_roles) && u.volunteer_roles.length > 0));
+    setAllUsers(data || []);
   }, []);
 
   const fetchPapers = useCallback(async () => {
@@ -187,7 +191,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     setLT(true);
     const { data: td } = await supabase.from('conference_teams').select('*').eq('conference_id', confId).order('created_at', { ascending: true });
     if (td) {
-      const { data: tmData } = await supabase.from('team_members').select('team_id,user_id,conference_user_id,status').in('team_id', td.map(t => t.id));
+      const { data: tmData } = await supabase.from('team_members').select('id,team_id,user_id,conference_user_id,status').in('team_id', td.map(t => t.id));
       const map = {};
       (tmData || []).forEach(tm => { (map[tm.team_id] = map[tm.team_id] || []).push(tm); });
       setTeams(td.map(t => ({ ...t, memberList: map[t.id] || [] })));
@@ -230,8 +234,8 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   }, [fetchMyRatings]);
 
   useEffect(() => {
-    fetchMembers(); fetchAllVolunteers(); fetchTeams(); fetchTasks(); fetchNotifs(); fetchPapers(); fetchGlobalRatings();
-  }, [fetchMembers, fetchAllVolunteers, fetchTeams, fetchTasks, fetchNotifs, fetchPapers, fetchGlobalRatings]);
+    fetchMembers(); fetchAllUsers(); fetchTeams(); fetchTasks(); fetchNotifs(); fetchPapers(); fetchGlobalRatings();
+  }, [fetchMembers, fetchAllUsers, fetchTeams, fetchTasks, fetchNotifs, fetchPapers, fetchGlobalRatings]);
 
   /* ── member CRUD ── */
   const updateRole = async (id, role) => {
@@ -239,7 +243,59 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     if (error) { alert(error.message); return; }
     setMembers(ms => ms.map(m => m.id === id ? { ...m, role } : m));
   };
-  const removeMember = async (id) => { await supabase.from('conference_user').delete().eq('id', id); fetchMembers(); fetchTeams(); };
+  const removeMember = async (id) => {
+    // 1. Get the user_id for this conference_user before we delete it (needed for paper assignments)
+    const member = members.find(m => m.id === id);
+    if (!member) return;
+
+    try {
+      setSaving(true);
+      
+      // 2. Remove from team memberships
+      await supabase.from('team_members').delete().eq('conference_user_id', id);
+
+      // 3. Unassign from tasks (don't delete the task, just remove the assignee)
+      await supabase.from('conference_tasks').update({ assignee_id: null }).eq('assignee_id', id);
+
+      // 4. Remove paper assignments if they were a reviewer
+      if (member.user_id) {
+        await supabase.from('paper_assignments').delete().eq('conference_id', confId).eq('reviewer_id', member.user_id);
+      }
+
+      // 5. Finally, remove from the conference member list
+      const { error } = await supabase.from('conference_user').delete().eq('id', id);
+      
+      if (error) {
+        alert('Failed to remove member: ' + error.message);
+      } else {
+        // Refresh local state
+        fetchMembers();
+        fetchTeams();
+        if (section === 'tasks') fetchTasks();
+        if (section === 'papers') fetchPapers();
+      }
+    } catch (err) {
+      console.error('Member removal error:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleInviteResponse = async (teamId, status) => {
+    try {
+      const res = await protectedFetch('http://localhost:4000/api/teams/invite/respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ team_id: teamId, user_id: user.id, status })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      fetchTeams();
+      fetchMembers();
+    } catch (err) {
+      alert(`Response error: ${err.message}`);
+    }
+  };
 
   const handleAddMember = async (user, role) => {
     const already = members.find(m => m.user_id === user.user_id);
@@ -248,21 +304,18 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     const { error } = await supabase.from('conference_user').insert([{ conference_id: confId, user_id: user.user_id, email: user.user_email || '', full_name: user.user_name || '', role, joined_at: new Date().toISOString() }]);
     setSaving(false);
     if (error) { alert(error.message); return; }
-    setModal(null); setMForm({ email: '', role: 'reviewer' }); fetchMembers(); fetchAllVolunteers();
+    setModal(null); setMForm({ email: '', role: 'reviewer' }); fetchMembers(); fetchAllUsers();
   };
 
   /* ── team CRUD ── */
-  const createTeam = async (pendingAdds = [], pendingInvites = []) => {
+  const createTeam = async (finalAdds = [], _, explicitHeadId = null) => {
     if (!tmForm.name.trim()) return; setSaving(true);
+    const headId = explicitHeadId || tmForm.head_id;
     
-    // Resolve all member IDs (existing + pending invites)
-    const membersToInvite = [
-      ...pendingAdds.map(id => members.find(m => m.id === id)?.user_id),
-      ...pendingInvites.map(v => v.user_id)
-    ].filter(Boolean);
+    const membersToInvite = finalAdds; // Now receiving user_ids directly
 
     try {
-      const res = await fetch('http://localhost:4000/api/teams/create', {
+      const res = await protectedFetch('http://localhost:4000/api/teams/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -270,7 +323,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
           name: tmForm.name.trim(),
           description: tmForm.description.trim(),
           color: tmForm.color,
-          head_id: tmForm.head_id || null,
+          head_id: headId || null,
           members: membersToInvite,
           type: tmForm.type
         })
@@ -287,34 +340,31 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     }
   };
 
-  const saveTeam = async (pendingAdds = [], pendingRemoves = [], pendingInvites = []) => {
+  const saveTeam = async (finalAdds = [], pendingRemoves = [], _, explicitHeadId = null) => {
     if (!tmForm.name.trim()) return; setSaving(true);
+    const headId = explicitHeadId || tmForm.head_id;
     
     try {
       // 1. Update Meta
-      const metaRes = await fetch(`http://localhost:4000/api/teams/${modalData.id}`, {
+      const metaRes = await protectedFetch(`http://localhost:4000/api/teams/${modalData.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: tmForm.name.trim(),
           description: tmForm.description.trim(),
           color: tmForm.color,
-          head_id: tmForm.head_id || null
+          head_id: headId || null
         })
       });
-      const metaData = await metaRes.json();
-      if (metaData.error) throw new Error(metaData.error);
+      const metaResJson = await metaRes.json();
+      if (metaResJson.error) throw new Error(metaResJson.error);
 
       // 2. Sync Members
-      const adds = [
-        ...pendingAdds.map(id => members.find(m => m.id === id)?.user_id),
-        ...pendingInvites.map(v => v.user_id)
-      ].filter(Boolean);
-      
-      const removes = pendingRemoves.map(id => members.find(m => m.id === id)?.user_id).filter(Boolean);
+      const adds = finalAdds; // Now receiving user_ids directly
+      const removes = pendingRemoves; // Now receiving user_ids directly
 
       if (adds.length > 0 || removes.length > 0) {
-        const syncRes = await fetch(`http://localhost:4000/api/teams/${modalData.id}/sync`, {
+        const syncRes = await protectedFetch(`http://localhost:4000/api/teams/${modalData.id}/sync`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ conference_id: confId, adds, removes })
@@ -333,7 +383,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
 
   const deleteTeam = async (id) => { 
     try {
-      const res = await fetch(`http://localhost:4000/api/teams/${id}`, { method: 'DELETE' });
+      const res = await protectedFetch(`http://localhost:4000/api/teams/${id}`, { method: 'DELETE' });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       fetchTeams(); fetchTasks(); 
@@ -349,7 +399,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     if (team?.memberList.some(tm => tm.conference_user_id === confUserId)) { alert('Already in team.'); return; }
     setSaving(true);
     try {
-      const res = await fetch(`http://localhost:4000/api/teams/${teamId}/sync`, {
+      const res = await protectedFetch(`http://localhost:4000/api/teams/${teamId}/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ conference_id: confId, adds: [member.user_id], removes: [] })
@@ -369,7 +419,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     if (!member) return;
     setSaving(true);
     try {
-      const res = await fetch(`http://localhost:4000/api/teams/${teamId}/sync`, {
+      const res = await protectedFetch(`http://localhost:4000/api/teams/${teamId}/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ conference_id: confId, adds: [], removes: [member.user_id] })
@@ -386,10 +436,38 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
 
   const handleAddVolunteerToConference = async (v) => {
     setSaving(true);
-    const { data, error } = await supabase.from('conference_user').insert([{ conference_id: confId, user_id: v.user_id, email: v.user_email || '', full_name: v.user_name || '', role: 'invited', joined_at: new Date().toISOString() }]).select().single();
+
+    // Check if this user is already in the conference (e.g. from a previous half-completed invite)
+    const { data: existing } = await supabase
+      .from('conference_user')
+      .select('id, role')
+      .eq('conference_id', confId)
+      .eq('user_id', v.user_id)
+      .maybeSingle();
+
+    if (existing) {
+      // Ensure at least 'invited' role so they can see the conference card
+      if (existing.role !== 'member' && existing.role !== 'organizer' && existing.role !== 'reviewer') {
+        await supabase.from('conference_user').update({ role: 'invited' }).eq('id', existing.id);
+      }
+      setSaving(false);
+      return existing.id;
+    }
+
+    // Brand-new user → insert with 'invited' role
+    const { data, error } = await supabase.from('conference_user').insert([{
+      conference_id: confId,
+      user_id: v.user_id,
+      email: v.user_email || '',
+      full_name: v.user_name || '',
+      role: 'invited',
+      joined_at: new Date().toISOString()
+    }]).select().single();
+
     setSaving(false);
     if (error) { alert(error.message); return null; }
-    fetchMembers(); return data.id;
+    fetchMembers();
+    return data.id;
   };
 
   /* ── task CRUD ── */
@@ -457,12 +535,12 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   const teamName     = (id) => teams.find(t => t.id === id)?.name || '—';
   const assigneeName = (id) => { const m = members.find(m => m.id === id || m.user_id === id); return m ? mName(m) : '—'; };
 
-  const filteredMembers = members.filter(m => m.role !== 'attendee' && m.role !== 'invited' && (!memberSearch || mName(m).toLowerCase().includes(memberSearch.toLowerCase()) || m.email?.toLowerCase().includes(memberSearch.toLowerCase())));
+  const filteredMembers = members.filter(m => m.role !== 'attendee' && (!memberSearch || mName(m).toLowerCase().includes(memberSearch.toLowerCase()) || m.email?.toLowerCase().includes(memberSearch.toLowerCase())));
   const attendees         = members.filter(m => m.role === 'attendee');
   const filteredAttendees = attendees.filter(m => !memberSearch || mName(m).toLowerCase().includes(memberSearch.toLowerCase()) || m.email?.toLowerCase().includes(memberSearch.toLowerCase()));
 
-  const volunteerMap    = Object.fromEntries(allVolunteers.map(u => [u.user_id, { volunteer_roles: u.volunteer_roles || [], volunteer_domains: u.volunteer_domains || [] }]));
-  const volunteersCount = allVolunteers.length;
+  const volunteerMap    = Object.fromEntries(allUsers.map(u => [u.user_id, { volunteer_roles: u.volunteer_roles || [], volunteer_domains: u.volunteer_domains || [] }]));
+  const volunteersCount = allUsers.length;
 
   const openEditTeam = (t) => {
     setModalData(t);
@@ -481,10 +559,11 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     { id: 'papers',        label: 'Papers',           icon: FileText,    badge: pendingCount || null,                      permission: 'view_papers' },
     { id: 'members',       label: 'Members',          icon: Users,       badge: null,                                      permission: 'view_members' },
     { id: 'attendees',     label: 'Attendees',        icon: Users,       badge: null,                                      permission: 'view_attendees' },
-    { id: 'teams',         label: 'Teams',            icon: Layers,      badge: null,                                      permission: 'view_teams' },
+    { id: 'teams',         label: 'Teams',            icon: Layers,      badge: pendingTeams.length || null,                                      permission: 'view_teams' },
     { id: 'tasks',         label: 'Tasks',            icon: CheckSquare, badge: tasks.filter(t => t.status !== 'done').length || null, permission: 'view_tasks' },
     { id: 'notifications', label: 'Notifications',    icon: Bell,        badge: null,                                      permission: 'view_notifications' },
     { id: 'emails',        label: 'Emails',           icon: Send,        badge: null,                                      permission: 'view_emails' },
+    { id: 'email_automations', label: 'Email Automations', icon: Zap,      badge: null,                                      permission: 'manage_emails' },
     { id: 'speakers',      label: 'Find Speakers',    icon: Users,       badge: null,                                      permission: 'find_speakers' },
     { id: 'invitations',   label: 'Invitation Tracker', icon: Clock,      badge: null,                                      permission: 'find_speakers' },
     { id: 'chat',          label: 'Team Chat',        icon: MessageSquare, badge: null,                                    permission: 'view_teams' },
@@ -510,12 +589,46 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
         {/* ── MAIN CONTENT ── */}
         <main className="flex-1 p-8 relative min-h-screen">
 
+          {/* ── TOP LEVEL INVITATIONS ── */}
+          {pendingTeams.length > 0 && (
+            <div className={`mb-10 p-6 rounded-[2.5rem] border animate-in slide-in-from-top-4 duration-700 bg-amber-500/5 border-amber-500/10 shadow-[0_0_40px_rgba(245,158,11,0.03)]`}>
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center border border-amber-500/20 shadow-inner">
+                   <label className="text-2xl">⚡</label>
+                </div>
+                <div>
+                  <h3 className={`text-xl font-black tracking-tight text-amber-500`}>Collaboration Pending</h3>
+                  <p className="text-xs font-bold text-amber-500/60 uppercase tracking-widest leading-none mt-1">Accept invitations to access team resources</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {pendingTeams.map(team => (
+                  <div key={team.id} className={`flex items-center justify-between p-6 rounded-[1.5rem] border transition-all ${isDark ? 'bg-black/40 border-white/5 hover:border-white/10' : 'bg-white border-amber-100 shadow-sm'}`}>
+                    <div className="flex items-center gap-4">
+                      <div className="w-1.5 h-10 rounded-full" style={{ backgroundColor: team.color || '#f59e0b' }} />
+                      <div>
+                        <div className={`font-black text-lg ${isDark ? 'text-white' : 'text-zinc-900'}`}>{team.name}</div>
+                        <div className="text-[10px] text-amber-500 uppercase font-bold tracking-widest mt-0.5">Invite Received</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => handleInviteResponse(team.id, 'accepted')} className="px-8 py-2.5 bg-amber-500 hover:bg-amber-400 text-black text-[11px] font-black uppercase rounded-2xl transition-all shadow-lg shadow-amber-500/25 active:scale-95">Accept</button>
+                      <button onClick={() => handleInviteResponse(team.id, 'rejected')} className={`px-6 py-2.5 text-[11px] font-black uppercase rounded-2xl border transition-all ${isDark ? 'border-white/10 text-slate-400 hover:text-white hover:bg-white/5' : 'border-zinc-200 text-zinc-500 hover:bg-zinc-50'} active:scale-95`}>Decline</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {section === 'overview' && (
             <OverviewSection
               members={members} teams={teams} tasks={tasks} confPapers={confPapers}
               pendingCount={pendingCount} accepted={accepted} rejected={rejected}
               volunteersCount={volunteersCount} volunteerMap={volunteerMap}
               isGlobalHead={isGlobalHead} can={can} setSection={setSection} setModal={setModal}
+              pendingTeams={teams.filter(t => t.memberList?.some(m => (m.user_id === user?.id || (myMemberId && m.conference_user_id === myMemberId)) && m.status === 'pending'))}
+              onInviteResponse={handleInviteResponse}
             />
           )}
 
@@ -549,9 +662,9 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
             />
           )}
 
-           {section === 'teams' && (
+          {section === 'teams' && (
             <TeamsSection
-              teams={teams} members={members} isOrganizer={isOrganizer} myMemberId={myMemberId}
+              teams={teams} members={members} isOrganizer={isOrganizer} myMemberId={myMemberId} myTeamIds={myTeamIds}
               loadingTeams={loadingTeams} setModal={setModal} setTmForm={setTmForm}
               openEditTeam={openEditTeam} deleteTeam={deleteTeam} setSection={setSection} can={can}
               setActiveChatTeamId={setActiveChatTeamId}
@@ -586,6 +699,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
 
           {section === 'feedback' && <FeedbackManager conf={conf} />}
           {section === 'emails' && <EmailComposer conf={conf} senderRole="organizer" onOpenEmailSettings={() => setSection('emailSettings')} />}
+          {section === 'email_automations' && <EmailAutomationsManager conf={conf} />}
           {section === 'emailSettings' && <EmailSettings conf={conf} />}
           {section === 'allocation' && <PaperAllocation conf={conf} />}
           {section === 'submission_rules' && <SubmissionSettingsSection conf={conf} />}
@@ -621,7 +735,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
         <TeamModal
           mode={modal} modalData={modalData} tmForm={tmForm} setTmForm={setTmForm}
           isOrganizer={isOrganizer} saving={saving} members={members}
-          allVolunteers={allVolunteers} confId={confId} globalRatings={globalRatings}
+          allUsers={allUsers} confId={confId} globalRatings={globalRatings}
           onClose={() => setModal(null)} onCreate={createTeam} onSave={saveTeam}
           onAddToTeam={addToTeam} onRemoveFromTeam={removeFromTeam}
           onAddVolunteer={handleAddVolunteerToConference}
@@ -631,7 +745,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
       {(modal === 'addTask' || modal === 'editTask') && (
         <TaskModal
           mode={modal} tkForm={tkForm} setTkForm={setTkForm}
-          teams={teams} members={members} isOrganizer={isOrganizer} myMemberId={myMemberId} saving={saving}
+          teams={teams} members={members} isOrganizer={isOrganizer} userId={user.id} saving={saving}
           onClose={() => setModal(null)} onCreate={createTask} onSave={saveTask}
         />
       )}

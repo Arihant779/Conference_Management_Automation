@@ -110,11 +110,25 @@ const MembersSection = ({
                             isDark ? 'bg-slate-900 hover:bg-slate-800' : 'bg-white hover:bg-zinc-50 border-zinc-200',
                             ROLE_STYLE[m.role] || ROLE_STYLE.member
                           )}>
-                          {['organizer','reviewer','presenter','member','invited'].map(r => (
+                        {(() => {
+                          const currentRole = m.role;
+                          const allowedTargets = ['organizer', 'presenter'];
+                          
+                          // Rules:
+                          // 1. Always include current role so it shows correctly.
+                          // 2. Can always promote to 'organizer' or 'presenter'.
+                          // 3. User said "not reviewer" as a target.
+                          // 4. User said "no organiser/reviewer/presenter should be possible to convert into team member".
+                          //    Since 'member' is not in allowedTargets, this is naturally enforced.
+                          
+                          const options = [...new Set([currentRole, ...allowedTargets])];
+                          
+                          return options.map(r => (
                             <option key={r} value={r} style={{ background: isDark ? '#0B0F1A' : '#fff', color: isDark ? '#fff' : '#000' }} className="normal-case">
                               {r === 'member' ? 'Team Member' : (r === 'invited' ? 'Invited' : r)}
                             </option>
-                          ))}
+                          ));
+                        })()}
                         </select>
                         <button onClick={() => { setModalData(m); setModal('confirmDelete'); }}
                           className={`p-2.5 rounded-xl transition-all ${

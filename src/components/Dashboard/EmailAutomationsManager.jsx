@@ -65,7 +65,7 @@ const EmailBodyEditor = ({ value, onChange, isDark }) => {
 const EmailAutomationsManager = ({ conf }) => {
   const { theme } = useApp();
   const isDark = theme === 'dark';
-  const confId = conf?.conference_id ?? conf?.id;
+  const confId = conf?.conference_id || conf?.id;
 
   const [automations, setAutomations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -93,6 +93,7 @@ const EmailAutomationsManager = ({ conf }) => {
   const [genError, setGenError] = useState('');
 
   const fetchAutomations = useCallback(async () => {
+    if (!confId) return;
     setLoading(true);
     const { data, error } = await supabase
       .from('conference_automations')
@@ -107,6 +108,15 @@ const EmailAutomationsManager = ({ conf }) => {
   }, [confId]);
 
   useEffect(() => { fetchAutomations(); }, [fetchAutomations]);
+
+  if (!confId) {
+    return (
+      <div className="flex flex-col items-center justify-center p-20 opacity-50">
+        <Loader2 className="animate-spin mb-4" />
+        <p className="text-sm font-medium">Resolving conference context...</p>
+      </div>
+    );
+  }
 
   const openNew = () => {
     setForm({

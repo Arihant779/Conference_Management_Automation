@@ -6,7 +6,7 @@ import { SpotlightCard, AnimatedSection } from '../common/Effects';
 import { useApp } from '../../../../../context/AppContext';
 
 const TeamsSection = ({
-  teams, members, isOrganizer, myMemberId, myTeamIds, loadingTeams,
+  teams, members, isOrganizer, myMemberId, myTeamIds = [], loadingTeams,
   setModal, setTmForm, openEditTeam, deleteTeam, setSection, can,
   setActiveChatTeamId,
 }) => {
@@ -36,7 +36,7 @@ const TeamsSection = ({
                 .filter(tm => tm.status === 'accepted')
                 .map(tm => members.find(m => m.id === tm.conference_user_id || m.user_id === tm.user_id))
                 .filter(Boolean);
-              const head = team.head_id ? members.find(m => m.id === team.head_id) : null;
+              const head = team.head_id ? members.find(m => m.user_id === team.head_id) : null;
               return (
                 <AnimatedSection key={team.id} delay={0.05 * i} className="h-full">
                   <SpotlightCard className="h-full rounded-2xl" spotlightColor={isDark ? "rgba(251,191,36,0.05)" : "rgba(251,191,36,0.1)"}>

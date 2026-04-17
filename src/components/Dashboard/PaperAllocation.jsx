@@ -158,7 +158,6 @@ const PaperAllocation = ({ conf, onRefresh }) => {
   };
 
   const removeFile = (idx) => setPapers(p => p.filter((_, i) => i !== idx));
-  const addReviewer = () => setReviewers(r => [...r, { name: '', expertise: '', capacity: 3 }]);
   const updateReviewer = (idx, field, val) =>
     setReviewers(r => r.map((rv, i) => i === idx ? { ...rv, [field]: val } : rv));
   const removeReviewer = (idx) => setReviewers(r => r.filter((_, i) => i !== idx));
@@ -490,9 +489,6 @@ const PaperAllocation = ({ conf, onRefresh }) => {
                 <Btn isDark={isDark} variant="secondary" className="text-[10px] uppercase py-2" onClick={() => setShowDbSelector(!showDbSelector)}>
                    {showDbSelector ? 'Hide committee' : 'Import committee'}
                 </Btn>
-                <Btn isDark={isDark} variant="secondary" className="text-[10px] uppercase py-2 font-bold" onClick={addReviewer}>
-                   + MANUAL ENTRY
-                </Btn>
               </div>
             </div>
 
@@ -526,7 +522,6 @@ const PaperAllocation = ({ conf, onRefresh }) => {
                <div className={cls("py-12 flex flex-col items-center border-2 border-dashed rounded-[2rem]", isDark ? "border-white/5 bg-white/2" : "border-zinc-100 bg-zinc-50/50")}>
                   <Users size={32} className={isDark ? "text-slate-700" : "text-zinc-300"} />
                   <p className={cls("text-sm mt-4 italic", isDark ? "text-slate-600" : "text-zinc-400")}>Assign at least {reviewersPerPaper} reviewers to begin</p>
-                  <button onClick={addReviewer} className="mt-4 text-amber-500 font-bold hover:underline transition-all">Add Manual Reviewer →</button>
                </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

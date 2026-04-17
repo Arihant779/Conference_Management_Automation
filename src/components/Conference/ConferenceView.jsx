@@ -86,7 +86,15 @@ const ConferenceView = ({
       .eq('conference_id', confId)
       .eq('user_id', user.id)
       .maybeSingle()
-      .then(({ data }) => setResolvedRole(data?.role || null));
+      .then(({ data }) => {
+        const role = data?.role || null;
+        setResolvedRole(role);
+        // If the user is specifically 'invited', take them straight to the dashboard 
+        // to see the invitation banner, instead of showing the site preview first.
+        if (role === 'invited' && viewMode === 'home') {
+          setViewMode('dashboard');
+        }
+      });
   }, [user, confId, isGuest]);
 
   /* ── Fetch members ── */

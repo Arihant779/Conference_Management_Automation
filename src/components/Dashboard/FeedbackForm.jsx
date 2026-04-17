@@ -292,11 +292,26 @@ const FeedbackForm = ({ conf }) => {
             {q.question_type === 'descriptive' && (
               <div className="ml-6">
                 <textarea
-                  className={cls("w-full border rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none resize-none h-24 transition-all", 
-                    isDark ? "bg-white/4 border-white/8 text-white placeholder-slate-600" : "bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:ring-4 focus:ring-indigo-500/5")}
+                  className={cls(
+                    "w-full border rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none transition-all", 
+                    isDark ? "bg-white/4 border-white/8 text-white placeholder-slate-600" : "bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:ring-4 focus:ring-indigo-500/5"
+                  )}
+                  style={{ 
+                    minHeight: '120px',
+                    height: 'auto',
+                    overflow: 'hidden'
+                  }}
                   placeholder="Write your response..."
                   value={answers[q.id] || ''}
-                  onChange={e => setAnswer(q.id, e.target.value)}
+                  onChange={e => {
+                    setAnswer(q.id, e.target.value);
+                    e.target.style.height = 'auto';
+                    e.target.style.height = e.target.scrollHeight + 'px';
+                  }}
+                  onFocus={e => {
+                    e.target.style.height = 'auto';
+                    e.target.style.height = e.target.scrollHeight + 'px';
+                  }}
                 />
               </div>
             )}

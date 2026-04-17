@@ -10,7 +10,6 @@ const AddMemberModal = ({ mForm, setMForm, members, confId, saving, onClose, onA
           <option value="reviewer">Reviewer</option>
           <option value="presenter">Presenter</option>
           <option value="organizer">Organizer</option>
-          <option value="member">Member</option>
         </Sel>
       </Field>
       <Field label="Select User">

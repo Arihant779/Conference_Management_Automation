@@ -14,6 +14,15 @@ router.post("/create", async (req, res) => {
       return res.status(400).json({ error: "MISSING_REQUIRED_FIELDS", message: "Title, Location, and Start Date are required." });
     }
 
+    const today = new Date().toISOString().split('T')[0];
+    if (start_date < today) {
+      return res.status(400).json({ error: "INVALID_DATE", message: "Start date cannot be in the past." });
+    }
+
+    if (end_date && end_date < start_date) {
+      return res.status(400).json({ error: "INVALID_DATE", message: "End date must be on or after the start date." });
+    }
+
     // Check for duplicate name
     const { data: existing } = await supabase.from("conference").select("conference_id").eq("title", title).maybeSingle();
     if (existing) {

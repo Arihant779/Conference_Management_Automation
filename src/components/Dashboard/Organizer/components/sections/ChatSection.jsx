@@ -5,7 +5,7 @@ import { useApp } from '../../../../../context/AppContext';
 import ChatInterface from '../../../../Chat/ChatInterface';
 
 const ChatSection = ({
-  confId, teams, isOrganizer, myTeamIds,
+  confId, teams, isOrganizer, myTeamIds = [],
   activeChatTeamId, setActiveChatTeamId,
   showLeaderHub = true,
 }) => {

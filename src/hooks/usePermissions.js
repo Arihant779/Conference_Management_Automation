@@ -33,10 +33,7 @@ export const usePermissions = (confId, userId) => {
       .from('conference_teams')
       .select('id, name')
       .eq('conference_id', confId)
-      .eq('head_id', (
-        // Subquery or separate select to get the conference_user.id
-        await supabase.from('conference_user').select('id').eq('conference_id', confId).eq('user_id', userId).single()
-      ).data?.id);
+      .eq('head_id', userId);
 
     // Dedup permission strings & role names
     const permsSet = new Set();

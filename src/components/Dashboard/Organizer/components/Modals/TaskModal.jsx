@@ -4,7 +4,7 @@ import { Modal, Field, Input, Sel, Textarea, Btn } from '../common/Primitives';
 
 const TaskModal = ({
   mode, tkForm, setTkForm,
-  teams, members, isOrganizer, myMemberId, saving,
+  teams, members, isOrganizer, userId, saving,
   onClose, onCreate, onSave,
 }) => (
   <Modal title={mode === 'addTask' ? 'Add Task' : 'Edit Task'} onClose={onClose} width="max-w-xl">
@@ -15,7 +15,7 @@ const TaskModal = ({
         <Field label="Assign to Team">
           <Sel value={tkForm.team_id} onChange={e => setTkForm({ ...tkForm, team_id: e.target.value })}>
             <option value="">{isOrganizer ? 'No team' : 'Select your team'}</option>
-            {teams.filter(t => isOrganizer || t.head_id === myMemberId).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            {teams.filter(t => isOrganizer || t.head_id === userId).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
           </Sel>
         </Field>
         <Field label="Assignee">

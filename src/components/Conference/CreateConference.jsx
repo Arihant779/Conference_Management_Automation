@@ -22,10 +22,25 @@ const CreateConference = ({ onCancel, onSuccess }) => {
 
   const update = (field) => (e) => setData((prev) => ({ ...prev, [field]: e.target.value }));
 
+  const today = new Date().toISOString().split('T')[0];
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    // Date Validation
+    if (data.start_date < today) {
+      setError('Start date cannot be in the past.');
+      setLoading(false);
+      return;
+    }
+
+    if (data.end_date && data.end_date < data.start_date) {
+      setError('End date must be on or after the start date.');
+      setLoading(false);
+      return;
+    }
 
     try {
       // 1. Create the conference row
@@ -66,7 +81,7 @@ const CreateConference = ({ onCancel, onSuccess }) => {
     }
   };
 
-  const canProceed = data.title && data.theme && data.start_date && data.location;
+  const canProceed = data.title && data.theme && data.start_date && data.location && (data.start_date >= today);
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 p-6 flex items-center justify-center">
@@ -123,7 +138,14 @@ const CreateConference = ({ onCancel, onSuccess }) => {
             {/* Step 1 */}
             {step === 1 && (
               <div className="space-y-6 flex-1">
-                <h3 className="text-2xl font-bold text-white mb-6">Conference Essentials</h3>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-2xl font-bold text-white">Conference Essentials</h3>
+                  {error && step === 1 && (
+                    <span className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-1 animate-pulse">
+                      {error}
+                    </span>
+                  )}
+                </div>
 
                 <div className="space-y-5">
                   <Field label="Conference Name">
@@ -135,12 +157,12 @@ const CreateConference = ({ onCancel, onSuccess }) => {
                       <Input required value={data.theme} onChange={update('theme')} placeholder="e.g. AI Ethics" />
                     </Field>
                     <Field label="Start Date">
-                      <Input required type="date" value={data.start_date} onChange={update('start_date')} className="[color-scheme:dark]" />
+                      <Input required type="date" value={data.start_date} onChange={update('start_date')} min={today} className="[color-scheme:dark]" />
                     </Field>
                   </div>
 
                   <Field label="End Date (optional)">
-                    <Input type="date" value={data.end_date} onChange={update('end_date')} className="[color-scheme:dark]" />
+                    <Input type="date" value={data.end_date} onChange={update('end_date')} min={data.start_date || today} className="[color-scheme:dark]" />
                   </Field>
 
                   <Field label="Location">

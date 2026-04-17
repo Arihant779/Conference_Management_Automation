@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Users, Plus, X, Check, UserMinus, UserPlus } from 'lucide-react';
+import { Users, Plus, X, Check, UserMinus, UserPlus, Star, Sparkles } from 'lucide-react';
 import { cls, mName, TEAM_TYPES, TEAM_COLORS } from '../../constants';
 import { Modal, Field, Input, Sel, Btn } from '../common/Primitives';
 import VolunteerCandidatePanel from '../Panels/VolunteerCandidatePanel';
@@ -7,7 +7,7 @@ import { useApp } from '../../../../../context/AppContext';
 
 const TeamModal = ({
   mode, modalData, tmForm, setTmForm,
-  isOrganizer, saving, members, allVolunteers, confId, globalRatings,
+  isOrganizer, saving, members, allUsers, confId, globalRatings,
   onClose, onCreate, onSave, onAddToTeam, onRemoveFromTeam, onAddVolunteer,
 }) => {
   const { theme } = useApp();
@@ -17,6 +17,7 @@ const TeamModal = ({
   const [pendingAdds, setPendingAdds]       = useState(new Set());   // conf_user_ids to add
   const [pendingRemoves, setPendingRemoves] = useState(new Set());   // conf_user_ids to remove
   const [pendingInvites, setPendingInvites] = useState(new Map());   // user_id -> volunteer object (not yet in conference)
+  const [selectionMode, setSelectionMode]   = useState('head');      // 'head' or 'members'
 
   // All existing team member conf_user_ids (from DB)
   const existingMemberIds = useMemo(
@@ -55,7 +56,9 @@ const TeamModal = ({
     return result;
   }, [modalData, pendingAdds, pendingRemoves, existingMemberIds, members, pendingInvites]);
 
-  const hasPendingChanges = pendingAdds.size > 0 || pendingRemoves.size > 0 || pendingInvites.size > 0;
+  const [potentialHead, setPotentialHead] = useState(null); // User object if head is not in conference yet
+
+  const hasPendingChanges = pendingAdds.size > 0 || pendingRemoves.size > 0 || pendingInvites.size > 0 || potentialHead !== null;
 
   // ── Handlers ──
   const handleToggleCandidate = (candidateOrId) => {
@@ -102,17 +105,53 @@ const TeamModal = ({
   };
 
   const handleSaveAll = async () => {
+    // 1. Handle Potential Head (if they aren't in conference yet)
+    let finalHeadId = tmForm.head_id;
+    if (potentialHead) {
+      const existingInConf = members.find(m => m.user_id === potentialHead.user_id);
+      if (existingInConf) {
+        finalHeadId = existingInConf.user_id;
+      } else {
+        const confUserId = await onAddVolunteer(potentialHead);
+        if (confUserId) finalHeadId = potentialHead.user_id;
+      }
+    }
+
+    // 2. Handle pending regular invites
     const inviteList = Array.from(pendingInvites.values());
-    // 1. Save team config (name, description, head, color) AND sync members
+    const newlyAddedUserIds = [];
+
+    for (const v of inviteList) {
+      await onAddVolunteer(v); // idempotent — creates conference_user if not already there
+      newlyAddedUserIds.push(v.user_id); // always include: backend ensureConferenceMember handles the rest
+    }
+
+    // 3. Finalize team membership sync (Use user_ids instead of conference_user_ids)
+    const finalAdds = new Set([
+      ...Array.from(pendingAdds).map(id => members.find(m => m.id === id)?.user_id).filter(Boolean),
+      ...newlyAddedUserIds
+    ]);
+    
+    // Ensure the head is also added as a member
+    if (finalHeadId) finalAdds.add(finalHeadId);
+
+    const finalRemoves = [...pendingRemoves].map(id => members.find(m => m.id === id)?.user_id).filter(Boolean);
+
+    // Update tmForm with the final head_id before calling onCreate/onSave
+    const updatedForm = { ...tmForm, head_id: finalHeadId };
+    setTmForm(updatedForm); // For UI consistency
+
+    const addsArray = Array.from(finalAdds);
     if (mode === 'createTeam') {
-      await onCreate([...pendingAdds], inviteList); 
+      await onCreate(addsArray, [], finalHeadId); 
     } else {
-      await onSave([...pendingAdds], [...pendingRemoves], inviteList);
+      await onSave(addsArray, finalRemoves, [], finalHeadId);
     }
 
     setPendingAdds(new Set());
     setPendingRemoves(new Set());
     setPendingInvites(new Map());
+    setPotentialHead(null);
   };
 
   return (
@@ -149,15 +188,36 @@ const TeamModal = ({
               {tmForm.type === 'custom' && <Input autoFocus placeholder="Enter team name (e.g. 'Coffee & Catering'…)" value={tmForm.name} onChange={e => setTmForm({ ...tmForm, name: e.target.value })} />}
             </div>
           </Field>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field label="Description (optional)">
               <Input placeholder="What does this team do?" value={tmForm.description} onChange={e => setTmForm({ ...tmForm, description: e.target.value })} />
             </Field>
-            <Field label="Team Head (optional)">
-              <Sel value={tmForm.head_id} onChange={e => setTmForm({ ...tmForm, head_id: e.target.value })}>
-                <option value="">— No team head —</option>
-                {members.map(m => <option key={m.id} value={m.id} className={isDark ? "bg-[#13151c] text-white" : "bg-white text-zinc-900"}>{mName(m)} ({m.role})</option>)}
-              </Sel>
+            <Field label="Team Head (Designated)">
+              <div className={cls("flex items-center gap-3 p-3 rounded-xl border transition-all", isDark ? "bg-white/5 border-white/10" : "bg-zinc-50 border-zinc-200")}>
+                {tmForm.head_id || potentialHead ? (
+                  <>
+                    <div className="w-8 h-8 rounded-full bg-amber-400 flex items-center justify-center text-xs font-black text-black shrink-0 shadow-lg shadow-amber-500/20">
+                      {mName(potentialHead || members.find(m => m.user_id === tmForm.head_id))[0]?.toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className={cls("text-xs font-bold truncate", isDark ? "text-white" : "text-zinc-900")}>
+                        {mName(potentialHead || members.find(m => m.user_id === tmForm.head_id))}
+                      </div>
+                      <div className="text-[10px] text-amber-500 font-bold uppercase tracking-widest leading-none mt-1">
+                        {potentialHead ? "Potential Head (Invite on Save)" : "Active Team Head"}
+                      </div>
+                    </div>
+                    <button onClick={() => { setTmForm({ ...tmForm, head_id: '' }); setPotentialHead(null); }}
+                      className="p-1.5 hover:bg-rose-500/10 hover:text-rose-500 rounded-lg text-zinc-500 transition-all">
+                      <X size={14} />
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center py-1.5 italic text-[11px] text-zinc-500">
+                    Search users below to assign a head
+                  </div>
+                )}
+              </div>
             </Field>
           </div>
           <Field label="Team Color">
@@ -238,7 +298,7 @@ const TeamModal = ({
                          )}
                        </div>
                      </div>
-                     {isOrganizer && (
+                     {(isOrganizer || mode === 'editTeam') && (
                        <button
                          onClick={() => {
                            if (typeof idOrToken === 'string' && idOrToken.startsWith('invite:')) {
@@ -286,23 +346,50 @@ const TeamModal = ({
               <Plus size={14} style={{ color: '#f5c518' }} />
               <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#f5c518', opacity: 0.8 }}>Add New Members</span>
             </div>
-             <VolunteerCandidatePanel
-              allVolunteers={allVolunteers} members={members} teamMembers={effectiveTeamMemberList}
-              teamTypeId={tmForm.type !== 'custom' ? tmForm.type : null}
-              confId={confId}
-              onAdd={(memberIdOrCandidate) => handleToggleCandidate(memberIdOrCandidate)}
-              onAddVolunteer={onAddVolunteer}
-              globalRatings={globalRatings}
-              pendingAdds={pendingAdds}
-              pendingInvites={pendingInvites}
-            />
+        {/* Candidate Selection Mode Toggle */}
+        <div className="flex p-1 rounded-xl mb-4" style={{ background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}` }}>
+          <button onClick={() => setSelectionMode('head')} className={cls('flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2')}
+            style={selectionMode === 'head' ? { background: '#f5c518', color: '#000', boxShadow: '0 4px 12px rgba(245,197,24,0.2)' } : { color: isDark ? '#6b7280' : '#4b5563' }}>
+            <Star size={12} fill={selectionMode === 'head' ? 'currentColor' : 'none'} />
+            SET TEAM HEAD
+          </button>
+          <button onClick={() => setSelectionMode('members')} className={cls('flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2')}
+            style={selectionMode === 'members' ? { background: isDark ? '#fff' : '#000', color: isDark ? '#000' : '#fff', boxShadow: isDark ? '0 4px 12px rgba(255,255,255,0.1)' : '0 4px 12px rgba(0,0,0,0.1)' } : { color: isDark ? '#6b7280' : '#4b5563' }}>
+            <Sparkles size={12} fill={selectionMode === 'members' ? 'currentColor' : 'none'} />
+            ADD MEMBERS
+          </button>
+        </div>
+
+        <VolunteerCandidatePanel
+          allUsers={allUsers} members={members} teamMembers={effectiveTeamMemberList}
+          teamTypeId={tmForm.type !== 'custom' ? tmForm.type : null}
+          confId={confId}
+          onAdd={(memberIdOrCandidate) => handleToggleCandidate(memberIdOrCandidate)}
+          onAddVolunteer={onAddVolunteer}
+          globalRatings={globalRatings}
+          pendingAdds={pendingAdds}
+          pendingInvites={pendingInvites}
+          onSetHead={(u) => {
+            if (!u) { setPotentialHead(null); setTmForm({ ...tmForm, head_id: '' }); return; }
+            const isMember = members.find(m => m.user_id === u.user_id);
+            if (isMember) {
+              setTmForm({ ...tmForm, head_id: u.user_id });
+              setPotentialHead(null);
+            } else {
+              setPotentialHead(u);
+              setTmForm({ ...tmForm, head_id: '' }); 
+            }
+          }}
+          currentHeadId={potentialHead?.user_id || tmForm.head_id}
+          selectionMode={selectionMode}
+        />
           </div>
         </div>
       </div>
 
       <div className="flex gap-3 mt-8">
         <Btn variant="secondary" className="flex-1" onClick={onClose}>Close</Btn>
-        {isOrganizer && (
+        {(isOrganizer || mode === 'editTeam') && (
           <Btn className="flex-1" onClick={handleSaveAll} disabled={saving || !tmForm.name.trim()}>
             {saving ? 'Saving…' : mode === 'createTeam' ? 'Create Team' : 'Save Changes'}
             {hasPendingChanges && !saving && (
