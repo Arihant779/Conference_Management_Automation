@@ -1,8 +1,10 @@
 import { supabase } from '../Supabase/supabaseclient';
 
 const getBaseUrl = (envVar, fallback) => {
-  const url = process.env[envVar] || fallback;
-  return url.endsWith('/') ? url.slice(0, -1) : url;
+  let url = process.env[envVar] || fallback;
+  if (url.endsWith('/')) url = url.slice(0, -1);
+  if (url.endsWith('/api')) url = url.slice(0, -4);
+  return url;
 };
 
 // In production on Vercel, the API will be relative to the domain (e.g. /api)
