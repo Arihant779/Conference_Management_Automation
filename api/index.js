@@ -2,18 +2,19 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 
-import emailRoutes from "./routes/email.js";
-import speakerRoutes from "./routes/speakers.js";
-import teamRoutes from "./routes/teams.js";
-import paperRoutes from "./routes/papers.js";
-import conferenceRoutes from "./routes/conferences.js";
-import dashboardRoutes from "./routes/dashboards.js";
-import authRoutes from "./routes/auth.js";
-import scheduleRoutes from "./routes/schedule.js";
-import { authMiddleware } from "./middleware/authMiddleware.js";
+import emailRoutes from "../server/routes/email.js";
+import speakerRoutes from "../server/routes/speakers.js";
+import teamRoutes from "../server/routes/teams.js";
+import paperRoutes from "../server/routes/papers.js";
+import conferenceRoutes from "../server/routes/conferences.js";
+import dashboardRoutes from "../server/routes/dashboards.js";
+import authRoutes from "../server/routes/auth.js";
+import scheduleRoutes from "../server/routes/schedule.js";
+import { authMiddleware } from "../server/middleware/authMiddleware.js";
 
-import { GROQ_API_KEY, GROQ_MODEL } from "./services/llmService.js";
-import { DEFAULT_SENDER } from "./config/email.js";
+import { GROQ_API_KEY, GROQ_MODEL } from "../server/services/llmService.js";
+import { DEFAULT_SENDER } from "../server/config/email.js";
+import cronHandler from "../server/cron/process-emails.js";
 
 const app = express();
 
@@ -52,6 +53,9 @@ app.use("/api/conferences", conferenceRoutes);
 app.use("/api/dashboards", dashboardRoutes);
     app.use("/api/auth", authRoutes);
 app.use("/api", scheduleRoutes);
+
+/* ── Cron ── */
+app.all("/api/cron/process-emails", cronHandler);
 
 /* ── Health check ── */
 app.get("/api/health", (req, res) => {
