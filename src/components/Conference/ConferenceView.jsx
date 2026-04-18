@@ -179,15 +179,34 @@ const ConferenceView = ({
   };
 
   const handleScheduleSave = async (newSchedule) => {
-    const { error } = await supabase.from('conference')
-      .update({ schedule: newSchedule }).eq('conference_id', confId);
-    if (error) throw new Error(error.message);
-    setLiveSchedule(newSchedule);
-    await supabase.from('notifications').insert([{
-      conference_id: confId, title: 'Schedule Updated',
-      message: `Schedule is updated by ${editorPosition} - ${editorName}`,
-      target_role: null, created_at: new Date().toISOString(),
-    }]);
+    const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:4000';
+    try {
+      const response = await fetch(`${backendUrl}/api/schedule`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conference_id: confId,
+          schedule: newSchedule,
+          editor_name: editorName,
+          editor_position: editorPosition,
+          notify: true
+        })
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        if (result.details) {
+          throw new Error(`${result.error}: ${result.details.join(' ')}`);
+        }
+        throw new Error(result.error || 'Failed to save schedule');
+      }
+
+      setLiveSchedule(newSchedule);
+    } catch (err) {
+      console.error("Schedule save error:", err);
+      throw err;
+    }
   };
 
   const templateProps = {

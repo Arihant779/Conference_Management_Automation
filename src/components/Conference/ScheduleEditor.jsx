@@ -90,7 +90,15 @@ const ScheduleEditor = ({ schedule: initialSchedule, members = [], onSave, onClo
   const addSession = (di) => {
     setSchedule(s => s.map((d, i) => i !== di ? d : {
       ...d,
-      sessions: [...d.sessions, { time: '09:00 AM', title: 'New Session', type: 'talk', speaker: '', room: '', head_id: '' }],
+      sessions: [...d.sessions, {
+        time: '09:00 AM',
+        duration: 30,
+        title: 'New Session',
+        type: 'talk',
+        speaker: '',
+        room: '',
+        head_id: ''
+      }],
     }));
   };
 
@@ -111,6 +119,27 @@ const ScheduleEditor = ({ schedule: initialSchedule, members = [], onSave, onClo
       setSaveError(e.message || 'Failed to save schedule');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const getEndTime = (startTime, durationRaw) => {
+    const duration = parseInt(durationRaw) || 0;
+    if (!startTime || !duration) return '';
+    try {
+      const [time, period] = startTime.split(' ');
+      let [hours, minutes] = time.split(':').map(Number);
+      if (period === 'PM' && hours !== 12) hours += 12;
+      if (period === 'AM' && hours === 12) hours = 0;
+
+      const totalMinutes = hours * 60 + minutes + duration;
+      const endHours = Math.floor(totalMinutes / 60) % 24;
+      const endMins = totalMinutes % 60;
+      const endPeriod = endHours >= 12 ? 'PM' : 'AM';
+      const displayHours = ((endHours + 11) % 12 + 1);
+
+      return `${displayHours}:${String(endMins).padStart(2, '0')} ${endPeriod}`;
+    } catch (e) {
+      return '';
     }
   };
 
@@ -232,18 +261,36 @@ const ScheduleEditor = ({ schedule: initialSchedule, members = [], onSave, onClo
                   currentDay.sessions.map((session, si) => (
                     <div key={si} className="bg-white/[0.02] border border-white/6 rounded-xl p-4 hover:border-white/10 transition-all group">
                       <div className="grid grid-cols-12 gap-3">
-                        {/* Time */}
-                        <div className="col-span-2">
-                          <label className="text-[9px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Time</label>
-                          <Input
-                            value={session.time}
-                            onChange={e => updateSession(activeDay, si, 'time', e.target.value)}
-                            placeholder="09:00 AM"
-                          />
+                        {/* Time & Duration */}
+                        <div className="col-span-3">
+                          <label className="text-[9px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Time & Duration</label>
+                          <div className="flex gap-2">
+                            <Input
+                              value={session.time}
+                              onChange={e => updateSession(activeDay, si, 'time', e.target.value)}
+                              placeholder="09:00 AM"
+                              className="w-2/3"
+                            />
+                            <div className="relative w-1/3">
+                              <Input
+                                type="number"
+                                value={session.duration || 30}
+                                onChange={e => updateSession(activeDay, si, 'duration', parseInt(e.target.value) || 0)}
+                                className="pr-1"
+                              />
+                              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] text-slate-500 font-bold pointer-events-none">m</span>
+                            </div>
+                          </div>
+                          {session.time && session.duration > 0 && (
+                            <div className="mt-1 flex items-center gap-1.5 text-[10px] text-indigo-400 font-medium">
+                              <span className="opacity-50">Ends:</span>
+                              {getEndTime(session.time, session.duration)}
+                            </div>
+                          )}
                         </div>
 
                         {/* Title */}
-                        <div className="col-span-4">
+                        <div className="col-span-3">
                           <label className="text-[9px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Session Title</label>
                           <Input
                             value={session.title}

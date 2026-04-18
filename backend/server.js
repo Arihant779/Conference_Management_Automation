@@ -12,6 +12,7 @@ import paperRoutes from "./routes/papers.js";
 import conferenceRoutes from "./routes/conferences.js";
 import dashboardRoutes from "./routes/dashboards.js";
 import authRoutes from "./routes/auth.js";
+import scheduleRoutes from "./routes/schedule.js";
 import { authMiddleware } from "./middleware/authMiddleware.js";
 
 import { initScheduler } from "./services/schedulerService.js";
@@ -33,6 +34,7 @@ app.use("/api/papers", paperRoutes);
 app.use("/api/conferences", conferenceRoutes);
 app.use("/api/dashboards", dashboardRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api", scheduleRoutes);
 
 /* ── Health check ── */
 app.get("/health", (req, res) => {
