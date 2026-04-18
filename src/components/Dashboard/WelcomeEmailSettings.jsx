@@ -171,7 +171,7 @@ const WelcomeEmailSettings = ({ conf }) => {
       setBody(data.body || '');
       if (!subject && data.subject) setSubject(data.subject);
     } catch {
-      setGenError('Failed to generate. Make sure your backend is running on port 4000.');
+      setGenError('Unable to reach the AI service. Please verify your internet connection or backend configuration.');
     }
     setGenerating(false);
   };

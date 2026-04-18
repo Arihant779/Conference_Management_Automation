@@ -242,7 +242,7 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
       if (!subject && data.subject) setSubject(data.subject);
       setStep('preview');
     } catch {
-      setGenError('Failed to generate. Make sure your backend is running on port 4000.');
+      setGenError('Unable to reach the AI service. Please verify your internet connection or backend configuration.');
     }
     setGenerating(false);
   };

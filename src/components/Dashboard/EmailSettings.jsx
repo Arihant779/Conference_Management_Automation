@@ -141,7 +141,7 @@ const EmailSettings = ({ conf }) => {
       }
     } catch {
       setTestResult('fail');
-      setTestMsg('Could not reach backend on port 4000.');
+      setTestMsg('Unable to reach the backend server. Please verify your internet connection or backend configuration.');
     }
     setTesting(false);
   };
