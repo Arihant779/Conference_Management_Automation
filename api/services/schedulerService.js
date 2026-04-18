@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import { supabase } from "../supabaseClient.js";
+import { supabase } from "../lib/supabaseClient.js";
 import { sendEmailsToRecipients } from "./emailService.js";
 
 /**

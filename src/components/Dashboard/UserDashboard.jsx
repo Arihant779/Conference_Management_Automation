@@ -5,7 +5,7 @@ import {
   MapPin, Bell, ChevronRight, ChevronLeft, Check,
   X, Sparkles, Settings, User, Mail, Shield,
   Award, FileText, Lock, Eye, EyeOff, Compass,
-  Zap, TrendingUp, Star, Globe, Sun, Moon
+  Zap, TrendingUp, Star, Globe, Sun
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
@@ -94,7 +94,7 @@ const VolunteerPreferencesModal = ({ userId, onClose, onSaved, theme = 'dark' })
       const { data: { session } } = await supabase.auth.getSession();
       const uid = session?.user?.id ?? userId;
       if (!uid) return;
-      const { data, error } = await supabase.from('users').select('volunteer_domains, volunteer_roles').eq('user_id', uid).maybeSingle();
+      const { data } = await supabase.from('users').select('volunteer_domains, volunteer_roles').eq('user_id', uid).maybeSingle();
       if (data?.volunteer_domains?.length) setSelectedDomains(new Set(data.volunteer_domains));
       if (data?.volunteer_roles?.length) setSelectedRoles(new Set(data.volunteer_roles));
     })();
@@ -862,7 +862,7 @@ const StatCard = ({ icon: Icon, label, value, color, delay = 0, theme = 'dark' }
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const UserDashboard = ({ onSelectConf, onCreateConf }) => {
-  const { user, conferences, logout, fetchConferences, theme, toggleTheme } = useApp();
+  const { user, conferences, logout, fetchConferences, theme } = useApp();
   const isDark = theme === 'dark';
 
   const [activeTab, setActiveTab] = useState('my');
@@ -876,7 +876,6 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
   const [searchFocused, setSearchFocused] = useState(false);
   const [notifs, setNotifs] = useState([]);
   const [invites, setInvites] = useState([]);
-  const [loadingInvites, setLI] = useState(true);
   const [lastReadAt, setLastReadAt] = useState(() => localStorage.getItem('conf_manager_notif_last_read') || new Date(0).toISOString());
 
   const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
@@ -887,14 +886,14 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
     const map = {};
     
     // 1. Get all basic conference memberships
-    const { data: memberships, error } = await supabase.from('conference_user').select('id, conference_id, role').eq('user_id', user.id);
+    const { data: memberships } = await supabase.from('conference_user').select('id, conference_id, role').eq('user_id', user.id);
     
     // 2. Get all functional team memberships (with full records for actions)
     const { data: teamMemberships } = await supabase.from('team_members').select('*').eq('user_id', user.id);
 
     const acceptedConfIds = new Set((teamMemberships || []).filter(tm => tm.status === 'accepted').map(tm => tm.conference_id));
 
-    if (!error && memberships) {
+    if (memberships) {
       memberships.forEach(({ conference_id, role }) => { 
         // Only grant 'member' role if they actually have an accepted team invitation
         if (role === 'member') {
@@ -936,7 +935,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
     
     setRoleMap(map);
     setLoadingRoles(false);
-  }, [user?.id, conferences, fetchConferences]); // Added fetchConferences to dependencies to match useApp
+  }, [user?.id, conferences]); 
 
   // ── Fetch role map ──────────────────────────────────────────────────
   useEffect(() => {

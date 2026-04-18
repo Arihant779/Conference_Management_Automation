@@ -1,5 +1,5 @@
 import express from "express";
-import { supabase } from "../supabaseClient.js";
+import { supabase } from "../lib/supabaseClient.js";
 import { createClient } from "@supabase/supabase-js";
 import fetch from "node-fetch";
 
