@@ -1,7 +1,6 @@
 {
   "name": "conference-platform",
   "version": "1.0.0",
-  "type": "module",
   "private": true,
   "dependencies": {
     "@supabase/supabase-js": "^2.99.2",
