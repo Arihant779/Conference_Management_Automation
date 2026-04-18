@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Loader2, Send, X, Sparkles, AlertCircle } from 'lucide-react';
 import { Field, Input, Btn } from '../common/Primitives';
+import { API_BASE_URL } from '../../../../../utils/api';
 
 const InviteSpeakerModal = ({ speaker, conference, onClose, onInviteSent }) => {
   const [loading, setLoading] = useState(false);
@@ -13,7 +14,7 @@ const InviteSpeakerModal = ({ speaker, conference, onClose, onInviteSent }) => {
     setPersonalizing(true);
     setError('');
     try {
-      const res = await fetch('http://localhost:4000/api/speakers/personalize', {
+      const res = await fetch(`${API_BASE_URL}/api/speakers/personalize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -43,7 +44,7 @@ const InviteSpeakerModal = ({ speaker, conference, onClose, onInviteSent }) => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('http://localhost:4000/api/speakers/invite', {
+      const res = await fetch(`${API_BASE_URL}/api/speakers/invite`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

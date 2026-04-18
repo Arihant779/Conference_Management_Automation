@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
+import { API_BASE_URL } from '../../utils/api';
 import CertificateEditor from './CertificateEditor';
 import { jsPDF } from 'jspdf';
 
@@ -230,7 +231,7 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
         .map(g => RECIPIENT_GROUPS.find(r => r.key === g)?.label).filter(Boolean).join(', ')
         || 'conference members';
 
-      const res = await fetch('http://localhost:4000/api/generate-email', {
+      const res = await fetch(`${API_BASE_URL}/api/generate-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ intent, tone, subject, recipientDescription, conferenceTitle: conf?.title, senderRole }),
@@ -339,7 +340,7 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
           try {
             const pdfBase64 = await renderCertificatePdf(name);
 
-            const res = await fetch('http://localhost:4000/api/send-email-with-attachment', {
+            const res = await fetch(`${API_BASE_URL}/api/send-email-with-attachment`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -371,7 +372,7 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
         setStep('sent');
       } else {
         // Normal flow: bulk send without attachments
-        const res = await fetch('http://localhost:4000/api/send-email', {
+        const res = await fetch(`${API_BASE_URL}/api/send-email`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

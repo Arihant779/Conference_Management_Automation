@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
-import { protectedFetch } from '../../utils/api';
+import { protectedFetch, API_BASE_URL } from '../../utils/api';
 import { mName, VOLUNTEER_ROLE_LABELS } from './Organizer/constants';
 
 /* ── external dashboard components (unchanged) ── */
@@ -283,7 +283,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
 
   const handleInviteResponse = async (teamId, status) => {
     try {
-      const res = await protectedFetch('http://localhost:4000/api/teams/invite/respond', {
+      const res = await protectedFetch(`${API_BASE_URL}/api/teams/invite/respond`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ team_id: teamId, user_id: user.id, status })
@@ -315,7 +315,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     const membersToInvite = finalAdds; // Now receiving user_ids directly
 
     try {
-      const res = await protectedFetch('http://localhost:4000/api/teams/create', {
+      const res = await protectedFetch(`${API_BASE_URL}/api/teams/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -346,7 +346,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     
     try {
       // 1. Update Meta
-      const metaRes = await protectedFetch(`http://localhost:4000/api/teams/${modalData.id}`, {
+      const metaRes = await protectedFetch(`${API_BASE_URL}/api/teams/${modalData.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -364,7 +364,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
       const removes = pendingRemoves; // Now receiving user_ids directly
 
       if (adds.length > 0 || removes.length > 0) {
-        const syncRes = await protectedFetch(`http://localhost:4000/api/teams/${modalData.id}/sync`, {
+        const syncRes = await protectedFetch(`${API_BASE_URL}/api/teams/${modalData.id}/sync`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ conference_id: confId, adds, removes })
@@ -383,7 +383,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
 
   const deleteTeam = async (id) => { 
     try {
-      const res = await protectedFetch(`http://localhost:4000/api/teams/${id}`, { method: 'DELETE' });
+      const res = await protectedFetch(`${API_BASE_URL}/api/teams/${id}`, { method: 'DELETE' });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       fetchTeams(); fetchTasks(); 
@@ -399,7 +399,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     if (team?.memberList.some(tm => tm.conference_user_id === confUserId)) { alert('Already in team.'); return; }
     setSaving(true);
     try {
-      const res = await protectedFetch(`http://localhost:4000/api/teams/${teamId}/sync`, {
+      const res = await protectedFetch(`${API_BASE_URL}/api/teams/${teamId}/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ conference_id: confId, adds: [member.user_id], removes: [] })
@@ -419,7 +419,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     if (!member) return;
     setSaving(true);
     try {
-      const res = await protectedFetch(`http://localhost:4000/api/teams/${teamId}/sync`, {
+      const res = await protectedFetch(`${API_BASE_URL}/api/teams/${teamId}/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ conference_id: confId, adds: [], removes: [member.user_id] })
@@ -505,7 +505,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   const findSpeakers = async () => {
     if (!spTopic.trim()) return; setSpLoading(true); setSpError(''); setSpResults([]);
     try {
-      const res = await fetch(`http://localhost:4000/api/speakers?topic=${encodeURIComponent(spTopic)}&limit=${spLimit}&source=${spSource}`);
+      const res = await fetch(`${API_BASE_URL}/api/speakers?topic=${encodeURIComponent(spTopic)}&limit=${spLimit}&source=${spSource}`);
       if (!res.ok) throw new Error('Server error');
       setSpResults(await res.json());
     } catch { setSpError('Failed to fetch speakers. Make sure your backend is running.'); }

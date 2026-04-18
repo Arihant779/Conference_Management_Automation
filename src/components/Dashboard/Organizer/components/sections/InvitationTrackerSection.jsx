@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Send, Clock, CheckCircle2, XCircle, Mail, ExternalLink, Loader2, RefreshCcw, Search, UserPlus } from 'lucide-react';
 import { Btn, Input } from '../common/Primitives';
 import ManualInviteModal from '../Modals/ManualInviteModal';
+import { API_BASE_URL } from '../../../../../utils/api';
 
 const StatusBadge = ({ status, scheduledAt }) => {
   const styles = {
@@ -32,7 +33,7 @@ const FollowUpButton = ({ inviteId, onSuccess, isDark }) => {
     if (isScheduled && !scheduledAt) return;
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:4000/api/speakers/follow-up', {
+      const res = await fetch(`${API_BASE_URL}/api/speakers/follow-up`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -106,7 +107,7 @@ const BulkFollowUpAction = ({ conference, pendingCount, onComplete, isDark }) =>
     console.log(`[Bulk] Sending request for conference: ${confId}, scheduled: ${isScheduled ? scheduledAt : 'Now'}`);
 
     try {
-      const res = await fetch('http://localhost:4000/api/speakers/bulk-follow-up', {
+      const res = await fetch(`${API_BASE_URL}/api/speakers/bulk-follow-up`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -183,7 +184,7 @@ const InvitationTrackerSection = ({ conference, isDark }) => {
   const fetchInvites = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:4000/api/speakers/invitations?conference_id=${confId}`);
+      const res = await fetch(`${API_BASE_URL}/api/speakers/invitations?conference_id=${confId}`);
       const data = await res.json();
       setInvites(data);
     } catch (err) {

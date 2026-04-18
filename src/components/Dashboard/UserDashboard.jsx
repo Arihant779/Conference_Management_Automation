@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
-import { protectedFetch } from '../../utils/api';
+import { protectedFetch, API_BASE_URL } from '../../utils/api';
 import AmbientBackground from '../Common/AmbientBackground';
 import GlowCard from '../Common/GlowCard';
 import MagneticButton from '../Common/MagneticButton';
@@ -962,8 +962,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
       return;
     }
 
-    // Use our new response API
-    const res = await protectedFetch('http://localhost:4000/api/teams/invite/respond', {
+    const res = await protectedFetch(`${API_BASE_URL}/api/teams/invite/respond`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 

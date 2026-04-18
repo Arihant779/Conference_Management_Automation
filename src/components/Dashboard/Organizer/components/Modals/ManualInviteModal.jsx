@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { UserPlus, Loader2, Send, X, Sparkles, Check, Globe, Mail, Clock } from 'lucide-react';
 import { Field, Input, Btn } from '../common/Primitives';
+import { API_BASE_URL } from '../../../../../utils/api';
 
 const ManualInviteModal = ({ conference, onClose, onInviteSent }) => {
   const [step, setStep] = useState(1); // 1: Name, 2: Profile/Draft, 3: Sending
@@ -22,7 +23,7 @@ const ManualInviteModal = ({ conference, onClose, onInviteSent }) => {
     setError('');
     try {
       // 1. Generate Profile
-      const profileRes = await fetch('http://localhost:4000/api/speakers/generate-profile', {
+      const profileRes = await fetch(`${API_BASE_URL}/api/speakers/generate-profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name })
@@ -35,7 +36,7 @@ const ManualInviteModal = ({ conference, onClose, onInviteSent }) => {
       setProfileBio(profileData.profile || '');
 
       // 2. Personalize Invitation (Automatic)
-      const personalizeRes = await fetch('http://localhost:4000/api/speakers/personalize', {
+      const personalizeRes = await fetch(`${API_BASE_URL}/api/speakers/personalize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -75,7 +76,7 @@ const ManualInviteModal = ({ conference, onClose, onInviteSent }) => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('http://localhost:4000/api/speakers/invite', {
+      const res = await fetch(`${API_BASE_URL}/api/speakers/invite`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

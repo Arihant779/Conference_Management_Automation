@@ -6,7 +6,7 @@ import {
 import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
-import { protectedFetch } from '../../utils/api';
+import { protectedFetch, API_BASE_URL } from '../../utils/api';
 import MemberNotifications from './MemberNotifications';
 import Sidebar from './Organizer/components/Sidebar';
 import AmbientBackground from '../Common/AmbientBackground';
@@ -101,7 +101,7 @@ const MemberDashboard = ({ conf, onBack }) => {
     if (!spTopic.trim()) return;
     setSpLoading(true); setSpError(''); setSpResults([]);
     try {
-      const res = await fetch(`http://localhost:4000/api/speakers/search?topic=${encodeURIComponent(spTopic)}&limit=${spLimit}&source=${spSource}`);
+      const res = await fetch(`${API_BASE_URL}/api/speakers/search?topic=${encodeURIComponent(spTopic)}&limit=${spLimit}&source=${spSource}`);
       if (!res.ok) throw new Error('Search failed');
       const data = await res.json();
       setSpResults(data.speakers || []);
@@ -268,7 +268,7 @@ const MemberDashboard = ({ conf, onBack }) => {
 
   const saveTeam = async () => {
     setSaving(true);
-    const { error } = await protectedFetch(`http://localhost:4000/api/teams/${modalData.id}`, {
+    const { error } = await protectedFetch(`${API_BASE_URL}/api/teams/${modalData.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(tmForm)
@@ -279,7 +279,7 @@ const MemberDashboard = ({ conf, onBack }) => {
 
   const addToTeam = async (userIds) => {
     const list = Array.isArray(userIds) ? userIds : [userIds];
-    await protectedFetch(`http://localhost:4000/api/teams/${modalData.id}/sync`, {
+    await protectedFetch(`${API_BASE_URL}/api/teams/${modalData.id}/sync`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ conference_id: confId, adds: list })
@@ -288,7 +288,7 @@ const MemberDashboard = ({ conf, onBack }) => {
   };
 
   const removeFromTeam = async (userId) => {
-    await protectedFetch(`http://localhost:4000/api/teams/${modalData.id}/sync`, {
+    await protectedFetch(`${API_BASE_URL}/api/teams/${modalData.id}/sync`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ conference_id: confId, removes: [userId] })
@@ -358,7 +358,7 @@ const MemberDashboard = ({ conf, onBack }) => {
 
   const handleInviteResponse = async (teamId, status) => {
     try {
-      const res = await protectedFetch('http://localhost:4000/api/teams/invite/respond', {
+      const res = await protectedFetch(`${API_BASE_URL}/api/teams/invite/respond`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ team_id: teamId, user_id: user.id, status })

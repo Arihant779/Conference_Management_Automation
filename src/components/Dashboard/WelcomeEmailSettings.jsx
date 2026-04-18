@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
+import { API_BASE_URL } from '../../utils/api';
 
 const cls = (...c) => c.filter(Boolean).join(' ');
 
@@ -153,7 +154,7 @@ const WelcomeEmailSettings = ({ conf }) => {
     setGenError('');
     setBody('');
     try {
-      const res = await fetch('http://localhost:4000/api/generate-email', {
+      const res = await fetch(`${API_BASE_URL}/api/generate-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

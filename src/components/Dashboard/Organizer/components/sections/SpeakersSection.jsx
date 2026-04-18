@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Users, Mail, Copy, Check, Loader2, Send } from 'lucide-react';
 import { Field, Input, Sel, Btn } from '../common/Primitives';
 import { useApp } from '../../../../../context/AppContext';
+import { API_BASE_URL } from '../../../../../utils/api';
 import InviteSpeakerModal from '../Modals/InviteSpeakerModal';
 
 const SpeakersSection = ({
@@ -26,8 +27,7 @@ const SpeakersSection = ({
   const fetchEmail = async (index, name, org) => {
     setEmailLoading(prev => ({ ...prev, [index]: true }));
     try {
-      const baseUrl = "http://localhost:4000"; 
-      const res = await fetch(`${baseUrl}/api/speakers/email?name=${encodeURIComponent(name)}&org=${encodeURIComponent(org || '')}`);
+      const res = await fetch(`${API_BASE_URL}/api/speakers/email?name=${encodeURIComponent(name)}&org=${encodeURIComponent(org || '')}`);
       
       if (!res.ok) {
         throw new Error(`Server returned ${res.status}`);

@@ -5,6 +5,7 @@ import {
   Calendar, MapPin, Users, Tag, FileText, Sparkles
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
+import { API_BASE_URL } from '../../utils/api';
 
 /* ─── helpers ─────────────────────────────────────────── */
 const cls = (...c) => c.filter(Boolean).join(' ');
@@ -267,7 +268,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
           if (autos && autos.length > 0) {
             for (const auto of autos) {
               const personalizedBody = auto.body.replace(/{Name}/g, form.first_name.trim());
-              await fetch('http://localhost:4000/api/send-email', {
+              await fetch(`${API_BASE_URL}/api/send-email`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

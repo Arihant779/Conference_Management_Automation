@@ -5,6 +5,7 @@ import {
   Cpu, Scale, TrendingUp, RefreshCw, Zap, Save
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
+import { API_BASE_URL, AI_ENGINE_URL } from '../../utils/api';
 import { useApp } from '../../context/AppContext';
 
 /* ─── helpers ─────────────────────────────────────────────── */
@@ -27,7 +28,7 @@ const Btn = ({ variant = 'primary', children, className, isDark, ...props }) => 
   return <button {...props} className={cls(base, v[variant], className)}>{children}</button>;
 };
 
-const ALLOCATION_API = 'http://localhost:5000/api/allocate-papers';
+const ALLOCATION_API = `${AI_ENGINE_URL}/api/allocate-papers`;
 
 /* ═════════════════════════════════════════════════════════════
    MAIN COMPONENT
@@ -306,7 +307,7 @@ const PaperAllocation = ({ conf, onRefresh }) => {
                    .replace(/{ReviewerName}/g, rData.name)
                    .replace(/{PaperTitle}/g, pData?.name || 'Untitled Paper');
 
-                 await fetch('http://localhost:4000/api/send-email', {
+                 await fetch(`${API_BASE_URL}/api/send-email`, {
                    method: 'POST',
                    headers: { 'Content-Type': 'application/json' },
                    body: JSON.stringify({

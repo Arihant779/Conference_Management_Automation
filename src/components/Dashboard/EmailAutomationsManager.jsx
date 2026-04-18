@@ -6,6 +6,7 @@ import {
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { API_BASE_URL } from '../../utils/api';
 
 const cls = (...classes) => classes.filter(Boolean).join(' ');
 
@@ -196,7 +197,7 @@ const EmailAutomationsManager = ({ conf }) => {
     const context = `(This is an automated email triggered by: ${triggerDef?.label}. The target audience is: ${form.target_role}. Please use curly braces for these variables exactly as written if applicable: ${triggerDef?.variables?.join(', ')})`;
 
     try {
-      const res = await fetch('http://localhost:4000/api/generate-email', {
+      const res = await fetch(`${API_BASE_URL}/api/generate-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

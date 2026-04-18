@@ -6,6 +6,7 @@ import RoleBasedDashboard from '../Dashboard/RoleBasedDashboard';
 import PaperSubmission from './Templates/PaperSubmission';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
+import { API_BASE_URL } from '../../utils/api';
 
 const ROLE_LABELS = {
   organizer: 'Organizer',
@@ -179,9 +180,8 @@ const ConferenceView = ({
   };
 
   const handleScheduleSave = async (newSchedule) => {
-    const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:4000';
     try {
-      const response = await fetch(`${backendUrl}/api/schedule`, {
+      const response = await fetch(`${API_BASE_URL}/api/schedule`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

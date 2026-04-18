@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
+import { API_BASE_URL } from '../../utils/api';
 
 const cls = (...c) => c.filter(Boolean).join(' ');
 
@@ -125,7 +126,7 @@ const EmailSettings = ({ conf }) => {
     setTestResult(null);
     setTestMsg('');
     try {
-      const res = await fetch('http://localhost:4000/api/test-email', {
+      const res = await fetch(`${API_BASE_URL}/api/test-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ conferenceId: confId }),
