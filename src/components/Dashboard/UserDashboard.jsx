@@ -882,13 +882,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
   const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const firstName = displayName.split(' ')[0];
 
-  // ── Fetch role map ──────────────────────────────────────────────────
-  useEffect(() => {
-    if (!user) return;
-    buildRoleMap();
-  }, [user, conferences]); // Consolidated refresh logic
-
-  const buildRoleMap = async () => {
+  const buildRoleMap = useCallback(async () => {
     setLoadingRoles(true);
     const map = {};
     
@@ -942,7 +936,13 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
     
     setRoleMap(map);
     setLoadingRoles(false);
-  };
+  }, [user?.id, conferences, fetchConferences]); // Added fetchConferences to dependencies to match useApp
+
+  // ── Fetch role map ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (!user) return;
+    buildRoleMap();
+  }, [user, conferences, buildRoleMap]); // Added buildRoleMap to dependencies
 
   useEffect(() => {
     if (!user) return;
