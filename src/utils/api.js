@@ -5,7 +5,11 @@ const getBaseUrl = (envVar, fallback) => {
   return url.endsWith('/') ? url.slice(0, -1) : url;
 };
 
-export const API_BASE_URL = getBaseUrl('REACT_APP_BACKEND_URL', 'http://localhost:4000');
+// In production on Vercel, the API will be relative to the domain (e.g. /api)
+// We prioritize the env var, then fallback to relative /api for production, then localhost for dev.
+const DEFAULT_BACKEND = process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:4000';
+
+export const API_BASE_URL = getBaseUrl('REACT_APP_BACKEND_URL', DEFAULT_BACKEND);
 export const AI_ENGINE_URL = getBaseUrl('REACT_APP_AI_ENGINE_URL', 'http://localhost:5000');
 
 /**

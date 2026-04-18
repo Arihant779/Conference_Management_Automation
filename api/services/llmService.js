@@ -10,7 +10,7 @@ export async function callLLM(prompt, retries = 3) {
   if (!GROQ_API_KEY) {
     throw new Error(
       "GROQ_API_KEY is not set. Get a free key at https://console.groq.com " +
-      "and add it to backend/.env"
+      "and add it to your environment variables."
     );
   }
 

@@ -13,7 +13,7 @@ export function createDefaultTransporter() {
   if (!DEFAULT_SENDER.email || !DEFAULT_SENDER.clientId || !DEFAULT_SENDER.refreshToken) {
     throw new Error(
       "Gmail not configured. Add DEFAULT_SENDER_EMAIL, DEFAULT_GMAIL_CLIENT_ID, " +
-      "DEFAULT_GMAIL_CLIENT_SECRET, DEFAULT_GMAIL_REFRESH_TOKEN to backend/.env"
+      "DEFAULT_GMAIL_CLIENT_SECRET, DEFAULT_GMAIL_REFRESH_TOKEN to your environment variables."
     );
   }
   return nodemailer.createTransport({
