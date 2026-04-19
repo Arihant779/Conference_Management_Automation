@@ -136,7 +136,6 @@ const SlideUploadPanel = ({ paper, onSlideUploaded, isDark }) => {
   };
 
   const { theme } = useApp();
-  const isDark = theme === 'dark';
 
   if (localUrl) {
     return (
@@ -525,10 +524,6 @@ const PaperCard = ({ paper, onSlideUploaded, onTimeSaved, isDark }) => {
           )}
           <button
             onClick={() => setExpanded(v => !v)}
-            className={cls(
-              "w-8 h-8 flex items-center justify-center rounded-lg border transition-all",
-              isDark ? "border-white/8 text-slate-500 hover:text-white hover:border-white/20" : "border-zinc-200 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-50"
-            )}
             className={cls(
               "w-8 h-8 flex items-center justify-center rounded-lg border transition-all",
               isDark ? "border-white/8 text-slate-500 hover:text-white hover:border-white/20" : "border-zinc-200 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-50"
