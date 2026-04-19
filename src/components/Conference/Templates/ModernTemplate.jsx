@@ -8,11 +8,11 @@ import {
 import ScheduleEditor from '../ScheduleEditor';
 import ConferenceRegistration from './../ConferenceRegistration';
 
-/* ═════════════════════════════════════════════════════════
+/* =========================================================
    AWWWARDS-LEVEL INTERACTIVE EFFECTS
-   ═════════════════════════════════════════════════════════ */
+   ========================================================= */
 
-/* ─── MAGNETIC BUTTON ─── */
+/* --- MAGNETIC BUTTON --- */
 const MagneticButton = ({ children, className = '', strength = 0.35, ...props }) => {
   const ref = useRef(null);
   const x = useMotionValue(0);
@@ -35,7 +35,7 @@ const MagneticButton = ({ children, className = '', strength = 0.35, ...props })
   );
 };
 
-/* ─── SPOTLIGHT CARD (cursor-following radial light) ─── */
+/* --- SPOTLIGHT CARD (cursor-following radial light) --- */
 const SpotlightCard = ({ children, className = '', spotlightColor = 'rgba(251,191,36,0.07)' }) => {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -57,7 +57,7 @@ const SpotlightCard = ({ children, className = '', spotlightColor = 'rgba(251,19
   );
 };
 
-/* ─── INFINITE MARQUEE BAND ─── */
+/* --- INFINITE MARQUEE BAND --- */
 const MarqueeBand = ({ items, speed = 30 }) => {
   const doubled = [...items, ...items];
   return (
@@ -75,7 +75,7 @@ const MarqueeBand = ({ items, speed = 30 }) => {
   );
 };
 
-/* ─── FLOATING GEOMETRIC SHAPES ─── */
+/* --- FLOATING GEOMETRIC SHAPES --- */
 const FloatingShapes = () => {
   const shapes = useMemo(() => [
     { type: 'ring', x: '8%', y: '15%', size: 60, duration: 22, delay: 0 },
@@ -117,7 +117,7 @@ const FloatingShapes = () => {
   );
 };
 
-/* ─── SCROLL PROGRESS BAR ─── */
+/* --- SCROLL PROGRESS BAR --- */
 const ScrollProgressBar = ({ scrollRef }) => {
   const { scrollYProgress } = useScroll({ container: scrollRef });
   const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
@@ -127,7 +127,7 @@ const ScrollProgressBar = ({ scrollRef }) => {
   );
 };
 
-/* ─── REVEAL TEXT (word-by-word) ─── */
+/* --- REVEAL TEXT (word-by-word) --- */
 const RevealText = ({ children, className = '', delay = 0 }) => {
   const words = children.split(' ');
   return (
@@ -147,9 +147,9 @@ const RevealText = ({ children, className = '', delay = 0 }) => {
   );
 };
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
    PARTICLES / ANIMATED BACKGROUND
-   ───────────────────────────────────────────── */
+   --------------------------------------------- */
 const FloatingParticles = () => {
   const particles = useMemo(() => Array.from({ length: 40 }, (_, i) => ({
     id: i,
@@ -213,9 +213,9 @@ const CinematicBackground = () => (
   </div>
 );
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
    ANIMATED COUNTER
-   ───────────────────────────────────────────── */
+   --------------------------------------------- */
 const AnimatedCounter = ({ value, suffix = '', className = '' }) => {
   const num = parseInt(value) || 0;
   const [count, setCount] = useState(0);
@@ -243,9 +243,9 @@ const AnimatedCounter = ({ value, suffix = '', className = '' }) => {
   return <span ref={ref} className={className}>{count}{suffix}</span>;
 };
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
    COUNTDOWN TIMER
-   ───────────────────────────────────────────── */
+   --------------------------------------------- */
 const CountdownTimer = ({ targetDate }) => {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
@@ -285,9 +285,9 @@ const CountdownTimer = ({ targetDate }) => {
   );
 };
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
    3D TILT CARD
-   ───────────────────────────────────────────── */
+   --------------------------------------------- */
 const TiltCard = ({ children, className = '', style = {} }) => {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -311,9 +311,9 @@ const TiltCard = ({ children, className = '', style = {} }) => {
   );
 };
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
    ANIMATED BORDER GLOW
-   ───────────────────────────────────────────── */
+   --------------------------------------------- */
 const GlowCard = ({ children, className = '', glowColor = 'rgba(251,191,36,0.15)' }) => (
   <div className={`relative group ${className}`}>
     <div className="absolute -inset-[1px] rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
@@ -325,10 +325,10 @@ const GlowCard = ({ children, className = '', glowColor = 'rgba(251,191,36,0.15)
   </div>
 );
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
    INLINE EDITABLE FIELD
-   ───────────────────────────────────────────── */
-const EditableText = ({ value, onChange, multiline = false, className = '', placeholder = 'Click to edit…', isEditing }) => {
+   --------------------------------------------- */
+const EditableText = ({ value, onChange, multiline = false, className = '', placeholder = 'Click to edit...', isEditing }) => {
   const [local, setLocal] = useState(value ?? '');
   const ref = useRef(null);
   useEffect(() => setLocal(value ?? ''), [value]);
@@ -344,9 +344,9 @@ const EditableText = ({ value, onChange, multiline = false, className = '', plac
   return multiline ? <textarea rows={3} {...shared} /> : <input {...shared} />;
 };
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
    SECTION WRAPPER WITH ANIMATIONS
-   ───────────────────────────────────────────── */
+   --------------------------------------------- */
 const AnimatedSection = ({ id, label, children, isEditing, className = '' }) => (
   <section id={id} className={`scroll-mt-24 relative z-10 w-full ${className}`}>
     {isEditing && (
@@ -367,9 +367,9 @@ const AnimatedSection = ({ id, label, children, isEditing, className = '' }) => 
   </section>
 );
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
    SECTION HEADING
-   ───────────────────────────────────────────── */
+   --------------------------------------------- */
 const SectionHeading = ({ badge, title, highlight, subtitle, align = 'left' }) => (
   <div className={align === 'center' ? 'text-center mb-16' : 'mb-12'}>
     {badge && (
@@ -458,7 +458,7 @@ const ModernTemplate = ({
       { label: 'Notification of Acceptance', date: 'April 30, 2025' },
       { label: 'Early Bird Registration', date: 'May 15, 2025' },
       { label: 'Full Paper Submission', date: 'June 1, 2025' },
-      { label: 'Conference Dates', date: `${initialConf.start_date || 'TBD'} – ${initialConf.end_date || 'TBD'}` },
+      { label: 'Conference Dates', date: `${initialConf.start_date || 'TBD'} - ${initialConf.end_date || 'TBD'}` },
     ],
     venue_name: initialConf.venue_name || 'Grand Convention Center',
     venue_address: initialConf.venue_address || initialConf.location || 'City, Country',
@@ -519,7 +519,7 @@ const ModernTemplate = ({
   };
 
   const displayName = conf.title ?? conf.name ?? 'Untitled Conference';
-  const displayDate = conf.start_date ? `${conf.start_date}${conf.end_date ? ` – ${conf.end_date}` : ''}` : 'Date TBD';
+  const displayDate = conf.start_date ? `${conf.start_date}${conf.end_date ? ` - ${conf.end_date}` : ''}` : 'Date TBD';
 
   const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.12 } } };
   const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6 } } };
@@ -572,7 +572,7 @@ const ModernTemplate = ({
           </div>
           <div className="flex items-center gap-3">
             {saveError && <span className="flex items-center gap-1 text-xs text-red-400 bg-red-400/10 px-3 py-1 rounded-full"><AlertCircle size={12} /> {saveError}</span>}
-            {saved && <span className="text-xs text-emerald-400 font-medium bg-emerald-400/10 px-3 py-1 rounded-full">✓ Saved!</span>}
+            {saved && <span className="text-xs text-emerald-400 font-medium bg-emerald-400/10 px-3 py-1 rounded-full">v Saved!</span>}
             {isEditing ? (
               <div className="flex gap-2">
                 <button
