@@ -6,7 +6,7 @@
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Point pdfjs-dist worker to the CDN (using .mjs for version 5+)
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 /**
  * Validates a file against organizer-defined rules.
@@ -70,8 +70,9 @@ export const validatePaper = async (file, settings) => {
             xPositions.push(x);
             xCounts[x] = (xCounts[x] || 0) + 1;
             
-            if (check_font_size && firstItem.height) {
-              fontSizes.push(firstItem.height);
+            const fontSize = firstItem.height || (firstItem.transform ? firstItem.transform[3] : 0);
+            if (check_font_size && fontSize > 0) {
+              fontSizes.push(fontSize);
             }
           }
         });

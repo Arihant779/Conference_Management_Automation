@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { PlusCircle, Trash2, Upload, CheckCircle, AlertCircle, FileCheck, XCircle } from 'lucide-react';
 import { supabase } from '../../../Supabase/supabaseclient';
 import { useApp } from '../../../context/AppContext';
 import { validatePaper } from '../../../utils/paperValidation';
 
-/* ─── constants ─────────────────────────────────────────────────────────── */
+/* â”€â”€â”€ constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 const EMPTY_AUTHOR = {
   salutation: 'Mr.',
@@ -51,7 +51,7 @@ const RESEARCH_AREAS = [
   'Communication & Journalism', 'Psychology', 'Sociology',
 ];
 
-/* ─── style helpers ─────────────────────────────────────────────────────── */
+/* â”€â”€â”€ style helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const inputCls =
   'w-full p-3 rounded-lg bg-black border border-white/10 text-slate-200 outline-none focus:border-amber-500 transition-colors';
 const smallInputCls =
@@ -73,9 +73,9 @@ const AuthorField = ({ label, children }) => (
 );
 
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    COMPONENT
-═══════════════════════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 const PaperSubmission = ({ conf }) => {
   const { user } = useApp();
 
@@ -100,14 +100,14 @@ const [isReviewer, setIsReviewer] = useState(false);
 
   const confId = conf?.conference_id ?? conf?.id ?? null;
 
-  // ── Guard: warn if conf is missing ──────────────────────────────────────
+  // â”€â”€ Guard: warn if conf is missing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     if (!confId) {
-      console.error('[PaperSubmission] conf.conference_id is undefined — paper will be orphaned!', conf);
+      console.error('[PaperSubmission] conf.conference_id is undefined â€” paper will be orphaned!', conf);
     }
   }, [confId, conf]);
 
-  // ── Check if this user already submitted to this conference ─────────────
+  // â”€â”€ Check if this user already submitted to this conference â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
   if (!confId || !user?.id) return;
   (async () => {
@@ -118,7 +118,7 @@ const [isReviewer, setIsReviewer] = useState(false);
       .eq('author_id', user.id);
     setExistingPapers(data || []);
 
-    // ← add this
+    // â† add this
     const { data: membership } = await supabase
       .from('conference_user')
       .select('role')
@@ -151,7 +151,7 @@ const [isReviewer, setIsReviewer] = useState(false);
   const addAuthor = () => setAuthors((prev) => [...prev, { ...EMPTY_AUTHOR }]);
   const removeAuthor = (idx) => setAuthors((prev) => prev.filter((_, i) => i !== idx));
 
-  /* ── Submit ─────────────────────────────────────────────────────────── */
+  /* â”€â”€ Submit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -212,8 +212,8 @@ const [isReviewer, setIsReviewer] = useState(false);
           message_to_editor: form.message_to_editor.trim() || null,
           file_url,
           author_id: userId,          // auth.uid() == users.user_id
-          conference_id: confId,          // never null — guarded above
-          status: 'pending',       // ← was 'submitted', now matches organiser filter
+          conference_id: confId,          // never null â€” guarded above
+          status: 'pending',       // â† was 'submitted', now matches organiser filter
         })
         .select()
         .single();
@@ -244,7 +244,7 @@ const [isReviewer, setIsReviewer] = useState(false);
           );
 
         if (authorsError) {
-          // Paper was inserted — log but don't block success
+          // Paper was inserted â€” log but don't block success
           console.error('[PaperSubmission] paper_author insert failed:', authorsError.message);
           throw new Error(`Author details failed to save: ${authorsError.message}`);
         }
@@ -259,7 +259,7 @@ const [isReviewer, setIsReviewer] = useState(false);
     }
   };
 
-  /* ── Success screen ─────────────────────────────────────────────────── */
+  /* â”€â”€ Success screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   if (success) {
     return (
       <div className="max-w-lg mx-auto p-12 text-center text-slate-200">
@@ -274,7 +274,7 @@ const [isReviewer, setIsReviewer] = useState(false);
     );
   }
 
-  /* ── Form ───────────────────────────────────────────────────────────── */
+  /* â”€â”€ Form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   return (
     <div className="max-w-6xl mx-auto p-8 text-slate-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -335,8 +335,8 @@ const [isReviewer, setIsReviewer] = useState(false);
       <form onSubmit={handleSubmit}>
         <div className="bg-[#0f1117] border border-white/10 rounded-xl p-8 space-y-8">
 
-          {/* ── Paper details ── */}
-          <FormField label="Title" hint="Write in Title Case — NOT IN ALL CAPITALS">
+          {/* â”€â”€ Paper details â”€â”€ */}
+          <FormField label="Title" hint="Write in Title Case â€” NOT IN ALL CAPITALS">
             <input
               required
               type="text"
@@ -347,7 +347,7 @@ const [isReviewer, setIsReviewer] = useState(false);
             />
           </FormField>
 
-          <FormField label="Abstract" hint="Short background about your research (150–300 words recommended)">
+          <FormField label="Abstract" hint="Short background about your research (150â€“300 words recommended)">
             <textarea
               required
               rows={5}
@@ -375,7 +375,7 @@ const [isReviewer, setIsReviewer] = useState(false);
               onChange={updateForm('research_area')}
               className={inputCls}
             >
-              <option value="">— Select Research Area —</option>
+              <option value="">â€” Select Research Area â€”</option>
               {RESEARCH_AREAS.map((a) => (
                 <option key={a} value={a}>{a}</option>
               ))}
@@ -384,12 +384,12 @@ const [isReviewer, setIsReviewer] = useState(false);
 
           <FormField
             label="Upload Research Paper"
-            hint="Accepted formats: .docx, .doc, .odt,.pdf — Use single column layout, NOT two columns"
+              hint={`Accepted formats: ${settings?.allowed_extensions?.join(', ') || '.pdf'} — Use single column layout, NOT two columns`}
           >
             <input
               required
               type="file"
-              accept=".docx,.doc,.odt , .pdf"
+              accept={settings?.allowed_extensions?.join(',') || '.pdf,.docx'}
               onChange={(e) => setFile(e.target.files[0] ?? null)}
               className={inputCls}
             />
@@ -457,7 +457,7 @@ const [isReviewer, setIsReviewer] = useState(false);
             />
           </FormField>
 
-          {/* ── Authors ── */}
+          {/* â”€â”€ Authors â”€â”€ */}
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -592,7 +592,7 @@ const [isReviewer, setIsReviewer] = useState(false);
             </div>
           </div>
 
-          {/* ── Error ── */}
+          {/* â”€â”€ Error â”€â”€ */}
           {error && (
             <div className="flex items-start gap-3 bg-red-500/10 border border-red-500/20 rounded-xl p-4">
               <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
@@ -600,14 +600,14 @@ const [isReviewer, setIsReviewer] = useState(false);
             </div>
           )}
 
-          {/* ── Submit ── */}
+          {/* â”€â”€ Submit â”€â”€ */}
           <button
             type="submit"
             disabled={loading || !confId || validating || (validation && !validation.valid)}
             className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 disabled:opacity-50 disabled:cursor-not-allowed py-3.5 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all shadow-lg shadow-amber-600/40"
           >
             <Upload size={17} />
-            {loading ? 'Submitting…' : 'Submit Research Paper'}
+            {loading ? 'Submittingâ€¦' : 'Submit Research Paper'}
           </button>
         </div>
       </form>

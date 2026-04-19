@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Settings, FileText, CheckCircle, XCircle, AlertCircle, Save } from 'lucide-react';
 import { supabase } from '../../../../../Supabase/supabaseclient';
 import { Btn } from '../common/Primitives';
@@ -100,7 +100,7 @@ const SubmissionSettingsSection = ({ conf }) => {
             </div>
 
             <div className="space-y-3">
-              {['.pdf', '.docx', '.doc', '.odt'].map(ext => (
+              {['.pdf', '.docx', '.doc'].map(ext => (
                 <div 
                   key={ext}
                   onClick={() => toggleExt(ext)}
