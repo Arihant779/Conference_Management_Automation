@@ -1080,20 +1080,35 @@ const ModernTemplate = ({
                 </div>
               </GlowCard>
             </div>
-            <div className="lg:col-span-3 rounded-3xl overflow-hidden relative min-h-[400px] group" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
-              <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1600')] bg-cover bg-center opacity-60 group-hover:scale-105 transition-transform duration-700 ease-in-out" />
-              <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #0B0F1A, transparent)' }} />
+            <div className="lg:col-span-3 rounded-3xl overflow-hidden relative min-h-[400px] group border border-white/10 bg-slate-900 shadow-2xl">
+              <iframe
+                title="Google Map"
+                width="100%"
+                height="100%"
+                frameBorder="0"
+                style={{ 
+                  border: 0, 
+                  filter: 'grayscale(1) invert(0.9) contrast(1.2) brightness(0.8)',
+                  transition: 'filter 0.5s ease-in-out'
+                }}
+                src={pageData.map_url && pageData.map_url.includes('google.com/maps/embed') 
+                  ? pageData.map_url 
+                  : `https://maps.google.com/maps?q=${encodeURIComponent(pageData.venue_address)}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
+                allowFullScreen
+                className="group-hover:filter-none transition-all duration-700"
+              />
+              <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to top, #0B0F1A, transparent 40%)' }} />
               <div className="absolute bottom-8 left-8">
                 <motion.a
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  href={pageData.map_url || '#'}
-                  target={pageData.map_url ? "_blank" : "_self"}
+                  href={pageData.map_url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pageData.venue_address)}`}
+                  target="_blank"
                   rel="noopener noreferrer"
-                  className="backdrop-blur-md px-4 py-1.5 rounded-full text-white text-sm font-bold inline-block border shadow-xl cursor-pointer hover:bg-white/20 transition-all"
+                  className="backdrop-blur-md px-6 py-2.5 rounded-full text-white text-sm font-bold inline-block border shadow-2xl cursor-pointer hover:bg-amber-500 hover:text-black transition-all"
                   style={{ background: 'rgba(255,255,255,0.15)', borderColor: 'rgba(255,255,255,0.2)' }}
                 >
-                  📍 View on Map
+                  📍 Open Full Map
                 </motion.a>
               </div>
             </div>

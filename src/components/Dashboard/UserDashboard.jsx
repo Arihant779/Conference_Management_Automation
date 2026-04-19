@@ -839,7 +839,7 @@ const ConfCard = ({ conf, role, hasPendingInvite, onSelectConf, onInviteAction, 
               </button>
             </div>
           ) : (
-            <MagneticButton
+            <button
               onClick={() => onSelectConf(conf, role)}
               className={`w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-300 ${
                 role
@@ -848,8 +848,8 @@ const ConfCard = ({ conf, role, hasPendingInvite, onSelectConf, onInviteAction, 
               }`}
             >
               {role ? 'Open Dashboard' : 'View Conference'}
-              <ChevronRight size={15} className="group-hover:translate-x-1 transition-transform" />
-            </MagneticButton>
+              <ChevronRight size={15} className="transition-transform" />
+            </button>
           )}
         </div>
       </div>

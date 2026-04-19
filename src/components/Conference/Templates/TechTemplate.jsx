@@ -216,8 +216,14 @@ const TechTemplate = ({
   }, []);
 
   const containerRef = useRef(null);
+  const scrollAreaRef = useRef(null);
+  useEffect(() => { scrollAreaRef.current = document.getElementById('scroll-area'); }, []);
+  const { scrollY } = useScroll({ container: scrollAreaRef });
   const { scrollYProgress } = useScroll({ container: containerRef });
   const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
+
+  const heroY = useTransform(scrollY, [0, 1000], [0, 200]);
+  const heroOpacity = useTransform(scrollY, [0, 800], [1, 0]);
 
   useEffect(() => { if (autoOpenRegister && !isGuest) setShowReg(true); }, [autoOpenRegister, isGuest]);
 
@@ -246,6 +252,7 @@ const TechTemplate = ({
     venue_address: initialConf.venue_address || initialConf.location || 'Silicon Valley, CA',
     venue_description: initialConf.venue_description || 'A state-of-the-art facility designed for high-performance collaboration and technological development.',
     capacity: initialConf.capacity || '1024 Attendees',
+    map_url: initialConf.map_url || '',
     registration_fee_general: initialConf.registration_fee_general || '$499',
     registration_fee_student: initialConf.registration_fee_student || '$99',
     registration_fee_early: initialConf.registration_fee_early || '$299',
@@ -358,13 +365,20 @@ const TechTemplate = ({
         <section className="min-h-screen flex flex-col items-center justify-center p-8 relative overflow-hidden">
           
           {(pageData.banner_url || initialConf.banner_url) && (
-            <div className="absolute inset-0 z-0">
-              <img src={pageData.banner_url || initialConf.banner_url} alt="" className="w-full h-full object-cover opacity-10 filter grayscale brightness-50" />
-              <div className="absolute inset-0 bg-gradient-to-t from-bg to-transparent" />
+            <div className="absolute inset-0 z-0 overflow-hidden">
+              <motion.img 
+                initial={{ scale: 1.1 }} animate={{ scale: 1 }} transition={{ duration: 2 }}
+                src={pageData.banner_url || initialConf.banner_url} 
+                className="w-full h-full object-cover opacity-[0.15] mix-blend-luminosity filter contrast-125" 
+                alt="" 
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/40 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-primary/5" />
             </div>
           )}
 
           <motion.div 
+            style={{ y: heroY, opacity: heroOpacity }}
             initial={{ opacity: 0, scale: 1.1 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1.5 }}
@@ -372,6 +386,19 @@ const TechTemplate = ({
           >
             <div className="text-center group">
               <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }}>
+                {isEditing && (
+                  <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="mb-10 w-full max-w-lg mx-auto">
+                    <div className="text-[10px] font-black uppercase tracking-[0.4em] text-accent mb-3 flex items-center gap-2">
+                       <Radio size={12} className="animate-pulse" /> // CHANGE_SOURCE_NODE
+                    </div>
+                    <EditableField 
+                      value={pageData.banner_url} 
+                      onChange={v => update('banner_url', v)} 
+                      isEditing={isEditing} 
+                      placeholder="Root image URL (Unsplash/Direct)..."
+                    />
+                  </motion.div>
+                )}
                 <div className="inline-flex items-center gap-3 px-4 py-1.5 border border-accent/30 rounded-full bg-accent/5 backdrop-blur-xl mb-8">
                   <Shield size={14} className="text-accent" />
                   <span className="text-[10px] font-black tracking-widest text-accent uppercase leading-none">
@@ -607,12 +634,33 @@ const TechTemplate = ({
                       <button onClick={() => update('speakers', pageData.speakers.filter((_, idx) => idx !== i))}
                               className="absolute top-4 right-4 z-20 text-secondary hover:underline text-[9px] font-black uppercase">Remove</button>
                     )}
-                    <div className="relative mb-8 aspect-video overflow-hidden rounded-lg bg-black/40">
-                        {sp.img && !isEditing ? (
-                          <img src={sp.img} alt={sp.name} className="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700" />
+                    <div className="relative mb-8 aspect-video overflow-hidden rounded-lg bg-black/40 border border-white/5">
+                        {sp.img ? (
+                          <img 
+                            src={sp.img} 
+                            alt={sp.name} 
+                            className={`w-full h-full object-cover transition-all duration-700 ${!isEditing ? 'grayscale brightness-75 group-hover:grayscale-0 group-hover:scale-110' : 'opacity-40'}`} 
+                          />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center border border-white/5">
+                          <div className="w-full h-full flex items-center justify-center">
                              <Cpu size={48} className="text-white/5" />
+                          </div>
+                        )}
+
+                        {isEditing && (
+                          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center p-6 bg-black/60 backdrop-blur-md border border-accent/30 rounded-lg">
+                            <div className="w-full space-y-3">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Zap size={10} className="text-accent animate-pulse" />
+                                <span className="text-[8px] font-black tracking-[0.3em] text-accent uppercase">Img Path Config</span>
+                              </div>
+                              <EditableField 
+                                value={sp.img} 
+                                onChange={v => updateNested('speakers', i, 'img', v)} 
+                                isEditing={isEditing} 
+                                placeholder="Root image link..."
+                              />
+                            </div>
                           </div>
                         )}
                     </div>
@@ -677,20 +725,48 @@ const TechTemplate = ({
                          <p className="text-white/40 leading-relaxed font-light italic">
                              {isEditing ? <EditableField value={pageData.venue_description} onChange={v => update('venue_description', v)} multiline isEditing /> : pageData.venue_description}
                          </p>
-                         <CyberButton variant="secondary" onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pageData.venue_address)}`, '_blank')}>Open in Maps</CyberButton>
-                      </div>
-                   </div>
-                   <div className="bg-white/5 relative flex items-center justify-center overflow-hidden min-h-[400px]">
-                       <Activity size={120} className="text-accent opacity-10 absolute animate-pulse" />
-                       <div className="absolute top-4 left-4 text-[8px] font-black text-white/20 tracking-widest uppercase">Live Location View</div>
-                       <div className="z-10 text-center space-y-4">
-                          <code className="text-accent text-sm opacity-60 block bg-black/40 p-4 border border-white/5">
-                             LOCATION: {pageData.venue_name.toUpperCase()}<br/>
-                             STATUS: VERIFIED
-                          </code>
+                          {isEditing && (
+                            <div className="space-y-2 py-4 border-t border-white/5">
+                              <span className="text-[9px] font-black text-accent uppercase tracking-widest block">Custom Map Portal URL</span>
+                              <EditableField 
+                                value={pageData.map_url} 
+                                onChange={v => update('map_url', v)} 
+                                isEditing={isEditing} 
+                                placeholder="Paste Google Maps iframe/link here..."
+                              />
+                            </div>
+                          )}
+
+                          <CyberButton 
+                            variant="secondary" 
+                            onClick={() => window.open(pageData.map_url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pageData.venue_address)}`, '_blank')}
+                          >
+                            {pageData.map_url ? 'Initialize Navigation' : 'Open in Maps'}
+                          </CyberButton>
                        </div>
-                   </div>
-                </div>
+                    </div>
+                    <div className="bg-white/5 relative overflow-hidden min-h-[400px] border-l border-white/5">
+                        {/* Real Google Map with Terminal Styling */}
+                        <iframe
+                          title="Tech Venue Map"
+                          width="100%"
+                          height="100%"
+                          frameBorder="0"
+                          style={{ 
+                            border: 0, 
+                            filter: 'grayscale(1) invert(0.8) contrast(1.5) brightness(0.7)',
+                            mixBlendMode: 'screen'
+                          }}
+                          src={pageData.map_url && pageData.map_url.includes('google.com/maps/embed') 
+                            ? pageData.map_url 
+                            : `https://maps.google.com/maps?q=${encodeURIComponent(pageData.venue_address)}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
+                          allowFullScreen
+                          className="absolute inset-0"
+                        />
+                        <div className="absolute inset-0 bg-accent/5 pointer-events-none" />
+                        <div className="absolute top-4 left-4 text-[8px] font-black text-white/20 tracking-widest uppercase z-10 bg-black/60 px-2 py-1 backdrop-blur-sm border border-white/5">Local Scan: {pageData.venue_name.toUpperCase()}</div>
+                    </div>
+                 </div>
              </HUDCard>
           </section>
 

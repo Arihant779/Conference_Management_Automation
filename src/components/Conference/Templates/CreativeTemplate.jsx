@@ -154,8 +154,14 @@ const CreativeTemplate = ({
   const [scrolled, setScrolled] = useState(false);
 
   const containerRef = useRef(null);
+  const scrollAreaRef = useRef(null);
+  useEffect(() => { scrollAreaRef.current = document.getElementById('scroll-area'); }, []);
+  const { scrollY } = useScroll({ container: scrollAreaRef });
   const { scrollYProgress } = useScroll({ container: containerRef });
   const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
+
+  const heroY = useTransform(scrollY, [0, 1000], [0, 200]);
+  const heroOpacity = useTransform(scrollY, [0, 800], [1, 0]);
 
   useEffect(() => {
     const el = document.getElementById('scroll-area');
@@ -192,6 +198,7 @@ const CreativeTemplate = ({
     venue_address: initialConf.venue_address || initialConf.location || 'Creativity Hub, LA',
     venue_description: initialConf.venue_description || 'A multi-sensory environment designed to spark imagination and fluid collaboration.',
     capacity: initialConf.capacity || '1000 Creators',
+    map_url: initialConf.map_url || '',
     registration_fee_general: initialConf.registration_fee_general || '$299',
     registration_fee_student: initialConf.registration_fee_student || '$99',
     registration_fee_early: initialConf.registration_fee_early || '$199',
@@ -315,7 +322,23 @@ const CreativeTemplate = ({
         )}
 
         {/* ══════════ HERO SECTION ══════════ */}
-        <section className="min-h-screen flex flex-col items-center justify-center p-8 relative z-10">
+        <section className="min-h-screen flex flex-col items-center justify-center p-8 relative overflow-hidden">
+           
+           {/* Banner Image with Overlays */}
+           {(pageData.banner_url || conf.banner_url) && (
+              <div className="absolute inset-0 z-0 overflow-hidden">
+                <motion.img 
+                  initial={{ scale: 1.1 }} animate={{ scale: 1 }} transition={{ duration: 2 }}
+                  src={pageData.banner_url || conf.banner_url} 
+                  className="w-full h-full object-cover opacity-[0.45] mix-blend-luminosity" 
+                  alt="" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#fdfcfd]/10 via-transparent to-[#fdfcfd]" />
+                <div className="absolute inset-0 bg-gradient-to-tr from-p-primary/10 via-transparent to-p-secondary/10" />
+              </div>
+           )}
+
+           <motion.div style={{ y: heroY, opacity: heroOpacity }} className="relative z-10 flex flex-col items-center w-full">
            {/* Floating Geometric Elements */}
            <motion.div 
               animate={{ y: [0, -30, 0], rotate: [0, 45, 0] }}
@@ -335,7 +358,19 @@ const CreativeTemplate = ({
              initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2 }}
              className="relative z-10 text-center max-w-5xl"
            >
-               <motion.div 
+                {isEditing && (
+                  <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="mb-12 w-full max-w-2xl mx-auto p-8 rounded-[2.5rem] bg-white/40 backdrop-blur-3xl border border-white/50 shadow-xl">
+                    <div className="text-[12px] font-black uppercase tracking-[0.4em] text-p-primary mb-4">Background Identity Surface</div>
+                    <EditableField 
+                      value={pageData.banner_url} 
+                      onChange={v => update('banner_url', v)} 
+                      isEditing={isEditing} 
+                      placeholder="Enter banner image URL (e.g. from Unsplash)..."
+                    />
+                  </motion.div>
+                )}
+
+                <motion.div 
                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                  className="inline-flex items-center gap-4 px-10 py-4 rounded-full bg-white/40 border border-white focus-within:border-p-primary/50 backdrop-blur-3xl mb-16 shadow-[0_20px_50px_-20px_rgba(139,92,246,0.3)] group transition-all"
                >
@@ -391,6 +426,7 @@ const CreativeTemplate = ({
                  </div>
               </div>
            </div>
+         </motion.div>
         </section>
 
         {/* ── SECTION NAV ── */}
@@ -545,10 +581,29 @@ const CreativeTemplate = ({
                         {sp.img && !isEditing ? (
                           <img src={sp.img} className="w-full h-full object-cover scale-110 group-hover:scale-100 group-hover:rotate-1 transition-all duration-1000" alt="" />
                         ) : (
-                          <div className="w-full h-full bg-slate-50 flex items-center justify-center text-slate-200"><Users size={64} /></div>
+                          <div className="w-full h-full bg-slate-50 flex items-center justify-center text-slate-200">
+                             {isEditing && sp.img ? (
+                               <img src={sp.img} className="w-full h-full object-cover opacity-30" alt="" />
+                             ) : (
+                               <Users size={64} />
+                             )}
+                          </div>
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-transparent" />
-                     </div>
+                         <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-transparent" />
+                         {isEditing && (
+                           <div className="absolute inset-0 z-30 flex items-center justify-center p-6 bg-white/20 backdrop-blur-sm">
+                             <div className="w-full space-y-2">
+                               <div className="text-[9px] font-black p-primary uppercase tracking-widest text-center">Photo URL</div>
+                               <EditableField 
+                                 value={sp.img} 
+                                 onChange={v => updateNested('speakers', i, 'img', v)} 
+                                 isEditing={isEditing} 
+                                 placeholder="Paste image link..."
+                               />
+                             </div>
+                           </div>
+                         )}
+                      </div>
                      <div className="p-10 space-y-6">
                         <div>
                            <span className="text-[10px] font-extrabold text-p-primary uppercase tracking-[0.2em] mb-2 block">
@@ -604,25 +659,57 @@ const CreativeTemplate = ({
                       <p className="text-xl text-slate-400 font-light leading-relaxed italic">
                          {isEditing ? <EditableField value={pageData.venue_description} onChange={v => update('venue_description', v)} multiline isEditing /> : pageData.venue_description}
                       </p>
-                      <PrismButton variant="secondary" onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pageData.venue_address)}`, '_blank')} className="!rounded-full !px-8">Get Coordinates</PrismButton>
+                      
+                      {isEditing && (
+                        <div className="space-y-2 py-4 border-t border-p-primary/10">
+                          <span className="text-[10px] font-extrabold text-p-primary uppercase tracking-[0.2em] block">Custom Map URL (Optional)</span>
+                          <EditableField 
+                            value={pageData.map_url} 
+                            onChange={v => update('map_url', v)} 
+                            isEditing={isEditing} 
+                            placeholder="Paste Google Maps link here..."
+                          />
+                        </div>
+                      )}
+
+                      <PrismButton 
+                        variant="secondary" 
+                        onClick={() => window.open(pageData.map_url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pageData.venue_address)}`, '_blank')} 
+                        className="!rounded-full !px-8"
+                      >
+                        {pageData.map_url ? 'Navigate to Portal' : 'Get Coordinates'}
+                      </PrismButton>
                    </div>
                 </div>
-                <div className="relative">
-                   <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 60, ease: "linear" }}
-                     className="absolute -inset-16 border-2 border-accent/10 border-dashed rounded-full" />
-                   <PrismCard className="aspect-square p-2 overflow-hidden !rounded-full shadow-2xl">
-                      <div className="w-full h-full rounded-full bg-slate-900 flex flex-col items-center justify-center p-12 text-center relative overflow-hidden group">
-                         <div className="absolute inset-0 bg-gradient-to-br from-accent/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                         <MapPin size={120} className="text-accent mb-12 animate-pulse" />
-                         <code className="relative z-10 text-[10px] font-mono text-slate-500 leading-relaxed uppercase">
-                            SYSTEM: PRISM_CORE<br/>
-                            LOCATION: {pageData.venue_name.toUpperCase()}<br/>
-                            LAT_LONG: REDACTED<br/>
-                            STATUS: ACTIVE
-                         </code>
-                      </div>
-                   </PrismCard>
-                </div>
+                 <div className="relative">
+                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 60, ease: "linear" }}
+                      className="absolute -inset-16 border-2 border-accent/10 border-dashed rounded-full" />
+                    <PrismCard className="aspect-square p-2 overflow-hidden !rounded-full shadow-2xl relative">
+                       {/* Real Google Map with Circular Mask */}
+                       <div className="absolute inset-0 z-0 overflow-hidden rounded-full">
+                          <iframe
+                            title="Prism Location"
+                            width="100%"
+                            height="100%"
+                            frameBorder="0"
+                            style={{ 
+                              border: 0, 
+                              filter: 'hue-rotate(240deg) grayscale(0.2) contrast(1.1) brightness(0.9)',
+                            }}
+                            src={pageData.map_url && pageData.map_url.includes('google.com/maps/embed') 
+                              ? pageData.map_url 
+                              : `https://maps.google.com/maps?q=${encodeURIComponent(pageData.venue_address)}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
+                            allowFullScreen
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-p-primary/20 to-transparent pointer-events-none" />
+                       </div>
+
+                       <div className="w-full h-full rounded-full bg-slate-900/10 flex flex-col items-center justify-center p-12 text-center relative overflow-hidden group pointer-events-none hover:bg-transparent transition-all">
+                          <div className="absolute inset-0 bg-gradient-to-br from-accent/20 to-transparent opacity-40 group-hover:opacity-0 transition-opacity" />
+                          {!isEditing && <MapPin size={80} className="text-accent mb-8 animate-pulse drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]" />}
+                       </div>
+                    </PrismCard>
+                 </div>
              </div>
           </section>
 

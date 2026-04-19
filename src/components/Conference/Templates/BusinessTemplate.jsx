@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useSpring, useTransform } from 'framer-motion';
 import {
   MapPin, Calendar, Users, Mail, Phone, Globe,
   Twitter, Linkedin, Edit3, Check, X, Plus, Save, AlertCircle, Clock,
@@ -120,8 +120,14 @@ const BusinessTemplate = ({
   const [scrolled, setScrolled] = useState(false);
 
   const containerRef = useRef(null);
+  const scrollAreaRef = useRef(null);
+  useEffect(() => { scrollAreaRef.current = document.getElementById('scroll-area'); }, []);
+  const { scrollY } = useScroll({ container: scrollAreaRef });
   const { scrollYProgress } = useScroll({ container: containerRef });
   const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
+
+  const heroY = useTransform(scrollY, [0, 1000], [0, 200]);
+  const heroOpacity = useTransform(scrollY, [0, 800], [1, 0]);
 
   useEffect(() => {
     const el = document.getElementById('scroll-area');
@@ -163,6 +169,7 @@ const BusinessTemplate = ({
     registration_fee_early: initialConf.registration_fee_early || '$1,800',
     about_extra: initialConf.about_extra || 'This conference brings together industry leaders and policymakers for strategic high-level dialogue.',
     themes: initialConf.themes || ['Capital Markets', 'Strategic Growth', 'Emerging Tech', 'Leadership'],
+    map_url: initialConf.map_url || '',
   });
 
   const update = (k, v) => setPageData(p => ({ ...p, [k]: v }));
@@ -267,15 +274,37 @@ const BusinessTemplate = ({
         {/* ══════════ HERO SECTION ══════════ */}
         <header className="min-h-screen flex flex-col justify-center relative overflow-hidden px-10 py-20 pb-0">
           <div className="absolute inset-0 z-0 overflow-hidden">
-             {pageData.banner_url && <img src={pageData.banner_url} className="w-full h-full object-cover opacity-10 filter grayscale brightness-[0.4]" alt="" />}
+             {(pageData.banner_url || initialConf.banner_url) && (
+               <motion.img 
+                initial={{ scale: 1.1 }} animate={{ scale: 1 }} transition={{ duration: 2 }}
+                src={pageData.banner_url || initialConf.banner_url} 
+                className="w-full h-full object-cover opacity-[0.2] mix-blend-luminosity filter contrast-125" 
+                alt="" 
+               />
+             )}
              <div className="absolute inset-0 bg-gradient-to-tr from-e-navy via-e-navy/95 to-transparent" />
+             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-e-navy/40 to-e-navy" />
              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100vw] h-[100vh] bg-e-accent/5 blur-[150px] rounded-full pointer-events-none" />
              <div className="absolute top-0 right-0 w-[40vw] h-[40vw] bg-white/5 blur-[120px] rounded-full pointer-events-none" />
           </div>
           
-          <div className="max-w-7xl mx-auto w-full relative z-10 grid lg:grid-cols-12 gap-24 items-center">
+          <motion.div style={{ y: heroY, opacity: heroOpacity }} className="max-w-7xl mx-auto w-full relative z-10 grid lg:grid-cols-12 gap-24 items-center">
             <div className="lg:col-span-8">
               <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1.2, ease: "easeOut" }}>
+                {isEditing && (
+                  <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-12 w-full max-w-lg">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-1 h-3 bg-e-accent" />
+                      <span className="text-[10px] font-black   text-e-accent uppercase tracking-widest leading-none">Banner Source Configuration</span>
+                    </div>
+                    <EditableField 
+                      value={pageData.banner_url} 
+                      onChange={v => update('banner_url', v)} 
+                      isEditing={isEditing} 
+                      placeholder="Elite Cover URL (Direct/Unsplash)..."
+                    />
+                  </motion.div>
+                )}
                 <div className="flex items-center gap-4 mb-10 overflow-hidden">
                    <div className="h-[1px] w-12 bg-e-accent" />
                    <span className="text-[11px] font-black tracking-widest text-e-accent uppercase border-r border-white/10 pr-6">
@@ -337,7 +366,7 @@ const BusinessTemplate = ({
                   </div>
                </motion.div>
             </div>
-          </div>
+          </motion.div>
         </header>
 
         {/* ── STICKY NAV ── */}
@@ -483,11 +512,33 @@ const BusinessTemplate = ({
                           <button onClick={() => update('speakers', pageData.speakers.filter((_, idx) => idx !== i))}
                                   className="absolute top-6 right-6 z-20 w-10 h-10 rounded-full bg-rose-500 text-white flex items-center justify-center hover:scale-110 shadow-xl transition-all"><Trash2 size={16} /></button>
                         )}
-                        {sp.img && !isEditing ? (
-                          <img src={sp.img} className="w-full h-full object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-1000" alt="" />
+                        {sp.img ? (
+                          <img 
+                            src={sp.img} 
+                            className={`w-full h-full object-cover transition-all duration-1000 ${!isEditing ? 'grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100' : 'opacity-20 blur-sm'}`} 
+                            alt="" 
+                          />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center"><Users size={64} className="text-white/5" /></div>
                         )}
+                        
+                        {isEditing && (
+                          <div className="absolute inset-0 z-30 flex items-center justify-center p-8 bg-e-navy/60 backdrop-blur-xl border border-white/10 rounded-[2.5rem]">
+                            <div className="w-full space-y-3">
+                               <div className="flex items-center gap-2 mb-1">
+                                  <div className="w-1 h-3 bg-e-accent" />
+                                  <span className="text-[10px] font-black tracking-widest text-e-accent uppercase">Media Configuration</span>
+                               </div>
+                               <EditableField 
+                                 value={sp.img} 
+                                 onChange={v => updateNested('speakers', i, 'img', v)} 
+                                 isEditing={isEditing} 
+                                 placeholder="Elite Profile Image URL..."
+                               />
+                            </div>
+                          </div>
+                        )}
+
                         <div className="absolute inset-x-0 bottom-0 p-8 pt-20 bg-gradient-to-t from-e-navy to-transparent">
                            <span className="text-[10px] font-black text-e-accent tracking-widest uppercase mb-1 block">
                              {isEditing ? <EditableField value={sp.role} onChange={v => updateNested('speakers', i, 'role', v)} isEditing /> : sp.role}
@@ -582,7 +633,7 @@ const BusinessTemplate = ({
                    </div>
                    <div className="space-y-12">
                       <div className="flex items-center gap-10 group">
-                         <div className="w-24 h-24 rounded-3xl bg-e-surface border border-white/10 flex items-center justify-center shadow-3xl group-hover:scale-110 group-hover:border-e-accent transition-all duration-700">
+                         <div className="w-24 h-24 rounded-3xl bg-e-surface border border-white/10 flex items-center justify-center shadow-3xl group-hover:scale-110 group-hover:border-e-accent transition-all duration-700" style={{ background: T.surface }}>
                             <MapPin size={40} className="text-e-accent" />
                          </div>
                          <div>
@@ -595,28 +646,66 @@ const BusinessTemplate = ({
                       <p className="text-2xl text-e-slate font-light italic leading-relaxed opacity-80">
                          {isEditing ? <EditableField value={pageData.venue_description} onChange={v => update('venue_description', v)} multiline isEditing /> : pageData.venue_description}
                       </p>
-                      <EliteButton variant="secondary" onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pageData.venue_address)}`, '_blank')} className="!px-12 !rounded-2xl !text-[10px]">Open in Maps</EliteButton>
+
+                      {isEditing && (
+                        <div className="space-y-3 py-6 border-t border-white/5">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="w-1 h-3 bg-e-accent" />
+                            <span className="text-[10px] font-black tracking-widest text-e-accent uppercase">Strategic Map Link</span>
+                          </div>
+                          <EditableField 
+                            value={pageData.map_url} 
+                            onChange={v => update('map_url', v)} 
+                            isEditing={isEditing} 
+                            placeholder="Map embed link..."
+                          />
+                        </div>
+                      )}
+
+                      <EliteButton 
+                        variant="secondary" 
+                        onClick={() => window.open(pageData.map_url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pageData.venue_address)}`, '_blank')} 
+                        className="!px-12 !rounded-2xl !text-[10px]"
+                      >
+                        {pageData.map_url ? 'Navigate to Center' : 'Open in Maps'}
+                      </EliteButton>
                    </div>
                 </div>
-                <div className="relative aspect-square bg-e-surface rounded-[3rem] overflow-hidden p-8 shadow-3xl border border-white/10">
-                   <div className="h-full w-full border border-white/5 rounded-[2.5rem] flex flex-col items-center justify-center gap-12 relative z-10 group bg-e-navy/40">
-                      <div className="relative">
-                         <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 20, ease: 'linear' }} className="absolute -inset-10 border border-e-accent/10 rounded-full border-dashed" />
-                         <MapPin size={100} className="text-e-accent opacity-20 group-hover:opacity-100 transition-all duration-1000 group-hover:scale-110" />
-                      </div>
-                      <div className="text-center space-y-6">
-                         <span className="text-[10px] font-black text-white/20 tracking-widest uppercase block animate-pulse">Location Confirmed</span>
-                         <code className="text-white/40 text-[11px] font-mono leading-relaxed block bg-black/40 p-10 border border-white/5 rounded-3xl shadow-inner uppercase">
-                            VENUE: {pageData.venue_name.toUpperCase()}<br/>
-                            CITY: {pageData.venue_address.toUpperCase()}<br/>
-                            STATUS: ACTIVE_NODE
-                         </code>
-                      </div>
-                   </div>
-                   <CornerBrackets color={T.slate} size={60} opacity={0.3} />
-                </div>
-             </div>
-          </section>
+                    <div className="relative aspect-square bg-e-surface rounded-[3rem] overflow-hidden p-8 shadow-3xl border border-white/10">
+                        <div className="h-full w-full border border-white/5 rounded-[2.5rem] flex flex-col items-center justify-center relative z-10 group bg-e-navy overflow-hidden">
+                            {/* Real Google Map with High Contrast Styling */}
+                            <iframe
+                              title="Elite Venue Map"
+                              width="100%"
+                              height="100%"
+                              frameBorder="0"
+                              style={{ 
+                                border: 0, 
+                                filter: 'grayscale(0.8) contrast(1.2) brightness(0.9)',
+                              }}
+                              src={pageData.map_url && pageData.map_url.includes('google.com/maps/embed') 
+                                ? pageData.map_url 
+                                : `https://maps.google.com/maps?q=${encodeURIComponent(pageData.venue_address)}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
+                              allowFullScreen
+                              className="absolute inset-0 opacity-40 group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-700"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-e-navy via-transparent to-transparent pointer-events-none" />
+                            
+                            <div className="relative z-20 text-center space-y-6 pointer-events-none group-hover:opacity-0 transition-opacity duration-500">
+                              <div className="relative inline-block">
+                                 <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 20, ease: 'linear' }} className="absolute -inset-10 border border-e-accent/10 rounded-full border-dashed" />
+                                 <MapPin size={80} className="text-e-accent opacity-20" />
+                              </div>
+                              <code className="text-white/40 text-[11px] font-mono leading-relaxed block bg-black/60 p-8 border border-white/5 rounded-3xl uppercase">
+                                 ASSET: {pageData.venue_name.toUpperCase()}<br/>
+                                 STATUS: VERIFIED
+                              </code>
+                            </div>
+                        </div>
+                       <CornerBrackets color={T.slate} size={60} opacity={0.3} />
+                    </div>
+                 </div>
+              </section>
 
           {/* ══════════ SPONSORS ══════════ */}
           <section id="sponsors" className="scroll-mt-48">
