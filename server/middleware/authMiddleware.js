@@ -1,4 +1,4 @@
-import { supabase } from "../lib/supabaseClient.mjs";
+import { supabase } from "../lib/supabaseClient.js";
 
 /**
  * Middleware to verify Supabase JWT token and attach user to req.user

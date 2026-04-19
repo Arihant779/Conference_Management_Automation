@@ -1,9 +1,14 @@
 import { supabase } from '../Supabase/supabaseclient';
 
 const getBaseUrl = (envVar, fallback) => {
-  let url = process.env[envVar] || fallback;
+  let url = process.env[envVar] || fallback || '';
   if (url.endsWith('/')) url = url.slice(0, -1);
   if (url.endsWith('/api')) url = url.slice(0, -4);
+  
+  // Ensure absolute URLs have a protocol to avoid being treated as relative paths
+  if (url && !url.startsWith('http') && !url.startsWith('mailto') && url.includes('.')) {
+    url = `https://${url}`;
+  }
   return url;
 };
 
