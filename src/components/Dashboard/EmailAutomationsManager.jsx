@@ -312,7 +312,7 @@ const EmailAutomationsManager = ({ conf }) => {
                     {TRIGGERS.map(t => {
                       const sel = form.trigger_type === t.id;
                       return (
-                        <div key={t.id} onClick={() => setForm({...form, trigger_type: t.id})} className={cls("flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all", sel ? (isDark ? "border-amber-500 bg-amber-500/10 text-amber-300" : "border-amber-500 bg-amber-50 text-amber-700") : (isDark ? "border-white/5 hover:border-white/15" : "border-zinc-200 hover:border-zinc-300"))}>
+                        <div key={t.id} onClick={() => setForm({...form, trigger_type: t.id, trigger_metadata: {}})} className={cls("flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all", sel ? (isDark ? "border-amber-500 bg-amber-500/10 text-amber-300" : "border-amber-500 bg-amber-50 text-amber-700") : (isDark ? "border-white/5 hover:border-white/15" : "border-zinc-200 hover:border-zinc-300"))}>
                           <t.icon size={16} className={sel ? "text-amber-500" : "text-zinc-400"} />
                           <span className="text-sm font-semibold">{t.label}</span>
                         </div>
@@ -320,6 +320,30 @@ const EmailAutomationsManager = ({ conf }) => {
                     })}
                   </div>
                 </div>
+
+                {form.trigger_type === 'relative_date' && (
+                  <div>
+                    <FieldLabel label="Days Before/After Start Date" isDark={isDark} hint="Negative for before, positive for after" />
+                    <Input
+                      type="number"
+                      isDark={isDark}
+                      value={form.trigger_metadata?.days_offset || 0}
+                      onChange={e => setForm({...form, trigger_metadata: { ...form.trigger_metadata, days_offset: parseInt(e.target.value, 10) }})}
+                      placeholder="-5 for 5 days before"
+                    />
+                  </div>
+                )}
+                {form.trigger_type === 'custom_date' && (
+                  <div>
+                    <FieldLabel label="Specific Date & Time" isDark={isDark} />
+                    <Input
+                      type="datetime-local"
+                      isDark={isDark}
+                      value={form.trigger_metadata?.specific_time || ''}
+                      onChange={e => setForm({...form, trigger_metadata: { ...form.trigger_metadata, specific_time: e.target.value }})}
+                    />
+                  </div>
+                )}
 
                 <div>
                   <FieldLabel label="Target Audience" isDark={isDark} />
