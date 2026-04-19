@@ -35,9 +35,9 @@ export const TEAM_COLORS = [
 
 export const VOLUNTEER_ROLE_LABELS = {
   logistics_head:    'Logistics Team',
-  outreach_head:     'Outreach Team Head',
-  organizer_head:    'Organizing Team Head',
-  technical_head:    'Reviewing Team Head',
+  outreach_head:     'Outreach Team',
+  organizer_head:    'Organizing Team',
+  technical_head:    'Reviewing Team',
   program_coord:     'Event Management Team',
   social_coord:      'Social Media Coord.',
   volunteer_coord:   'Volunteer Coordinator',

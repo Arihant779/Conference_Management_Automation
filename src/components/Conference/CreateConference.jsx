@@ -58,9 +58,11 @@ const CreateConference = ({ onCancel, onSuccess }) => {
     description: '',
     template: 'modern',
     banner_url: '',
+    is_published: true, // Default to publish now
   });
 
   const update = (field) => (e) => setData((prev) => ({ ...prev, [field]: e.target.value }));
+  const togglePublish = (val) => setData((prev) => ({ ...prev, is_published: val }));
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -95,6 +97,7 @@ const CreateConference = ({ onCancel, onSuccess }) => {
           template: data.template,
           banner_url: data.banner_url || null,
           conference_head_id: user?.id ?? null,
+          is_published: data.is_published,
         })
         .select()
         .single();
@@ -402,6 +405,40 @@ const CreateConference = ({ onCancel, onSuccess }) => {
                               ${data.template === t ? 'border-amber-500 bg-amber-500' : 'border-white/10'}`}>
                               {data.template === t && <div className="w-1.5 h-1.5 bg-black rounded-full" />}
                             </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">
+                        Publish Visibility
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        {[
+                          { val: true, label: 'Publish Now', sub: 'Visible in Explore immediately' },
+                          { val: false, label: 'Publish Later', sub: 'Hidden until you manually publish' }
+                        ].map(({ val, label, sub }) => (
+                          <motion.div
+                            key={val.toString()}
+                            whileHover={{ scale: 1.01 }}
+                            whileTap={{ scale: 0.99 }}
+                            onClick={() => togglePublish(val)}
+                            className={`cursor-pointer group flex flex-col p-5 border rounded-2xl transition-all duration-300 relative
+                              ${data.is_published === val 
+                                ? 'bg-amber-500/10 border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.05)]' 
+                                : 'bg-white/[0.04] border-white/5 hover:border-white/10 hover:bg-white/[0.06]'
+                              }`}
+                          >
+                            <div className="flex items-center gap-3 mb-1">
+                              <span className={`font-black uppercase tracking-widest text-xs ${data.is_published === val ? 'text-amber-500' : 'text-white/60 group-hover:text-white'}`}>
+                                {label}
+                              </span>
+                              {data.is_published === val && <CheckCircle size={14} className="text-amber-500" />}
+                            </div>
+                            <span className={`text-[10px] font-medium uppercase tracking-wider ${data.is_published === val ? 'text-white/40' : 'text-white/10'}`}>
+                              {sub}
+                            </span>
                           </motion.div>
                         ))}
                       </div>
