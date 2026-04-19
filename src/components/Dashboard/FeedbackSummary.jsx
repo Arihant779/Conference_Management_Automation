@@ -300,7 +300,7 @@ const FeedbackSummary = ({ form, questions, confId, onClose }) => {
               <div key={q.id} className={cls("rounded-[2rem] border p-8 space-y-8 animate-in slide-in-from-bottom-4 duration-500", isDark ? "bg-white/2 border-white/6" : "bg-white border-zinc-100 shadow-xl shadow-zinc-500/5")}>
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <div className={cls("w-10 h-10 rounded-2xl flex items-center justify-center font-black text-xs shrink-0", isDark ? "bg-indigo-500/20 text-indigo-400" : "bg-indigo-50 text-indigo-600")}>
+                    <div className={cls("w-10 h-10 rounded-2xl flex items-center justify-center font-black text-xs shrink-0", isDark ? "bg-amber-500/20 text-amber-400" : "bg-amber-50 text-amber-600")}>
                        Q{idx + 1}
                     </div>
                     <h4 className={cls("text-lg font-bold tracking-tight", isDark ? "text-white" : "text-zinc-900")}>{q.question_text}</h4>

@@ -509,7 +509,7 @@ const PasswordUpdateSection = ({ user, theme = 'dark' }) => {
         {step !== 'initial' && <button onClick={reset} className="text-xs font-semibold text-zinc-500 hover:text-zinc-300 transition-colors">Cancel</button>}
       </div>
       {isOAuth ? (
-        <div className={`border rounded-xl p-4 transition-colors duration-300 ${isDark ? 'bg-blue-500/5 border-blue-500/10' : 'bg-blue-50 border-blue-100'}`}>
+        <div className={`border rounded-xl p-4 transition-colors duration-300 ${isDark ? 'bg-amber-500/5 border-amber-500/10' : 'bg-amber-50 border-amber-100'}`}>
           <p className={`text-sm leading-relaxed transition-colors duration-300 ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>Your account is managed via <span className={`font-semibold transition-colors ${isDark ? 'text-zinc-200' : 'text-zinc-900'}`}>{providerName}</span>. Password updates are handled through your {providerName} account settings.</p>
         </div>
       ) : (
@@ -701,10 +701,10 @@ const getRoleBadgeStyle = (role, isDark) => {
       glow: isDark ? 'shadow-slate-400/5' : 'shadow-none' 
     },
     member: { 
-      bg: isDark ? 'bg-blue-500/15' : 'bg-blue-100', 
-      text: isDark ? 'text-blue-300' : 'text-blue-700', 
-      border: isDark ? 'border-blue-500/25' : 'border-blue-200', 
-      glow: isDark ? 'shadow-blue-500/5' : 'shadow-none' 
+      bg: isDark ? 'bg-amber-500/10' : 'bg-amber-50', 
+      text: isDark ? 'text-amber-400/80' : 'text-amber-600', 
+      border: isDark ? 'border-amber-500/20' : 'border-amber-200', 
+      glow: isDark ? 'shadow-amber-500/5' : 'shadow-none' 
     },
   };
   return styles[role] || styles.member;

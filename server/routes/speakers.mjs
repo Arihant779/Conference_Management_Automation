@@ -37,7 +37,7 @@ router.get("/speakers/email", async (req, res) => {
 });
 
 /* ── Generate Speaker Profile from Name ── */
-router.post("/speakers/generate-profile", async (req, res) => {
+router.post("/speakers/generate-profile", authMiddleware, async (req, res) => {
   const { name } = req.body;
   if (!name) return res.status(400).json({ error: "Name is required" });
 
@@ -77,7 +77,7 @@ BIO: <brief 2-3 sentence biography>
 });
 
 /* ── Personalize invitation via AI ── */
-router.post("/speakers/personalize", async (req, res) => {
+router.post("/speakers/personalize", authMiddleware, async (req, res) => {
   const { name, institution, profile, conferenceTitle } = req.body;
   if (!name || !conferenceTitle) return res.status(400).json({ error: "Name and Conference Title are required" });
 
@@ -112,7 +112,7 @@ BODY:
 });
 
 /* ── Send Invitation & Save to DB ── */
-router.post("/speakers/invite", async (req, res) => {
+router.post("/speakers/invite", authMiddleware, async (req, res) => {
   const { conference_id, speaker_name, speaker_email, speaker_profile, subject, body, scheduledAt } = req.body;
 
   if (!speaker_email || !subject || !body) {
@@ -240,7 +240,7 @@ BODY: <short 2-sentence nudge body>
 }
 
 /* ── Individual Follow-up ── */
-router.post("/speakers/follow-up", async (req, res) => {
+router.post("/speakers/follow-up", authMiddleware, async (req, res) => {
   const { invite_id, scheduledAt } = req.body;
   if (!invite_id) return res.status(400).json({ error: "Invite ID is required" });
 
@@ -262,7 +262,7 @@ router.post("/speakers/follow-up", async (req, res) => {
 });
 
 /* ── Bulk Follow-up ── */
-router.post("/speakers/bulk-follow-up", async (req, res) => {
+router.post("/speakers/bulk-follow-up", authMiddleware, async (req, res) => {
   const { conference_id, scheduledAt } = req.body;
   if (!conference_id) return res.status(400).json({ error: "Conference ID is required" });
 

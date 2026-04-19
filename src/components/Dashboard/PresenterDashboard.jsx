@@ -175,15 +175,15 @@ const SlideUploadPanel = ({ paper, onSlideUploaded }) => {
           className={cls(
             'flex items-center gap-3 border border-dashed rounded-xl px-4 py-3 cursor-pointer transition-all',
             isDark 
-              ? 'border-white/10 hover:border-indigo-500/40 hover:bg-indigo-500/5' 
+              ? 'border-white/10 hover:border-amber-500/40 hover:bg-amber-500/5' 
               : 'border-zinc-300 bg-white hover:bg-zinc-50 shadow-sm transition-all'
           )}
         >
           <div className={cls(
             "w-8 h-8 border rounded-lg flex items-center justify-center shrink-0",
-            isDark ? "bg-indigo-500/10 border-indigo-500/20" : "bg-indigo-50 border-indigo-100"
+            isDark ? "bg-amber-500/10 border-amber-500/20" : "bg-amber-50 border-amber-100"
           )}>
-            <Upload size={14} className={isDark ? "text-indigo-400" : "text-indigo-600"} />
+            <Upload size={14} className={isDark ? "text-amber-400" : "text-amber-600"} />
           </div>
           <div>
             <p className={cls("text-xs font-semibold", isDark ? "text-slate-300" : "text-zinc-700")}>Select presentation slides</p>
@@ -200,14 +200,14 @@ const SlideUploadPanel = ({ paper, onSlideUploaded }) => {
       ) : (
         <div className={cls(
           "border rounded-xl p-3",
-            isDark ? "bg-indigo-500/5 border-indigo-500/20" : "bg-white border-zinc-300 shadow-md shadow-zinc-200/50"
+            isDark ? "bg-amber-500/5 border-amber-500/20" : "bg-white border-zinc-300 shadow-md shadow-zinc-200/50"
         )}>
           <div className="flex items-center gap-3 mb-3">
             <div className={cls(
               "w-8 h-8 border rounded-lg flex items-center justify-center shrink-0",
-              isDark ? "bg-indigo-500/10 border-indigo-500/20" : "bg-indigo-50 border-indigo-100"
+              isDark ? "bg-amber-500/10 border-amber-500/20" : "bg-amber-50 border-amber-100"
             )}>
-              <FileText size={14} className={isDark ? "text-indigo-400" : "text-indigo-600"} />
+              <FileText size={14} className={isDark ? "text-amber-400" : "text-amber-600"} />
             </div>
             <div className="flex-1 min-w-0">
               <p className={cls("text-xs font-semibold truncate", isDark ? "text-slate-200" : "text-zinc-900")}>{selectedFile.name}</p>
@@ -227,7 +227,7 @@ const SlideUploadPanel = ({ paper, onSlideUploaded }) => {
           <button
             onClick={handleUpload}
             disabled={uploading}
-            className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold py-2 rounded-lg transition-all shadow-sm"
+            className="w-full flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white text-xs font-bold py-2 rounded-lg transition-all shadow-sm"
           >
             {uploading ? (
               <RefreshCw size={12} className="animate-spin" />
@@ -313,18 +313,18 @@ const TimePreferencePanel = ({ paper, onSaved }) => {
       {saved && (
         <div className={cls(
           "flex items-start gap-3 border rounded-xl px-4 py-3",
-          isDark ? "bg-blue-500/8 border-blue-500/20" : "bg-white border-blue-300 shadow-sm"
+          isDark ? "bg-amber-500/8 border-amber-500/20" : "bg-white border-amber-300 shadow-sm"
         )}>
-          <CheckCircle size={14} className={isDark ? "text-blue-400 shrink-0 mt-0.5" : "text-blue-500 shrink-0 mt-0.5"} />
+          <CheckCircle size={14} className={isDark ? "text-amber-400 shrink-0 mt-0.5" : "text-amber-500 shrink-0 mt-0.5"} />
           <div className="flex-1 min-w-0">
-            <p className={cls("text-xs font-semibold mb-1.5", isDark ? "text-blue-300" : "text-blue-700")}>
+            <p className={cls("text-xs font-semibold mb-1.5", isDark ? "text-amber-300" : "text-amber-700")}>
               Time preference saved — {selected.size} slot{selected.size !== 1 ? 's' : ''} available
             </p>
             <div className="flex flex-wrap gap-1.5">
               {TIME_SLOTS.filter(s => selected.has(s)).map(s => (
                 <span key={s} className={cls(
                   "text-[10px] font-bold px-2 py-0.5 rounded-lg border",
-                  isDark ? "bg-blue-500/15 border-blue-500/25 text-blue-300" : "bg-white border-blue-200 text-blue-600"
+                  isDark ? "bg-amber-500/15 border-amber-500/25 text-amber-300" : "bg-white border-amber-200 text-amber-600"
                 )}>
                   {s}
                 </span>
@@ -369,12 +369,12 @@ const TimePreferencePanel = ({ paper, onSaved }) => {
                   className={cls(
                     'px-3 py-1.5 rounded-xl text-xs font-bold border transition-all select-none',
                     isOn
-                      ? (isDark ? 'bg-purple-500/15 border-purple-500/40 text-purple-200 hover:bg-purple-500/10' : 'bg-purple-50 border-purple-200 text-purple-600')
+                      ? (isDark ? 'bg-amber-500/15 border-amber-500/40 text-amber-200 hover:bg-amber-500/10' : 'bg-amber-50 border-amber-200 text-amber-600')
                       : (isDark ? 'bg-white/3 border-white/8 text-slate-500 hover:border-white/16 hover:text-slate-400' : 'bg-zinc-50 border-zinc-200 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'),
                     wouldHitMin && 'opacity-40 cursor-not-allowed'
                   )}
                 >
-                  {isOn && <span className={isDark ? "mr-1 text-purple-400" : "mr-1 text-purple-500"}>✓</span>}
+                  {isOn && <span className={isDark ? "mr-1 text-amber-400" : "mr-1 text-amber-500"}>✓</span>}
                   {slot}
                 </button>
               );
@@ -392,7 +392,7 @@ const TimePreferencePanel = ({ paper, onSaved }) => {
               rows={2}
               placeholder="e.g. I am unavailable on the first day morning…"
               className={cls(
-                "w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-purple-500 resize-none transition-all",
+                "w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-amber-500 resize-none transition-all",
                 isDark ? "bg-white/5 border-white/8 text-white placeholder-slate-600" : "bg-white border-zinc-200 text-zinc-900 placeholder-zinc-300"
               )}
             />
@@ -407,7 +407,7 @@ const TimePreferencePanel = ({ paper, onSaved }) => {
           <button
             onClick={handleSave}
             disabled={saving || selected.size < MIN_SLOTS}
-            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 shadow-lg shadow-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black px-6 py-2.5 rounded-xl transition-all"
+            className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 shadow-lg shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black px-6 py-2.5 rounded-xl transition-all"
           >
             <Send size={12} />
             {saving ? 'Saving…' : `Save ${selected.size} Slot${selected.size !== 1 ? 's' : ''}`}
@@ -441,7 +441,7 @@ const PaperCard = ({ paper, onSlideUploaded, onTimeSaved }) => {
             'w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 mt-0.5',
             isAccepted
               ? (isDark ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-emerald-50 border-emerald-100 text-emerald-600')
-              : (isDark ? 'bg-indigo-500/10 border-indigo-500/15 text-indigo-400' : 'bg-indigo-50 border-indigo-100 text-indigo-600')
+              : (isDark ? 'bg-amber-500/10 border-amber-500/15 text-amber-400' : 'bg-amber-50 border-amber-100 text-amber-600')
           )}>
             <FileText size={18} />
           </div>
@@ -512,7 +512,7 @@ const PaperCard = ({ paper, onSlideUploaded, onTimeSaved }) => {
           {/* Upload slides */}
           <div>
             <div className="flex items-center gap-2 mb-2.5">
-              <Presentation size={14} className="text-blue-500" />
+              <Presentation size={14} className="text-amber-500" />
               <span className={cls("text-xs font-bold uppercase tracking-wider", isDark ? "text-slate-300" : "text-zinc-600")}>Presentation Slides</span>
             </div>
             <SlideUploadPanel paper={paper} onSlideUploaded={onSlideUploaded} />
@@ -522,17 +522,17 @@ const PaperCard = ({ paper, onSlideUploaded, onTimeSaved }) => {
           {isAccepted && (
             <div>
               <div className="flex items-center gap-2 mb-2.5">
-                <Clock size={14} className="text-purple-500" />
+                <Clock size={14} className="text-amber-500" />
                 <span className={cls("text-xs font-bold uppercase tracking-wider", isDark ? "text-slate-300" : "text-zinc-600")}>Presentation Time Preference</span>
               </div>
               <div className={cls(
                 "border rounded-xl px-4 py-3 mb-3",
-                isDark ? "bg-purple-500/5 border-purple-500/15" : "bg-purple-50 border-purple-100"
+                isDark ? "bg-amber-500/5 border-amber-500/15" : "bg-amber-50 border-amber-100"
               )}>
                 <div className="flex items-start gap-2">
-                  <Info size={12} className="text-purple-500 shrink-0 mt-0.5" />
-                  <p className={cls("text-[11px] leading-relaxed", isDark ? "text-purple-300/70" : "text-purple-700 font-medium")}>
-                    Your paper has been <strong className={isDark ? "text-purple-300" : "text-purple-900"}>accepted</strong>.
+                  <Info size={12} className="text-amber-500 shrink-0 mt-0.5" />
+                  <p className={cls("text-[11px] leading-relaxed", isDark ? "text-amber-300/70" : "text-amber-700 font-medium")}>
+                    Your paper has been <strong className={isDark ? "text-amber-300" : "text-amber-900"}>accepted</strong>.
                     Please share your preferred date and time slot — the organiser will finalise the schedule accordingly.
                   </p>
                 </div>
@@ -703,7 +703,7 @@ const PresenterDashboard = ({ conf, onBack }) => {
                     {[
                       { label: 'Total Submissions', value: papers.length, color: isDark ? 'text-slate-200' : 'text-zinc-800', icon: FileText },
                       { label: 'Accepted',          value: accepted,       color: 'text-emerald-400', icon: CheckCircle },
-                      { label: 'Slides Uploaded',   value: withSlides,     color: 'text-blue-400', icon: Presentation },
+                      { label: 'Slides Uploaded',   value: withSlides,     color: 'text-amber-400', icon: Presentation },
                     ].map(({ label, value, color, icon: Icon }) => (
                       <div key={label} className={`border rounded-xl p-4 transition-all duration-300 ${
                         isDark ? 'bg-[#0d1117] border-white/10' : 'bg-white border-zinc-300 shadow-md shadow-zinc-200/50'
