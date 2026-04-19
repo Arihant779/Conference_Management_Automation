@@ -76,7 +76,7 @@ const AuthorField = ({ label, children }) => (
 /* ═══════════════════════════════════════════════════════════════════════════
    COMPONENT
 ═══════════════════════════════════════════════════════════════════════════ */
-const PaperSubmission = ({ conf }) => {
+const PaperSubmission = ({ conf, onSwitchToTab, showReg, setShowReg }) => {
   const { user } = useApp();
 
   const [form, setForm] = useState({
@@ -87,7 +87,7 @@ const PaperSubmission = ({ conf }) => {
     message_to_editor: '',
   });
   const [file, setFile] = useState(null);
-const [isReviewer, setIsReviewer] = useState(false);
+const [role, setRole] = useState('loading'); // 'loading', 'attendee', 'none', or 'other'
 
   const [authors, setAuthors] = useState([{ ...EMPTY_AUTHOR }]);
   const [loading, setLoading] = useState(false);
@@ -117,15 +117,21 @@ const [isReviewer, setIsReviewer] = useState(false);
       .eq('conference_id', confId)
       .eq('author_id', user.id);
     setExistingPapers(data || []);
+      
+      const { data: membership } = await supabase
+        .from('conference_user')
+        .select('role')
+        .eq('conference_id', confId)
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-    // ← add this
-    const { data: membership } = await supabase
-      .from('conference_user')
-      .select('role')
-      .eq('conference_id', confId)
-      .eq('user_id', user.id)
-      .maybeSingle();
-      if (membership?.role === 'reviewer') setIsReviewer(true);
+      if (!membership) {
+        setRole('none');
+      } else if (membership.role === 'attendee') {
+        setRole('attendee');
+      } else {
+        setRole(membership.role);
+      }
       
       // Fetch Conference Validation Settings
       const { data: confData } = await supabase.from('conference').select('submission_settings').eq('conference_id', confId).single();
@@ -308,30 +314,64 @@ const [isReviewer, setIsReviewer] = useState(false);
         </div>
       )}
 
-      {/* No conf guard */}
-      {!confId && (
-        <div className="mb-6 bg-red-500/10 border border-red-500/25 rounded-xl px-5 py-4 text-sm text-red-400">
-          Conference information is missing. Please go back and re-open this form from a valid conference.
+      {/* ── LOADER / GUARD ── */}
+      {role === 'loading' && (
+        <div className="flex flex-col items-center justify-center py-24 gap-4">
+          <div className="w-10 h-10 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
+          <p className="text-slate-500 text-sm animate-pulse">Verifying registration status...</p>
         </div>
       )}
 
-      {isReviewer && (
-  <div className="flex flex-col items-center justify-center py-20 text-center">
-    <div className="w-16 h-16 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto mb-5">
-      <AlertCircle size={28} className="text-amber-400" />
-    </div>
-    <h3 className="text-xl font-bold text-white mb-2">Submission Not Allowed</h3>
-    <p className="text-slate-400 text-sm max-w-sm leading-relaxed">
-      You are part of the <span className="text-amber-400 font-semibold">reviewing team</span> for this conference.
-      Reviewers cannot submit papers to maintain the integrity of the review process.
-    </p>
-    <p className="text-slate-600 text-xs mt-4">
-      If you believe this is a mistake, please contact the conference organizer.
-    </p>
-  </div>
-)}
+      {/* ── NOT REGISTERED GUARD ── */}
+      {role === 'none' && (
+        <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="w-20 h-20 rounded-3xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-amber-500/10">
+            <AlertCircle size={36} className="text-amber-400" />
+          </div>
+          <h3 className="text-3xl font-bold text-white mb-4">Registration Required</h3>
+          <p className="text-slate-400 text-base max-w-sm leading-relaxed mb-10">
+            You must be registered as an <span className="text-white font-semibold">Attendee</span> for this conference before you can submit a research paper.
+          </p>
+          
+          <button
+            onClick={() => {
+              if (onSwitchToTab) onSwitchToTab('home');
+              if (setShowReg) setShowReg(true);
+            }}
+            className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold transition-all shadow-lg shadow-amber-600/30 flex items-center gap-2 group"
+          >
+            Go to Registration
+            <PlusCircle size={18} className="group-hover:rotate-90 transition-transform duration-300" />
+          </button>
+          
+          <p className="text-slate-600 text-[11px] mt-8 uppercase tracking-[0.2em] font-medium italic">
+            Registration is mandatory to participate in the call for papers
+          </p>
+        </div>
+      )}
 
-  {!isReviewer && (
+      {/* ── NON-ATTENDEE ROLE GUARD (Organizer, Reviewer, etc.) ── */}
+      {role !== 'loading' && role !== 'none' && role !== 'attendee' && (
+        <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="w-20 h-20 rounded-3xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-red-500/10">
+            <XCircle size={36} className="text-red-400" />
+          </div>
+          <h3 className="text-3xl font-bold text-white mb-4">Submission Not Allowed</h3>
+          <p className="text-slate-400 text-base max-w-md leading-relaxed">
+            Your current role as an <span className="text-red-400 font-bold uppercase tracking-wider px-2 py-0.5 bg-red-500/10 rounded">{role}</span> does not have paper submission privileges.
+          </p>
+          <p className="text-slate-500 text-sm mt-6 max-w-sm">
+            Only registered <span className="text-amber-400 font-semibold font-mono">ATTENDEES</span> are permitted to submit research papers to maintain the integrity of the review process.
+          </p>
+          <div className="mt-12 p-4 rounded-xl bg-white/5 border border-white/5 max-w-sm">
+            <p className="text-slate-600 text-xs italic leading-relaxed">
+              If you believe this is a mistake or you intended to submit as an author, please contact the conference leadership.
+            </p>
+          </div>
+        </div>
+      )}
+
+  {role === 'attendee' && (
       <form onSubmit={handleSubmit}>
         <div className="bg-[#0f1117] border border-white/10 rounded-xl p-8 space-y-8">
 

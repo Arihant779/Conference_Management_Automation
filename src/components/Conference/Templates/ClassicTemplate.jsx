@@ -97,7 +97,20 @@ const sessionTypeStyle = {
    ───────────────────────────────────────────── */
 const DEFAULT_AVATAR = 'https://i.pinimg.com/736x/8b/16/7a/8b167afad976f5947fb84260a1280dd9.jpg';
 
-const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEditSchedule = false, currentUserId = null, members = [], onScheduleSave, onDelete }) => {
+const ClassicTemplate = ({
+  conf: initialConf,
+  isOrganizer = false,
+  onSave,
+  canEditSchedule = false,
+  currentUserId = null,
+  members = [],
+  onScheduleSave,
+  onDelete,
+  isGuest = false,
+  onRequireAuthForRegister = null,
+  showReg = false,
+  setShowReg = null,
+}) => {
   const [conf, setConf] = useState(initialConf);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -107,46 +120,46 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEd
   const [scheduleTab, setScheduleTab] = useState(0);
   const [showScheduleEditor, setShowScheduleEditor] = useState(false);
 
-  const [pageData, setPageData] = useState({
-    title: initialConf.title || 'Untitled Conference',
-    tagline: initialConf.tagline || 'Advancing Knowledge, Forging Connections',
-    banner_url: initialConf.banner_url || '',
-    contact_email: initialConf.contact_email || 'contact@conference.org',
-    contact_phone: initialConf.contact_phone || '+1 (555) 000-0000',
-    website: initialConf.website || 'https://yourconference.org',
-    twitter: initialConf.twitter || '',
-    linkedin: initialConf.linkedin || '',
-    schedule: initialConf.schedule || [],
-    speakers: initialConf.speakers || [
+  const getInitialPageData = (c) => ({
+    title: c.title || 'Untitled Conference',
+    tagline: c.tagline || 'Advancing Knowledge, Forging Connections',
+    banner_url: c.banner_url || '',
+    contact_email: c.contact_email || 'contact@conference.org',
+    contact_phone: c.contact_phone || '+1 (555) 000-0000',
+    website: c.website || 'https://yourconference.org',
+    twitter: c.twitter || '',
+    linkedin: c.linkedin || '',
+    schedule: c.schedule || [],
+    speakers: c.speakers || [
       { name: 'Prof. Eleanor Hartley', role: 'Keynote Speaker', org: 'University of Oxford', img: 'https://i.pravatar.cc/150?img=47', bio: 'Distinguished scholar whose work bridges computational theory and humanistic inquiry.' },
       { name: 'Dr. Marcus Chen', role: 'Invited Lecturer', org: 'Harvard University', img: 'https://i.pravatar.cc/150?img=68', bio: 'Award-winning researcher with over 200 published works in leading journals.' },
       { name: 'Prof. Amara Osei', role: 'Panel Moderator', org: 'ETH Zürich', img: 'https://i.pravatar.cc/150?img=41', bio: 'Pioneer in interdisciplinary methodology and cross-cultural academic collaboration.' },
       { name: 'Dr. Isabelle Moreau', role: 'Workshop Lead', org: 'Sciences Po Paris', img: 'https://i.pravatar.cc/150?img=44', bio: 'Specialist in policy analysis and evidence-based decision making frameworks.' },
     ],
-    sponsors: initialConf.sponsors || [
+    sponsors: c.sponsors || [
       { name: 'Royal Academy of Sciences', tier: 'platinum' },
       { name: 'National Research Foundation', tier: 'gold' },
       { name: 'Meridian Trust', tier: 'gold' },
       { name: 'University Press', tier: 'silver' },
       { name: 'Scholar Fund', tier: 'silver' },
     ],
-    important_dates: initialConf.important_dates || [
+    important_dates: c.important_dates || [
       { label: 'Abstract Submission Opens', date: 'January 10, 2025' },
       { label: 'Abstract Submission Deadline', date: 'March 15, 2025' },
       { label: 'Notification of Acceptance', date: 'April 30, 2025' },
       { label: 'Early Bird Registration Closes', date: 'May 15, 2025' },
       { label: 'Full Paper Submission', date: 'June 1, 2025' },
-      { label: 'Conference Dates', date: `${initialConf.start_date || 'TBD'} – ${initialConf.end_date || 'TBD'}` },
+      { label: 'Conference Dates', date: `${c.start_date || 'TBD'} – ${c.end_date || 'TBD'}` },
     ],
-    venue_name: initialConf.venue_name || 'Grand Academic Hall',
-    venue_address: initialConf.venue_address || initialConf.location || 'City, Country',
-    venue_description: initialConf.venue_description || 'A storied venue of intellectual heritage, hosting generations of scholarly exchange. Equipped with a grand lecture theatre, seminar rooms, and distinguished dining facilities.',
-    capacity: initialConf.capacity || '400+',
-    registration_fee_general: initialConf.registration_fee_general || '$350',
-    registration_fee_student: initialConf.registration_fee_student || '$150',
-    registration_fee_early: initialConf.registration_fee_early || '$250',
-    about_extra: initialConf.about_extra || 'Scholars, researchers, and practitioners from across the globe convene to present original research, debate emerging paradigms, and forge collaborations that shape the trajectory of the field.',
-    organizing_committee: initialConf.organizing_committee || [
+    venue_name: c.venue_name || 'Grand Academic Hall',
+    venue_address: c.venue_address || c.location || 'City, Country',
+    venue_description: c.venue_description || 'A storied venue of intellectual heritage, hosting generations of scholarly exchange. Equipped with a grand lecture theatre, seminar rooms, and distinguished dining facilities.',
+    capacity: c.capacity || '400+',
+    registration_fee_general: c.registration_fee_general || '$350',
+    registration_fee_student: c.registration_fee_student || '$150',
+    registration_fee_early: c.registration_fee_early || '$250',
+    about_extra: c.about_extra || 'Scholars, researchers, and practitioners from across the globe convene to present original research, debate emerging paradigms, and forge collaborations that shape the trajectory of the field.',
+    organizing_committee: c.organizing_committee || [
       { name: 'Prof. William Sterling', role: 'General Chair' },
       { name: 'Dr. Nadia Karim', role: 'Programme Chair' },
       { name: 'Prof. James Okafor', role: 'Organizing Chair' },
@@ -289,7 +302,7 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEd
                 >
                   <Trash2 size={12} /> Delete Conference
                 </button>
-                <button onClick={() => setIsEditing(false)} style={{
+                <button onClick={handleCancel} style={{
                   background: 'transparent', border: '1px solid #4a3f35', color: '#8c7e72',
                   padding: '6px 14px', borderRadius: 4, fontSize: 12, cursor: 'pointer', ...sansS,
                   display: 'flex', alignItems: 'center', gap: 6,

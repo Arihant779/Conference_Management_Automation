@@ -7,6 +7,9 @@ import BusinessTemplate from './Templates/BusinessTemplate';
 import CreativeTemplate from './Templates/CreativeTemplate';
 import RoleBasedDashboard from '../Dashboard/RoleBasedDashboard';
 import PaperSubmission from './Templates/PaperSubmission';
+import ConferenceRegistration from './ConferenceRegistration';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
 import { API_BASE_URL } from '../../utils/api';
@@ -72,6 +75,7 @@ const ConferenceView = ({
   const [teamLeaderPosition, setTeamLeaderPosition] = useState('');
   const [liveSchedule, setLiveSchedule] = useState(conf?.schedule || []);
   const [copied, setCopied] = useState(false);
+  const [showReg, setShowReg] = useState(false);
 
   const confId = conf?.conference_id ?? conf?.id;
   const displayTitle = conf.title ?? conf.name ?? 'Untitled Conference';
@@ -249,6 +253,8 @@ const ConferenceView = ({
     onRequireAuthForRegister: handleRequireAuthForRegister,
     autoOpenRegister,
     onSwitchToTab: handleTabClick,
+    showReg,
+    setShowReg,
   };
 
   return (
@@ -334,9 +340,27 @@ const ConferenceView = ({
         ) : viewMode === 'dashboard' ? (
           <RoleBasedDashboard conf={conf} role={resolvedRole} onBack={onBack} onSwitchView={handleTabClick} />
         ) : viewMode === 'submitPaper' ? (
-          <PaperSubmission conf={conf} />
+          <PaperSubmission conf={conf} onSwitchToTab={handleTabClick} showReg={showReg} setShowReg={setShowReg} />
         ) : null}
       </div>
+
+      {/* ── Registration Modal ── */}
+      <AnimatePresence>
+        {showReg && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-black/85 backdrop-blur-xl flex items-center justify-center p-4">
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+              className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl"
+              style={{ background: '#0B0F1A', border: '1px solid rgba(251,191,36,0.15)' }}>
+              <button onClick={() => setShowReg(false)}
+                className="absolute top-6 right-6 z-10 text-slate-400 hover:text-white transition-all hover:rotate-90 bg-white/5 hover:bg-white/10 rounded-full p-2">
+                <X size={20} />
+              </button>
+              <ConferenceRegistration conf={conf} currentUser={user} onSuccess={() => setShowReg(false)} onBack={() => setShowReg(false)} />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
