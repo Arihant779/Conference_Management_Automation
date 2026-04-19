@@ -136,6 +136,7 @@ const SlideUploadPanel = ({ paper, onSlideUploaded, isDark }) => {
   };
 
   const { theme } = useApp();
+  const isDark = theme === 'dark';
 
   if (localUrl) {
     return (
