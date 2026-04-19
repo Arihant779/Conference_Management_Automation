@@ -127,14 +127,7 @@ const DigitalRain = () => {
         backgroundSize: '40px 40px',
         transform: 'perspective(500px) rotateX(60deg) translateY(-100px)',
         height: '200%',
-        animation: 'gridMove 20s linear infinite'
       }} />
-      <style>{`
-        @keyframes gridMove {
-          from { background-position: 0 0; }
-          to { background-position: 0 800px; }
-        }
-      `}</style>
     </div>
   );
 };
@@ -143,14 +136,6 @@ const GlitchText = ({ children, color = T.text, fontSize = 'inherit', className 
   return (
     <span className={`relative inline-block ${className}`} style={{ color, fontSize }}>
       {children}
-      <style>{`
-        .glitch-copy { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: none; }
-        .group:hover .glitch-copy { display: block; }
-        @keyframes glitch-1 { 0% { clip: rect(20px, 9999px, 80px, 0); } 100% { clip: rect(40px, 9999px, 60px, 0); } }
-        @keyframes glitch-2 { 0% { clip: rect(60px, 9999px, 100px, 0); } 100% { clip: rect(10px, 9999px, 30px, 0); } }
-      `}</style>
-      <span className="glitch-copy" style={{ color: T.primary, opacity: 0.8, animation: 'glitch-1 0.5s infinite linear alternate-reverse', transform: 'translateX(-2px)' }}>{children}</span>
-      <span className="glitch-copy" style={{ color: T.secondary, opacity: 0.8, animation: 'glitch-2 0.5s infinite linear alternate-reverse', transform: 'translateX(2px)' }}>{children}</span>
     </span>
   );
 };
@@ -472,20 +457,28 @@ const TechTemplate = ({
           </motion.div>
         </section>
 
-        {/* ── STICKY NAV ── */}
-        <nav className={`sticky top-0 z-[100] transition-all duration-300 ${scrolled ? 'py-2 bg-black/80 backdrop-blur-2xl border-b border-accent/20' : 'py-6 bg-transparent border-b border-transparent'}`}>
-          <div className="max-w-7xl mx-auto px-8 flex items-center gap-12 overflow-x-auto no-scrollbar">
-             {['about', 'schedule', 'speakers', 'venue', 'sponsors', 'contact'].map(id => (
-               <button key={id} onClick={() => { 
-                   const el = document.getElementById(id);
-                   if (el) el.scrollIntoView({ behavior: 'smooth' });
-                   setActiveNav(id); 
-                 }}
-                 className={`text-[9px] font-black tracking-widest uppercase transition-all whitespace-nowrap px-4 py-2 rounded-full ${activeNav === id ? 'text-accent bg-accent/10 border border-accent/20' : 'text-white/30 hover:text-white border border-transparent'}`}
-               >
-                 {id}
-               </button>
-             ))}
+        <nav className={`sticky top-0 z-[100] transition-all duration-300 ${scrolled ? 'py-4 bg-black/80 backdrop-blur-2xl border-b border-accent/20' : 'py-6 bg-transparent border-b border-transparent'}`}>
+          <div className="max-w-7xl mx-auto px-8 flex items-center justify-between">
+            <div className="flex gap-12 overflow-x-auto no-scrollbar">
+               {['about', 'schedule', 'speakers', 'venue', 'sponsors', 'contact'].map(id => (
+                 <button key={id} onClick={() => { 
+                     const el = document.getElementById(id);
+                     if (el) el.scrollIntoView({ behavior: 'smooth' });
+                     setActiveNav(id); 
+                   }}
+                   className={`text-[9px] font-black tracking-widest uppercase transition-all whitespace-nowrap px-4 py-2 rounded-full ${activeNav === id ? 'text-accent bg-accent/10 border border-accent/20' : 'text-white/30 hover:text-white border border-transparent'}`}
+                 >
+                   {id}
+                 </button>
+               ))}
+            </div>
+            
+            <button
+               onClick={() => setShowReg(true)}
+               className={`px-8 py-3 bg-accent text-black text-[10px] font-black uppercase tracking-widest rounded-full transition-all duration-500 ${scrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+            >
+               Register Now
+            </button>
           </div>
         </nav>
 
