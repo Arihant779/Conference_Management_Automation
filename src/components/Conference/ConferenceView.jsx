@@ -60,7 +60,7 @@ const ConferenceView = ({
   onRequireAuth = null,
   onPendingConsumed = null,
 }) => {
-  const { user } = useApp();
+  const { user, fetchConferences } = useApp();
 
   // 'register' is not a tab — resolve it to 'home' so we never fall into the
   // PaperSubmission branch by accident
@@ -188,6 +188,8 @@ const ConferenceView = ({
     // If template changed, reload to apply new design system
     if (pageData.template && pageData.template !== conf.template) {
       window.location.reload();
+    } else {
+      await fetchConferences();
     }
   };
 

@@ -198,6 +198,21 @@ const ClassicTemplate = ({
     }));
   };
 
+  const [pageData, setPageData] = useState(() => getInitialPageData(initialConf));
+
+  // Sync state if initialConf changes from parent
+  useEffect(() => {
+    setConf(initialConf);
+    setPageData(getInitialPageData(initialConf));
+  }, [initialConf]);
+
+  const handleCancel = () => {
+    setPageData(getInitialPageData(initialConf));
+    setConf(initialConf);
+    setIsEditing(false);
+    setSaveError(null);
+  };
+
   const update = (key, value) => setPageData(p => ({ ...p, [key]: value }));
   const updateNested = (key, index, field, value) => {
     setPageData(p => {
