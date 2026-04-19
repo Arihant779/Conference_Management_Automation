@@ -62,14 +62,14 @@ const HUDCard = ({ children, title, className = '', style = {}, spotlight = true
     >
       {spotlight && (
         <motion.div
-           className="absolute inset-0 z-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-           style={{ background }}
+          className="absolute inset-0 z-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+          style={{ background }}
         />
       )}
-      
+
       {/* HUD Decorators */}
       <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 2, background: `linear-gradient(90deg, ${T.accent}, transparent)` }} />
-      
+
       <div className="relative z-10 p-6">
         {title && (
           <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-2">
@@ -79,7 +79,7 @@ const HUDCard = ({ children, title, className = '', style = {}, spotlight = true
         )}
         {children}
       </div>
-      
+
       <CornerBrackets color={T.accent} size={8} />
     </motion.div>
   );
@@ -109,7 +109,7 @@ const CyberButton = ({ children, onClick, variant = 'primary', className = '' })
       <div className="relative z-10 flex items-center justify-center gap-3">
         {children}
       </div>
-      
+
       {/* Interactive elements */}
       <div className="absolute top-0 left-0 w-2 h-[1px]" style={{ backgroundColor: color }} />
       <div className="absolute top-0 left-0 w-[1px] h-2" style={{ backgroundColor: color }} />
@@ -216,8 +216,14 @@ const TechTemplate = ({
   }, []);
 
   const containerRef = useRef(null);
+  const scrollAreaRef = useRef(null);
+  useEffect(() => { scrollAreaRef.current = document.getElementById('scroll-area'); }, []);
+  const { scrollY } = useScroll({ container: scrollAreaRef });
   const { scrollYProgress } = useScroll({ container: containerRef });
   const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
+
+  const heroY = useTransform(scrollY, [0, 1000], [0, 200]);
+  const heroOpacity = useTransform(scrollY, [0, 800], [1, 0]);
 
   useEffect(() => { if (autoOpenRegister && !isGuest) setShowReg(true); }, [autoOpenRegister, isGuest]);
 
@@ -246,6 +252,7 @@ const TechTemplate = ({
     venue_address: initialConf.venue_address || initialConf.location || 'Silicon Valley, CA',
     venue_description: initialConf.venue_description || 'A state-of-the-art facility designed for high-performance collaboration and technological development.',
     capacity: initialConf.capacity || '1024 Attendees',
+    map_url: initialConf.map_url || '',
     registration_fee_general: initialConf.registration_fee_general || '$499',
     registration_fee_student: initialConf.registration_fee_student || '$99',
     registration_fee_early: initialConf.registration_fee_early || '$299',
@@ -281,13 +288,13 @@ const TechTemplate = ({
   const displayDate = conf.start_date ? `${conf.start_date}${conf.end_date ? ` – ${conf.end_date}` : ''}` : 'Dates to be announced';
 
   return (
-    <div className="min-h-screen text-[#e6edf3] selection:bg-[#f5c51840]" 
-         style={{ background: T.bg, fontFamily: "'JetBrains Mono', monospace", overflow: 'hidden' }}>
-      
+    <div className="min-h-screen text-[#e6edf3] selection:bg-[#f5c51840]"
+      style={{ background: T.bg, fontFamily: "'JetBrains Mono', monospace", overflow: 'hidden' }}>
+
       <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Space+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet" />
-      
+
       <DigitalRain />
-      
+
       <style>{`
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -299,7 +306,7 @@ const TechTemplate = ({
       <AnimatePresence>
         {showReg && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                      className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4">
+            className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4">
             <HUDCard className="w-full max-w-2xl max-h-[90vh] overflow-y-auto" style={{ border: `1px solid ${T.accent}` }}>
               <div className="flex justify-between items-center mb-6">
                 <span className="text-sm font-black text-accent tracking-widest uppercase">// SECURE REGISTRATION</span>
@@ -314,7 +321,7 @@ const TechTemplate = ({
       <AnimatePresence>
         {showScheduleEditor && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                      className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-4 md:p-12">
+            className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-4 md:p-12">
             <HUDCard className="w-full h-full max-w-6xl" style={{ border: `1px solid ${T.primary}` }}>
               <div className="flex justify-between items-center mb-6">
                 <span className="text-sm font-black text-primary tracking-widest uppercase">// SCHEDULE EDITOR</span>
@@ -353,18 +360,25 @@ const TechTemplate = ({
             </div>
           </div>
         )}
-        
+
         {/* ══════════ HERO SECTION ══════════ */}
         <section className="min-h-screen flex flex-col items-center justify-center p-8 relative overflow-hidden">
-          
+
           {(pageData.banner_url || initialConf.banner_url) && (
-            <div className="absolute inset-0 z-0">
-              <img src={pageData.banner_url || initialConf.banner_url} alt="" className="w-full h-full object-cover opacity-10 filter grayscale brightness-50" />
-              <div className="absolute inset-0 bg-gradient-to-t from-bg to-transparent" />
+            <div className="absolute inset-0 z-0 overflow-hidden">
+              <motion.img
+                initial={{ scale: 1.1 }} animate={{ scale: 1 }} transition={{ duration: 2 }}
+                src={pageData.banner_url || initialConf.banner_url}
+                className="w-full h-full object-cover opacity-[0.15] mix-blend-luminosity filter contrast-125"
+                alt=""
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/40 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-primary/5" />
             </div>
           )}
 
-          <motion.div 
+          <motion.div
+            style={{ y: heroY, opacity: heroOpacity }}
             initial={{ opacity: 0, scale: 1.1 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1.5 }}
@@ -372,6 +386,19 @@ const TechTemplate = ({
           >
             <div className="text-center group">
               <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }}>
+                {isEditing && (
+                  <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="mb-10 w-full max-w-lg mx-auto">
+                    <div className="text-[10px] font-black uppercase tracking-[0.4em] text-accent mb-3 flex items-center gap-2">
+                      <Radio size={12} className="animate-pulse" /> // CHANGE_SOURCE_NODE
+                    </div>
+                    <EditableField
+                      value={pageData.banner_url}
+                      onChange={v => update('banner_url', v)}
+                      isEditing={isEditing}
+                      placeholder="Root image URL (Unsplash/Direct)..."
+                    />
+                  </motion.div>
+                )}
                 <div className="inline-flex items-center gap-3 px-4 py-1.5 border border-accent/30 rounded-full bg-accent/5 backdrop-blur-xl mb-8">
                   <Shield size={14} className="text-accent" />
                   <span className="text-[10px] font-black tracking-widest text-accent uppercase leading-none">
@@ -380,7 +407,7 @@ const TechTemplate = ({
                 </div>
               </motion.div>
 
-              <motion.h1 
+              <motion.h1
                 initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.7 }}
                 className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter mb-4 leading-[0.9] text-white"
                 style={{ fontFamily: "'Space Grotesk', sans-serif" }}
@@ -435,12 +462,12 @@ const TechTemplate = ({
               </div>
             ))}
             <div className="hidden lg:flex items-center gap-8">
-               {pageData.tracks.map((t, idx) => (
-                 <div key={idx} className="flex items-center gap-2">
-                    <Hexagon size={10} className="text-primary" />
-                    <span className="text-[9px] font-black text-white/60 tracking-widest uppercase">#{t.toUpperCase().replace(/\s/g, '_')}</span>
-                 </div>
-               ))}
+              {pageData.tracks.map((t, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <Hexagon size={10} className="text-primary" />
+                  <span className="text-[9px] font-black text-white/60 tracking-widest uppercase">#{t.toUpperCase().replace(/\s/g, '_')}</span>
+                </div>
+              ))}
             </div>
           </motion.div>
         </section>
@@ -448,17 +475,17 @@ const TechTemplate = ({
         {/* ── STICKY NAV ── */}
         <nav className={`sticky top-0 z-[100] transition-all duration-300 ${scrolled ? 'py-2 bg-black/80 backdrop-blur-2xl border-b border-accent/20' : 'py-6 bg-transparent border-b border-transparent'}`}>
           <div className="max-w-7xl mx-auto px-8 flex items-center gap-12 overflow-x-auto no-scrollbar">
-             {['about', 'schedule', 'speakers', 'venue', 'sponsors', 'contact'].map(id => (
-               <button key={id} onClick={() => { 
-                   const el = document.getElementById(id);
-                   if (el) el.scrollIntoView({ behavior: 'smooth' });
-                   setActiveNav(id); 
-                 }}
-                 className={`text-[9px] font-black tracking-widest uppercase transition-all whitespace-nowrap px-4 py-2 rounded-full ${activeNav === id ? 'text-accent bg-accent/10 border border-accent/20' : 'text-white/30 hover:text-white border border-transparent'}`}
-               >
-                 {id}
-               </button>
-             ))}
+            {['about', 'schedule', 'speakers', 'venue', 'sponsors', 'contact'].map(id => (
+              <button key={id} onClick={() => {
+                const el = document.getElementById(id);
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+                setActiveNav(id);
+              }}
+                className={`text-[9px] font-black tracking-widest uppercase transition-all whitespace-nowrap px-4 py-2 rounded-full ${activeNav === id ? 'text-accent bg-accent/10 border border-accent/20' : 'text-white/30 hover:text-white border border-transparent'}`}
+              >
+                {id}
+              </button>
+            ))}
           </div>
         </nav>
 
@@ -468,27 +495,27 @@ const TechTemplate = ({
           <section id="about" className="scroll-mt-32">
             <div className="grid lg:grid-cols-12 gap-16 items-start">
               <div className="lg:col-span-12 mb-12">
-                 <div className="flex items-center gap-4 mb-4">
-                    <div className="h-[1px] w-12 bg-accent opacity-30" />
-                    <span className="text-xs font-black tracking-widest text-accent uppercase">// About the Conference</span>
-                 </div>
-                 <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
-                    Event <span className="text-accent">Overview.</span>
-                 </h2>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="h-[1px] w-12 bg-accent opacity-30" />
+                  <span className="text-xs font-black tracking-widest text-accent uppercase">// About the Conference</span>
+                </div>
+                <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
+                  Event <span className="text-accent">Overview.</span>
+                </h2>
               </div>
-              
+
               <div className="lg:col-span-8">
                 <HUDCard spotlight={false} style={{ background: 'transparent', border: 'none', padding: 0 }}>
                   <div className="space-y-8 text-lg text-white/50 leading-relaxed max-w-3xl">
                     <p className="first-letter:text-5xl first-letter:text-accent first-letter:font-black first-letter:mr-3 first-letter:float-left">
-                       {isEditing ? <EditableField value={conf.description} onChange={v => setConf(p => ({ ...p, description: v }))} multiline isEditing /> : conf.description}
+                      {isEditing ? <EditableField value={conf.description} onChange={v => setConf(p => ({ ...p, description: v }))} multiline isEditing /> : conf.description}
                     </p>
                     <div className="pt-4 border-l-2 border-accent/20 pl-8 italic">
-                       {isEditing ? <EditableField value={pageData.about_extra} onChange={v => update('about_extra', v)} multiline isEditing /> : pageData.about_extra}
+                      {isEditing ? <EditableField value={pageData.about_extra} onChange={v => update('about_extra', v)} multiline isEditing /> : pageData.about_extra}
                     </div>
                   </div>
                 </HUDCard>
-                
+
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-16">
                   {[
                     { val: pageData.capacity, label: 'ATTENDEES', color: T.accent },
@@ -505,26 +532,26 @@ const TechTemplate = ({
               </div>
 
               <div className="lg:col-span-4">
-                 <HUDCard title="Registration Fees">
-                    <div className="space-y-6">
-                       {[
-                         { label: 'STANDARD RATE', key: 'registration_fee_general', color: T.text },
-                         { label: 'STUDENT RATE', key: 'registration_fee_student', color: T.primary },
-                         { label: 'EARLY BIRD', key: 'registration_fee_early', color: T.accent },
-                       ].map(({ label, key, color }) => (
-                         <div key={key} className="flex justify-between items-end gap-4">
-                            <span className="text-[10px] font-black text-white/40 tracking-widest uppercase">{label}</span>
-                            <div className="flex-1 border-b border-white/10 border-dotted mb-1.5" />
-                            <span className="text-xl font-black" style={{ color }}>
-                              {isEditing ? <EditableField value={pageData[key]} onChange={v => update(key, v)} isEditing /> : pageData[key]}
-                            </span>
-                         </div>
-                       ))}
-                    </div>
-                    <CyberButton onClick={handleRegisterClick} className="w-full mt-10">
-                       Register Now
-                    </CyberButton>
-                 </HUDCard>
+                <HUDCard title="Registration Fees">
+                  <div className="space-y-6">
+                    {[
+                      { label: 'STANDARD RATE', key: 'registration_fee_general', color: T.text },
+                      { label: 'STUDENT RATE', key: 'registration_fee_student', color: T.primary },
+                      { label: 'EARLY BIRD', key: 'registration_fee_early', color: T.accent },
+                    ].map(({ label, key, color }) => (
+                      <div key={key} className="flex justify-between items-end gap-4">
+                        <span className="text-[10px] font-black text-white/40 tracking-widest uppercase">{label}</span>
+                        <div className="flex-1 border-b border-white/10 border-dotted mb-1.5" />
+                        <span className="text-xl font-black" style={{ color }}>
+                          {isEditing ? <EditableField value={pageData[key]} onChange={v => update(key, v)} isEditing /> : pageData[key]}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <CyberButton onClick={handleRegisterClick} className="w-full mt-10">
+                    Register Now
+                  </CyberButton>
+                </HUDCard>
               </div>
             </div>
           </section>
@@ -532,58 +559,58 @@ const TechTemplate = ({
           {/* ══════════ SCHEDULE ══════════ */}
           <section id="schedule" className="scroll-mt-32">
             <div className="flex items-center justify-between mb-16">
-               <div>
-                  <div className="flex items-center gap-4 mb-4">
-                      <div className="h-[1px] w-12 bg-accent opacity-30" />
-                      <span className="text-xs font-black tracking-widest text-accent uppercase">// Event Program</span>
-                  </div>
-                  <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
-                      Conference <span className="text-accent">Schedule.</span>
-                  </h2>
-               </div>
-               {canEditSchedule && (
-                 <CyberButton onClick={() => setShowScheduleEditor(true)} variant="secondary" className="px-4 py-2">
-                    Modify Schedule
-                 </CyberButton>
-               )}
+              <div>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="h-[1px] w-12 bg-accent opacity-30" />
+                  <span className="text-xs font-black tracking-widest text-accent uppercase">// Event Program</span>
+                </div>
+                <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
+                  Conference <span className="text-accent">Schedule.</span>
+                </h2>
+              </div>
+              {canEditSchedule && (
+                <CyberButton onClick={() => setShowScheduleEditor(true)} variant="secondary" className="px-4 py-2">
+                  Modify Schedule
+                </CyberButton>
+              )}
             </div>
 
             {pageData.schedule.length > 0 ? (
               <div className="grid lg:grid-cols-12 gap-12">
-                 <div className="lg:col-span-3 space-y-2">
-                    {pageData.schedule.map((day, di) => (
-                      <button key={di} onClick={() => setScheduleDay(di)}
-                        className={`w-full p-6 text-left border rounded-xl transition-all ${scheduleDay === di ? 'bg-accent/10 border-accent text-accent' : 'bg-white/5 border-white/5 text-white/40 hover:bg-white/10'}`}
-                      >
-                         <div className="text-[8px] font-black uppercase tracking-widest mb-1">Day 0{di+1}</div>
-                         <div className="text-lg font-black">{day.date}</div>
-                      </button>
-                    ))}
-                 </div>
-                 <div className="lg:col-span-9 space-y-4">
-                    {pageData.schedule[scheduleDay]?.sessions.map((session, si) => (
-                        <HUDCard key={si} spotlight={false} className="hover:border-accent/40 transition-all">
-                           <div className="flex flex-col md:flex-row md:items-center gap-8">
-                              <div className="md:w-32 flex-shrink-0">
-                                 <div className="text-[9px] font-black text-white/20 mb-1 uppercase tracking-widest">Start Time</div>
-                                 <div className="text-xl font-black text-accent">{session.time}</div>
-                              </div>
-                              <div className="flex-1">
-                                 <div className="flex items-center gap-3 mb-2">
-                                    <span className="px-2 py-0.5 text-[8px] font-black tracking-widest border border-white/10 text-white/40 uppercase">{session.type}</span>
-                                    {session.speaker && <span className="text-[9px] font-black text-white/60 tracking-widest uppercase">/ Speaker: {session.speaker}</span>}
-                                 </div>
-                                 <h4 className="text-2xl font-black text-white uppercase tracking-tight">{session.title}</h4>
-                              </div>
-                              <CornerBrackets size={4} color="rgba(255,255,255,0.1)" />
-                           </div>
-                        </HUDCard>
-                    ))}
-                 </div>
+                <div className="lg:col-span-3 space-y-2">
+                  {pageData.schedule.map((day, di) => (
+                    <button key={di} onClick={() => setScheduleDay(di)}
+                      className={`w-full p-6 text-left border rounded-xl transition-all ${scheduleDay === di ? 'bg-accent/10 border-accent text-accent' : 'bg-white/5 border-white/5 text-white/40 hover:bg-white/10'}`}
+                    >
+                      <div className="text-[8px] font-black uppercase tracking-widest mb-1">Day 0{di + 1}</div>
+                      <div className="text-lg font-black">{day.date}</div>
+                    </button>
+                  ))}
+                </div>
+                <div className="lg:col-span-9 space-y-4">
+                  {pageData.schedule[scheduleDay]?.sessions.map((session, si) => (
+                    <HUDCard key={si} spotlight={false} className="hover:border-accent/40 transition-all">
+                      <div className="flex flex-col md:flex-row md:items-center gap-8">
+                        <div className="md:w-32 flex-shrink-0">
+                          <div className="text-[9px] font-black text-white/20 mb-1 uppercase tracking-widest">Start Time</div>
+                          <div className="text-xl font-black text-accent">{session.time}</div>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <span className="px-2 py-0.5 text-[8px] font-black tracking-widest border border-white/10 text-white/40 uppercase">{session.type}</span>
+                            {session.speaker && <span className="text-[9px] font-black text-white/60 tracking-widest uppercase">/ Speaker: {session.speaker}</span>}
+                          </div>
+                          <h4 className="text-2xl font-black text-white uppercase tracking-tight">{session.title}</h4>
+                        </div>
+                        <CornerBrackets size={4} color="rgba(255,255,255,0.1)" />
+                      </div>
+                    </HUDCard>
+                  ))}
+                </div>
               </div>
             ) : (
               <HUDCard className="text-center py-24 border-dashed opacity-40">
-                 <div className="text-xs font-black tracking-widest uppercase">// Schedule updates coming soon</div>
+                <div className="text-xs font-black tracking-widest uppercase">// Schedule updates coming soon</div>
               </HUDCard>
             )}
           </section>
@@ -591,226 +618,275 @@ const TechTemplate = ({
           {/* ══════════ SPEAKERS ══════════ */}
           <section id="speakers" className="scroll-mt-32">
             <div className="mb-16">
-               <div className="flex items-center gap-4 mb-4">
-                  <div className="h-[1px] w-12 bg-accent opacity-30" />
-                  <span className="text-xs font-black tracking-widest text-accent uppercase">// Experts & Visionaries</span>
-               </div>
-               <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
-                  Distinguished <span className="text-accent">Speakers.</span>
-               </h2>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="h-[1px] w-12 bg-accent opacity-30" />
+                <span className="text-xs font-black tracking-widest text-accent uppercase">// Experts & Visionaries</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
+                Distinguished <span className="text-accent">Speakers.</span>
+              </h2>
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-               {pageData.speakers.map((sp, i) => (
-                 <HUDCard key={i} className="group flex flex-col h-full">
-                    {isEditing && (
-                      <button onClick={() => update('speakers', pageData.speakers.filter((_, idx) => idx !== i))}
-                              className="absolute top-4 right-4 z-20 text-secondary hover:underline text-[9px] font-black uppercase">Remove</button>
+              {pageData.speakers.map((sp, i) => (
+                <HUDCard key={i} className="group flex flex-col h-full">
+                  {isEditing && (
+                    <button onClick={() => update('speakers', pageData.speakers.filter((_, idx) => idx !== i))}
+                      className="absolute top-4 right-4 z-20 text-secondary hover:underline text-[9px] font-black uppercase">Remove</button>
+                  )}
+                  <div className="relative mb-8 aspect-video overflow-hidden rounded-lg bg-black/40 border border-white/5">
+                    {sp.img ? (
+                      <img
+                        src={sp.img}
+                        alt={sp.name}
+                        className={`w-full h-full object-cover transition-all duration-700 ${!isEditing ? 'grayscale brightness-75 group-hover:grayscale-0 group-hover:scale-110' : 'opacity-40'}`}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Cpu size={48} className="text-white/5" />
+                      </div>
                     )}
-                    <div className="relative mb-8 aspect-video overflow-hidden rounded-lg bg-black/40">
-                        {sp.img && !isEditing ? (
-                          <img src={sp.img} alt={sp.name} className="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center border border-white/5">
-                             <Cpu size={48} className="text-white/5" />
+
+                    {isEditing && (
+                      <div className="absolute inset-0 z-30 flex flex-col items-center justify-center p-6 bg-black/60 backdrop-blur-md border border-accent/30 rounded-lg">
+                        <div className="w-full space-y-3">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Zap size={10} className="text-accent animate-pulse" />
+                            <span className="text-[8px] font-black tracking-[0.3em] text-accent uppercase">Img Path Config</span>
                           </div>
-                        )}
+                          <EditableField
+                            value={sp.img}
+                            onChange={v => updateNested('speakers', i, 'img', v)}
+                            isEditing={isEditing}
+                            placeholder="Root image link..."
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1 space-y-4">
+                    <div>
+                      <span className="text-[10px] font-black text-accent tracking-widest uppercase mb-1 block">
+                        {isEditing ? <EditableField value={sp.role} onChange={v => updateNested('speakers', i, 'role', v)} isEditing /> : sp.role}
+                      </span>
+                      <h4 className="text-3xl font-black text-white uppercase tracking-tighter">
+                        {isEditing ? <EditableField value={sp.name} onChange={v => updateNested('speakers', i, 'name', v)} isEditing /> : sp.name}
+                      </h4>
+                      <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest mt-1 block">
+                        @ {isEditing ? <EditableField value={sp.org} onChange={v => updateNested('speakers', i, 'org', v)} isEditing /> : sp.org}
+                      </span>
                     </div>
-                    
-                    <div className="flex-1 space-y-4">
-                       <div>
-                          <span className="text-[10px] font-black text-accent tracking-widest uppercase mb-1 block">
-                            {isEditing ? <EditableField value={sp.role} onChange={v => updateNested('speakers', i, 'role', v)} isEditing /> : sp.role}
-                          </span>
-                          <h4 className="text-3xl font-black text-white uppercase tracking-tighter">
-                            {isEditing ? <EditableField value={sp.name} onChange={v => updateNested('speakers', i, 'name', v)} isEditing /> : sp.name}
-                          </h4>
-                          <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest mt-1 block">
-                             @ {isEditing ? <EditableField value={sp.org} onChange={v => updateNested('speakers', i, 'org', v)} isEditing /> : sp.org}
-                          </span>
-                       </div>
-                       <p className="text-sm text-white/40 leading-relaxed font-light line-clamp-4 italic">
-                          {isEditing ? <EditableField value={sp.bio} onChange={v => updateNested('speakers', i, 'bio', v)} multiline isEditing /> : `"${sp.bio}"`}
-                       </p>
-                    </div>
-                 </HUDCard>
-               ))}
-               {isEditing && (
-                 <button onClick={() => update('speakers', [...pageData.speakers, { name: 'New Speaker', role: 'Role', org: 'Entity', img: '', bio: 'Bio information coming soon...' }])}
-                   className="h-full min-h-[400px] border-2 border-dashed border-white/5 rounded-2xl flex flex-col items-center justify-center gap-4 text-white/20 hover:text-accent hover:border-accent/40 transition-all"
-                 >
-                    <Plus size={32} />
-                    <span className="text-[10px] font-black tracking-widest uppercase">Add Speaker</span>
-                 </button>
-               )}
+                    <p className="text-sm text-white/40 leading-relaxed font-light line-clamp-4 italic">
+                      {isEditing ? <EditableField value={sp.bio} onChange={v => updateNested('speakers', i, 'bio', v)} multiline isEditing /> : `"${sp.bio}"`}
+                    </p>
+                  </div>
+                </HUDCard>
+              ))}
+              {isEditing && (
+                <button onClick={() => update('speakers', [...pageData.speakers, { name: 'New Speaker', role: 'Role', org: 'Entity', img: '', bio: 'Bio information coming soon...' }])}
+                  className="h-full min-h-[400px] border-2 border-dashed border-white/5 rounded-2xl flex flex-col items-center justify-center gap-4 text-white/20 hover:text-accent hover:border-accent/40 transition-all"
+                >
+                  <Plus size={32} />
+                  <span className="text-[10px] font-black tracking-widest uppercase">Add Speaker</span>
+                </button>
+              )}
             </div>
           </section>
 
           {/* ══════════ VENUE ══════════ */}
           <section id="venue" className="scroll-mt-32">
-             <HUDCard className="overflow-hidden">
-                <div className="grid lg:grid-cols-2 gap-0 overflow-hidden">
-                   <div className="p-12 space-y-8">
-                      <div>
-                         <div className="flex items-center gap-4 mb-4">
-                            <div className="h-[1px] w-12 bg-accent opacity-30" />
-                            <span className="text-xs font-black tracking-widest text-accent uppercase">// Venue Information</span>
-                         </div>
-                         <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
-                             The <span className="text-accent">Location.</span>
-                         </h2>
+            <HUDCard className="overflow-hidden">
+              <div className="grid lg:grid-cols-2 gap-0 overflow-hidden">
+                <div className="p-12 space-y-8">
+                  <div>
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="h-[1px] w-12 bg-accent opacity-30" />
+                      <span className="text-xs font-black tracking-widest text-accent uppercase">// Venue Information</span>
+                    </div>
+                    <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
+                      The <span className="text-accent">Location.</span>
+                    </h2>
+                  </div>
+                  <div className="space-y-6">
+                    <div>
+                      <span className="text-[9px] font-black text-white/20 tracking-widest uppercase mb-1 block">Venue Name</span>
+                      <h3 className="text-2xl font-black text-white">
+                        {isEditing ? <EditableField value={pageData.venue_name} onChange={v => update('venue_name', v)} isEditing /> : pageData.venue_name}
+                      </h3>
+                    </div>
+                    <div>
+                      <span className="text-[9px] font-black text-white/20 tracking-widest uppercase mb-1 block">Address</span>
+                      <div className="text-lg font-bold text-accent flex items-center gap-3">
+                        <MapPin size={18} />
+                        {isEditing ? <EditableField value={pageData.venue_address} onChange={v => update('venue_address', v)} isEditing /> : pageData.venue_address}
                       </div>
-                      <div className="space-y-6">
-                         <div>
-                            <span className="text-[9px] font-black text-white/20 tracking-widest uppercase mb-1 block">Venue Name</span>
-                            <h3 className="text-2xl font-black text-white">
-                                {isEditing ? <EditableField value={pageData.venue_name} onChange={v => update('venue_name', v)} isEditing /> : pageData.venue_name}
-                            </h3>
-                         </div>
-                         <div>
-                            <span className="text-[9px] font-black text-white/20 tracking-widest uppercase mb-1 block">Address</span>
-                            <div className="text-lg font-bold text-accent flex items-center gap-3">
-                               <MapPin size={18} />
-                               {isEditing ? <EditableField value={pageData.venue_address} onChange={v => update('venue_address', v)} isEditing /> : pageData.venue_address}
-                            </div>
-                         </div>
-                         <p className="text-white/40 leading-relaxed font-light italic">
-                             {isEditing ? <EditableField value={pageData.venue_description} onChange={v => update('venue_description', v)} multiline isEditing /> : pageData.venue_description}
-                         </p>
-                         <CyberButton variant="secondary" onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pageData.venue_address)}`, '_blank')}>Open in Maps</CyberButton>
+                    </div>
+                    <p className="text-white/40 leading-relaxed font-light italic">
+                      {isEditing ? <EditableField value={pageData.venue_description} onChange={v => update('venue_description', v)} multiline isEditing /> : pageData.venue_description}
+                    </p>
+                    {isEditing && (
+                      <div className="space-y-2 py-4 border-t border-white/5">
+                        <span className="text-[9px] font-black text-accent uppercase tracking-widest block">Custom Map Portal URL</span>
+                        <EditableField
+                          value={pageData.map_url}
+                          onChange={v => update('map_url', v)}
+                          isEditing={isEditing}
+                          placeholder="Paste Google Maps iframe/link here..."
+                        />
                       </div>
-                   </div>
-                   <div className="bg-white/5 relative flex items-center justify-center overflow-hidden min-h-[400px]">
-                       <Activity size={120} className="text-accent opacity-10 absolute animate-pulse" />
-                       <div className="absolute top-4 left-4 text-[8px] font-black text-white/20 tracking-widest uppercase">Live Location View</div>
-                       <div className="z-10 text-center space-y-4">
-                          <code className="text-accent text-sm opacity-60 block bg-black/40 p-4 border border-white/5">
-                             LOCATION: {pageData.venue_name.toUpperCase()}<br/>
-                             STATUS: VERIFIED
-                          </code>
-                       </div>
-                   </div>
+                    )}
+
+                    <CyberButton
+                      variant="secondary"
+                      onClick={() => window.open(pageData.map_url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pageData.venue_address)}`, '_blank')}
+                    >
+                      {pageData.map_url ? 'Initialize Navigation' : 'Open in Maps'}
+                    </CyberButton>
+                  </div>
                 </div>
-             </HUDCard>
+                <div className="bg-white/5 relative overflow-hidden min-h-[400px] border-l border-white/5">
+                  {/* Real Google Map with Terminal Styling */}
+                  <iframe
+                    title="Tech Venue Map"
+                    width="100%"
+                    height="100%"
+                    frameBorder="0"
+                    style={{
+                      border: 0,
+                      filter: 'grayscale(1) invert(0.8) contrast(1.5) brightness(0.7)',
+                      mixBlendMode: 'screen'
+                    }}
+                    src={pageData.map_url && pageData.map_url.includes('google.com/maps/embed')
+                      ? pageData.map_url
+                      : `https://maps.google.com/maps?q=${encodeURIComponent(pageData.venue_address)}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
+                    allowFullScreen
+                    className="absolute inset-0"
+                  />
+                  <div className="absolute inset-0 bg-accent/5 pointer-events-none" />
+                  <div className="absolute top-4 left-4 text-[8px] font-black text-white/20 tracking-widest uppercase z-10 bg-black/60 px-2 py-1 backdrop-blur-sm border border-white/5">Local Scan: {pageData.venue_name.toUpperCase()}</div>
+                </div>
+              </div>
+            </HUDCard>
           </section>
 
-           {/* ══════════ SPONSORS ══════════ */}
-           <section id="sponsors" className="scroll-mt-32">
-             <div className="mb-16">
+          {/* ══════════ SPONSORS ══════════ */}
+          <section id="sponsors" className="scroll-mt-32">
+            <div className="mb-16">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="h-[1px] w-12 bg-accent opacity-30" />
+                <span className="text-xs font-black tracking-widest text-accent uppercase">// Supporting Partners</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
+                Official <span className="text-accent">Sponsors.</span>
+              </h2>
+            </div>
+
+            <div className="space-y-12">
+              {['platinum', 'gold', 'silver'].map(tier => {
+                const tierSponsors = pageData.sponsors.filter(s => s.tier === tier);
+                if (!tierSponsors.length && !isEditing) return null;
+                return (
+                  <div key={tier}>
+                    <span className="text-[10px] font-black text-white/30 tracking-widest uppercase mb-6 block">{tier.toUpperCase()} PARTNERS</span>
+                    <div className="flex flex-wrap gap-6">
+                      {tierSponsors.map((sp, idx) => {
+                        const gi = pageData.sponsors.indexOf(sp);
+                        return (
+                          <HUDCard key={idx} className="relative group !p-6" spotlight={false}>
+                            {isEditing && (
+                              <button onClick={() => update('sponsors', pageData.sponsors.filter((_, i) => i !== gi))}
+                                className="absolute -top-2 -right-2 z-10 p-1 bg-secondary text-white rounded-full"><X size={8} /></button>
+                            )}
+                            <span className="text-xl font-black text-white group-hover:text-accent transition-colors">
+                              {isEditing ? <EditableField value={sp.name} onChange={v => updateNested('sponsors', gi, 'name', v)} isEditing /> : sp.name}
+                            </span>
+                          </HUDCard>
+                        )
+                      })}
+                      {isEditing && (
+                        <button onClick={() => update('sponsors', [...pageData.sponsors, { name: 'New Sponsor', tier }])}
+                          className="px-8 py-4 border border-dashed border-white/10 text-accent/60 text-[10px] font-bold tracking-widest hover:border-accent hover:text-accent transition-all">
+                          + ADD SPONSOR
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+
+          {/* ══════════ CONTACT ══════════ */}
+          <section id="contact" className="scroll-mt-32">
+            <div className="grid lg:grid-cols-12 gap-16">
+              <div className="lg:col-span-12">
                 <div className="flex items-center gap-4 mb-4">
-                   <div className="h-[1px] w-12 bg-accent opacity-30" />
-                   <span className="text-xs font-black tracking-widest text-accent uppercase">// Supporting Partners</span>
+                  <div className="h-[1px] w-12 bg-accent opacity-30" />
+                  <span className="text-xs font-black tracking-widest text-accent uppercase">// Get in Touch</span>
                 </div>
                 <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
-                   Official <span className="text-accent">Sponsors.</span>
+                  Contact <span className="text-accent">Us.</span>
                 </h2>
-             </div>
-             
-             <div className="space-y-12">
-                {['platinum', 'gold', 'silver'].map(tier => {
-                   const tierSponsors = pageData.sponsors.filter(s => s.tier === tier);
-                   if (!tierSponsors.length && !isEditing) return null;
-                   return (
-                     <div key={tier}>
-                       <span className="text-[10px] font-black text-white/30 tracking-widest uppercase mb-6 block">{tier.toUpperCase()} PARTNERS</span>
-                       <div className="flex flex-wrap gap-6">
-                          {tierSponsors.map((sp, idx) => {
-                             const gi = pageData.sponsors.indexOf(sp);
-                             return (
-                               <HUDCard key={idx} className="relative group !p-6" spotlight={false}>
-                                  {isEditing && (
-                                    <button onClick={() => update('sponsors', pageData.sponsors.filter((_, i) => i !== gi))}
-                                            className="absolute -top-2 -right-2 z-10 p-1 bg-secondary text-white rounded-full"><X size={8} /></button>
-                                  )}
-                                  <span className="text-xl font-black text-white group-hover:text-accent transition-colors">
-                                     {isEditing ? <EditableField value={sp.name} onChange={v => updateNested('sponsors', gi, 'name', v)} isEditing /> : sp.name}
-                                  </span>
-                               </HUDCard>
-                             )
-                          })}
-                          {isEditing && (
-                             <button onClick={() => update('sponsors', [...pageData.sponsors, { name: 'New Sponsor', tier }])}
-                                     className="px-8 py-4 border border-dashed border-white/10 text-accent/60 text-[10px] font-bold tracking-widest hover:border-accent hover:text-accent transition-all">
-                                + ADD SPONSOR
-                             </button>
-                          )}
-                       </div>
-                     </div>
-                   )
-                })}
-             </div>
-           </section>
+              </div>
 
-           {/* ══════════ CONTACT ══════════ */}
-          <section id="contact" className="scroll-mt-32">
-             <div className="grid lg:grid-cols-12 gap-16">
-                <div className="lg:col-span-12">
-                   <div className="flex items-center gap-4 mb-4">
-                      <div className="h-[1px] w-12 bg-accent opacity-30" />
-                      <span className="text-xs font-black tracking-widest text-accent uppercase">// Get in Touch</span>
-                   </div>
-                   <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
-                      Contact <span className="text-accent">Us.</span>
-                   </h2>
-                </div>
-                
-                <div className="lg:col-span-5 space-y-4">
-                   {[
-                     { label: 'EMAIL ADDRESS', key: 'contact_email', icon: Mail },
-                     { label: 'WEBSITE', key: 'website', icon: Globe },
-                     { label: 'TWITTER / X', key: 'twitter', icon: Twitter },
-                     { label: 'LINKEDIN', key: 'linkedin', icon: Linkedin },
-                   ].map(({ label, key, icon: Icon }) => (
-                     <HUDCard key={key} className="p-4" spotlight={false}>
-                        <div className="flex items-center gap-6">
-                           <div className="w-12 h-12 bg-accent/10 rounded flex items-center justify-center text-accent">
-                              <Icon size={20} />
-                           </div>
-                           <div>
-                              <div className="text-[10px] font-black text-white/20 tracking-widest uppercase">{label}</div>
-                              <div className="text-lg font-bold text-white truncate w-48 md:w-64">
-                                {isEditing ? <EditableField value={pageData[key]} onChange={v => update(key, v)} isEditing /> : pageData[key] || '---'}
-                              </div>
-                           </div>
+              <div className="lg:col-span-5 space-y-4">
+                {[
+                  { label: 'EMAIL ADDRESS', key: 'contact_email', icon: Mail },
+                  { label: 'WEBSITE', key: 'website', icon: Globe },
+                  { label: 'TWITTER / X', key: 'twitter', icon: Twitter },
+                  { label: 'LINKEDIN', key: 'linkedin', icon: Linkedin },
+                ].map(({ label, key, icon: Icon }) => (
+                  <HUDCard key={key} className="p-4" spotlight={false}>
+                    <div className="flex items-center gap-6">
+                      <div className="w-12 h-12 bg-accent/10 rounded flex items-center justify-center text-accent">
+                        <Icon size={20} />
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-black text-white/20 tracking-widest uppercase">{label}</div>
+                        <div className="text-lg font-bold text-white truncate w-48 md:w-64">
+                          {isEditing ? <EditableField value={pageData[key]} onChange={v => update(key, v)} isEditing /> : pageData[key] || '---'}
                         </div>
-                     </HUDCard>
-                   ))}
-                </div>
-                <div className="lg:col-span-7">
-                   <HUDCard title="Send a Message">
-                      <div className="grid md:grid-cols-2 gap-6 mb-6">
-                         <div className="space-y-2">
-                            <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Full Name</span>
-                            <input placeholder="Enter name" className="w-full bg-white/5 border border-white/10 p-4 text-xs font-bold text-white outline-none focus:border-accent transition-all" />
-                         </div>
-                         <div className="space-y-2">
-                           <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Email Address</span>
-                           <input placeholder="Enter email" className="w-full bg-white/5 border border-white/10 p-4 text-xs font-bold text-white outline-none focus:border-accent transition-all" />
-                         </div>
                       </div>
-                      <div className="space-y-2 mb-8">
-                         <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Message</span>
-                         <textarea placeholder="Your inquiries..." rows={4} className="w-full bg-white/5 border border-white/10 p-4 text-xs font-bold text-white outline-none focus:border-accent transition-all resize-none" />
-                      </div>
-                      <CyberButton className="w-full">Submit Message</CyberButton>
-                   </HUDCard>
-                </div>
-             </div>
+                    </div>
+                  </HUDCard>
+                ))}
+              </div>
+              <div className="lg:col-span-7">
+                <HUDCard title="Send a Message">
+                  <div className="grid md:grid-cols-2 gap-6 mb-6">
+                    <div className="space-y-2">
+                      <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Full Name</span>
+                      <input placeholder="Enter name" className="w-full bg-white/5 border border-white/10 p-4 text-xs font-bold text-white outline-none focus:border-accent transition-all" />
+                    </div>
+                    <div className="space-y-2">
+                      <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Email Address</span>
+                      <input placeholder="Enter email" className="w-full bg-white/5 border border-white/10 p-4 text-xs font-bold text-white outline-none focus:border-accent transition-all" />
+                    </div>
+                  </div>
+                  <div className="space-y-2 mb-8">
+                    <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Message</span>
+                    <textarea placeholder="Your inquiries..." rows={4} className="w-full bg-white/5 border border-white/10 p-4 text-xs font-bold text-white outline-none focus:border-accent transition-all resize-none" />
+                  </div>
+                  <CyberButton className="w-full">Submit Message</CyberButton>
+                </HUDCard>
+              </div>
+            </div>
           </section>
         </main>
 
         <footer className="p-24 border-t border-white/5 bg-black/40">
-           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-12 text-center md:text-left">
-              <div>
-                 <h2 className="text-4xl font-black text-white uppercase tracking-tighter mb-2">{displayName}</h2>
-                 <span className="text-[10px] font-black text-accent tracking-[0.4em] uppercase">// ADVANCING INNOVATION TOGETHER</span>
-              </div>
-              <div className="flex items-center gap-12 text-[10px] font-black text-white/20 tracking-widest uppercase">
-                 <span>© {new Date().getFullYear()} TECH SUMMIT</span>
-                 <div className="w-px h-4 bg-white/10" />
-                 <span>PORTAL ACTIVE</span>
-              </div>
-           </div>
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-12 text-center md:text-left">
+            <div>
+              <h2 className="text-4xl font-black text-white uppercase tracking-tighter mb-2">{displayName}</h2>
+              <span className="text-[10px] font-black text-accent tracking-[0.4em] uppercase">// ADVANCING INNOVATION TOGETHER</span>
+            </div>
+            <div className="flex items-center gap-12 text-[10px] font-black text-white/20 tracking-widest uppercase">
+              <span>© {new Date().getFullYear()} TECH SUMMIT</span>
+              <div className="w-px h-4 bg-white/10" />
+              <span>PORTAL ACTIVE</span>
+            </div>
+          </div>
         </footer>
       </div>
     </div>
