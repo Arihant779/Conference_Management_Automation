@@ -2,6 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowRight, Share2, Check, LogIn, Star } from 'lucide-react';
 import ModernTemplate from './Templates/ModernTemplate';
 import ClassicTemplate from './Templates/ClassicTemplate';
+import TechTemplate from './Templates/TechTemplate';
+import BusinessTemplate from './Templates/BusinessTemplate';
+import CreativeTemplate from './Templates/CreativeTemplate';
 import RoleBasedDashboard from '../Dashboard/RoleBasedDashboard';
 import PaperSubmission from './Templates/PaperSubmission';
 import ConferenceRegistration from './ConferenceRegistration';
@@ -15,13 +18,13 @@ const ROLE_LABELS = {
   organizer: 'Organizer',
   logistics_head: 'Logistics Team Lead',
   outreach_head: 'Outreach Team Lead',
-  technical_head: 'Reviewing Team Head',
+  technical_head: 'Technical Team Lead',
   registration_head: 'Registration Team Head',
   sponsorship_head: 'Sponsorship Team Head',
   hospitality_head: 'Hospitality Team Lead',
   publication_head: 'Publications Team Lead',
   finance_head: 'Finance Team Lead',
-  program_coord: 'Program Coordinator',
+  program_coord: 'Reviewing Team',
   social_coord: 'Social Media Coordinator',
   volunteer_coord: 'Volunteer Coordinator',
   design_lead: 'Design Lead',
@@ -57,7 +60,7 @@ const ConferenceView = ({
   onRequireAuth = null,
   onPendingConsumed = null,
 }) => {
-  const { user } = useApp();
+  const { user, fetchConferences } = useApp();
 
   // 'register' is not a tab — resolve it to 'home' so we never fall into the
   // PaperSubmission branch by accident
@@ -185,6 +188,8 @@ const ConferenceView = ({
     // If template changed, reload to apply new design system
     if (pageData.template && pageData.template !== conf.template) {
       window.location.reload();
+    } else {
+      await fetchConferences();
     }
   };
 
@@ -326,7 +331,13 @@ const ConferenceView = ({
         {viewMode === 'home' ? (
           conf.template === 'classic'
             ? <ClassicTemplate {...templateProps} />
-            : <ModernTemplate {...templateProps} />
+            : conf.template === 'tech'
+              ? <TechTemplate {...templateProps} />
+              : conf.template === 'business'
+                ? <BusinessTemplate {...templateProps} />
+                : conf.template === 'creative'
+                  ? <CreativeTemplate {...templateProps} />
+                  : <ModernTemplate {...templateProps} />
         ) : viewMode === 'dashboard' ? (
           <RoleBasedDashboard conf={conf} role={resolvedRole} onBack={onBack} onSwitchView={handleTabClick} />
         ) : viewMode === 'submitPaper' ? (

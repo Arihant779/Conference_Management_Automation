@@ -21,7 +21,7 @@ const ChatSection = ({
   }, [showLeaderHub, activeChatTeamId, visibleTeams, setActiveChatTeamId]);
 
   return (
-    <AnimatedSection className="flex flex-col h-full gap-4 overflow-hidden">
+    <AnimatedSection className="flex flex-col flex-1 min-h-0 gap-4 overflow-hidden">
       {/* Chat Type Selector */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 shrink-0 custom-scrollbar whitespace-nowrap">
         <div

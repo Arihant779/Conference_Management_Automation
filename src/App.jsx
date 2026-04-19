@@ -33,7 +33,7 @@ const INTENT_KEY = 'confmanager_initial_view';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const App = () => {
-  const { user, setUser, setActiveConfId } = useApp();
+  const { user, setUser, conferences, activeConfId, setActiveConfId } = useApp();
   const [view, setView] = useState('dashboard');
   const [selectedConf, setSelectedConf] = useState(null);
   const [initialView, setInitialView] = useState('home');
@@ -156,6 +156,19 @@ const App = () => {
       setPrevUser(null);
     }
   }, [user, loading]);
+
+  // ── Sync local selectedConf with global conferences list ──────────────
+  useEffect(() => {
+    if (activeConfId && conferences.length > 0) {
+      const updated = conferences.find(c => (c.conference_id ?? c.id) === activeConfId);
+      console.log('[App Sync] Found updated conf:', updated?.title, 'Published:', updated?.is_published);
+      if (updated && JSON.stringify(updated) !== JSON.stringify(selectedConf)) {
+        console.log('[App Sync] Updating selectedConf state');
+        setSelectedConf(updated);
+      }
+    }
+  }, [conferences, activeConfId, selectedConf]);
+
 
   if (loading) {
     return (

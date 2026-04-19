@@ -18,7 +18,7 @@ const REGISTRATION_TYPES = [
     fallback: '$299',
     icon: Users,
     description: 'Full access to all sessions, workshops, and networking events.',
-    accent: 'indigo',
+    accent: 'amber',
   },
   {
     id: 'student',
@@ -48,7 +48,7 @@ const STEPS = ['Your Details', 'Affiliation', 'Preferences', 'Review & Pay'];
 /* ─── field primitives ───────────────────────────────── */
 const Label = ({ children, required }) => (
   <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-    {children}{required && <span className="text-indigo-400 ml-0.5">*</span>}
+    {children}{required && <span className="text-amber-400 ml-0.5">*</span>}
   </label>
 );
 
@@ -65,7 +65,7 @@ const Input = ({ icon: Icon, error, className, ...props }) => (
         Icon && 'pl-9',
         error
           ? 'border-red-500/50 focus:border-red-500'
-          : 'border-white/10 focus:border-indigo-500/70 focus:bg-white/10',
+          : 'border-white/10 focus:border-amber-500/70 focus:bg-white/10',
         className,
       )}
     />
@@ -82,7 +82,7 @@ const Select = ({ icon: Icon, children, error, ...props }) => (
         'w-full bg-[#0d1117] border rounded-xl px-4 py-3 text-sm text-white',
         'outline-none transition-all appearance-none cursor-pointer',
         Icon && 'pl-9',
-        error ? 'border-red-500/50' : 'border-white/10 focus:border-indigo-500/70',
+        error ? 'border-red-500/50' : 'border-white/10 focus:border-amber-500/70',
       )}
     >
       {children}
@@ -98,7 +98,7 @@ const Textarea = ({ error, ...props }) => (
       className={cls(
         'w-full bg-white/5 border rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600',
         'outline-none resize-none transition-all',
-        error ? 'border-red-500/50' : 'border-white/10 focus:border-indigo-500/70 focus:bg-white/10',
+        error ? 'border-red-500/50' : 'border-white/10 focus:border-amber-500/70 focus:bg-white/10',
       )}
     />
     {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
@@ -116,15 +116,15 @@ const StepBar = ({ current }) => (
           <div className="flex flex-col items-center gap-1.5 shrink-0">
             <div className={cls(
               'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all',
-              done ? 'bg-indigo-600 border-indigo-600 text-white'
-                : active ? 'bg-transparent border-indigo-500 text-indigo-400'
+              done ? 'bg-amber-600 border-amber-600 text-white'
+                : active ? 'bg-transparent border-amber-500 text-amber-500'
                   : 'bg-transparent border-white/10 text-slate-600',
             )}>
               {done ? <Check size={13} /> : i + 1}
             </div>
             <span className={cls(
               'text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap hidden sm:block',
-              active ? 'text-white' : done ? 'text-indigo-400' : 'text-slate-600',
+              active ? 'text-white' : done ? 'text-amber-400' : 'text-slate-600',
             )}>
               {label}
             </span>
@@ -132,7 +132,7 @@ const StepBar = ({ current }) => (
           {i < STEPS.length - 1 && (
             <div className={cls(
               'flex-1 h-px mx-2 transition-all',
-              i < current ? 'bg-indigo-600' : 'bg-white/10',
+              i < current ? 'bg-amber-600' : 'bg-white/10',
             )} />
           )}
         </React.Fragment>
@@ -310,20 +310,20 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
             Welcome to <span className="text-white font-semibold">{conf?.title}</span>.
           </p>
           <p className="text-slate-500 text-sm">
-            A confirmation will be sent to <span className="text-indigo-400">{form.email}</span>.
+            A confirmation will be sent to <span className="text-amber-400">{form.email}</span>.
           </p>
           <div className="mt-8 flex flex-col gap-3 items-center">
             <div className="flex items-center gap-2 text-xs text-slate-500 bg-white/5 border border-white/10 px-4 py-2.5 rounded-xl">
-              <Calendar size={13} className="text-indigo-400" />
+              <Calendar size={13} className="text-amber-400" />
               {conf?.start_date}{conf?.end_date ? ` – ${conf.end_date}` : ''}
             </div>
             <div className="flex items-center gap-2 text-xs text-slate-500 bg-white/5 border border-white/10 px-4 py-2.5 rounded-xl">
-              <MapPin size={13} className="text-indigo-400" />
+              <MapPin size={13} className="text-amber-400" />
               {conf?.location || 'Location TBD'}
             </div>
           </div>
           {onBack && (
-            <button onClick={onBack} className="mt-8 text-sm text-indigo-400 hover:text-indigo-300 font-semibold transition-colors">
+            <button onClick={onBack} className="mt-8 text-sm text-amber-500 hover:text-amber-400 font-semibold transition-colors">
               ← Back to conference
             </button>
           )}
@@ -344,7 +344,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
           <h2 className="text-2xl font-bold text-white mb-2">Already Registered</h2>
           <p className="text-slate-400 text-sm">You're already registered for this conference.</p>
           {onBack && (
-            <button onClick={onBack} className="mt-6 text-sm text-indigo-400 hover:text-indigo-300 font-semibold">
+            <button onClick={onBack} className="mt-6 text-sm text-amber-500 hover:text-amber-400 font-semibold">
               ← Back to conference
             </button>
           )}
@@ -382,7 +382,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
               </div>
             </div>
           </div>
-          <span className="text-xs font-bold text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-md uppercase tracking-wider">
+          <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-md uppercase tracking-wider">
             Registration
           </span>
         </div>
@@ -410,7 +410,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
                     const price = conf?.[t.feeKey] || t.fallback;
                     const isSelected = regType === t.id;
                     const accent = {
-                      indigo: { border: 'border-indigo-500/60', bg: 'bg-indigo-500/10', text: 'text-indigo-400', check: 'bg-indigo-600' },
+                      amber: { border: 'border-amber-500/60', bg: 'bg-amber-500/10', text: 'text-amber-400', check: 'bg-amber-600' },
                       purple: { border: 'border-purple-500/60', bg: 'bg-purple-500/10', text: 'text-purple-400', check: 'bg-purple-600' },
                       emerald: { border: 'border-emerald-500/60', bg: 'bg-emerald-500/10', text: 'text-emerald-400', check: 'bg-emerald-600' },
                     }[t.accent];
@@ -604,13 +604,13 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
                     className={cls(
                       'flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all select-none',
                       form.accommodation_required
-                        ? 'border-indigo-500/60 bg-indigo-500/10'
+                        ? 'border-amber-500/60 bg-amber-500/10'
                         : 'border-white/10 bg-white/5 hover:border-white/20',
                     )}
                   >
                     <div className={cls(
                       'w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all',
-                      form.accommodation_required ? 'bg-indigo-600' : 'bg-white/5',
+                      form.accommodation_required ? 'bg-amber-600' : 'bg-white/5',
                     )}>
                       <MapPin size={17} className={form.accommodation_required ? 'text-white' : 'text-slate-500'} />
                     </div>
@@ -623,7 +623,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
                     {/* Toggle pill */}
                     <div className={cls(
                       'w-11 h-6 rounded-full relative transition-all shrink-0',
-                      form.accommodation_required ? 'bg-indigo-600' : 'bg-white/10',
+                      form.accommodation_required ? 'bg-amber-600' : 'bg-white/10',
                     )}>
                       <div className={cls(
                         'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-200',
@@ -680,13 +680,13 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
                   const Icon = selectedType.icon;
                   const price = conf?.[selectedType.feeKey] || selectedType.fallback;
                   return (
-                    <div className="flex items-center gap-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4">
-                      <Icon size={18} className="text-indigo-400 shrink-0" />
+                    <div className="flex items-center gap-3 bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
+                      <Icon size={18} className="text-amber-500 shrink-0" />
                       <div className="flex-1">
                         <div className="text-sm font-semibold text-white">{selectedType.label}</div>
                         <div className="text-xs text-slate-500 mt-0.5">{selectedType.description}</div>
                       </div>
-                      <div className="text-xl font-black text-indigo-400">{price}</div>
+                      <div className="text-xl font-black text-amber-500">{price}</div>
                     </div>
                   );
                 })()}
@@ -763,7 +763,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
               {step < STEPS.length - 1 ? (
                 <button
                   onClick={next}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-lg shadow-indigo-500/20"
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold bg-amber-600 hover:bg-amber-500 text-white transition-all shadow-lg shadow-amber-500/20"
                 >
                   Continue <ChevronRight size={15} />
                 </button>
@@ -771,7 +771,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
                 <button
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold bg-amber-600 hover:bg-amber-500 text-white transition-all shadow-lg shadow-amber-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {submitting
                     ? <><Loader2 size={15} className="animate-spin" />Registering…</>
@@ -796,7 +796,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
               )}
               <div className="p-5 space-y-3">
                 {conf?.theme && (
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-full">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full">
                     {conf.theme}
                   </span>
                 )}

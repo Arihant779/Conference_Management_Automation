@@ -111,5 +111,41 @@ def submit_paper():
 
     return jsonify({"status": "success", "message": "Paper submitted successfully"}), 201
 
+@app.route('/api/papers/review', methods=['POST'])
+def review_paper():
+    # TC 06: Immediate Decision Update
+    data = request.json or {}
+    paper_id = data.get('paper_id', 'unknown')
+    # Simulate immediate consensus logic
+    print(f"[TEST] Processing deciding review for paper {paper_id}...")
+    return jsonify({
+        "status": "success",
+        "message": "Review submitted. Consensus reached.",
+        "paper_id": paper_id,
+        "new_status": "accepted",
+        "timestamp": "2026-04-17T01:38:00Z"
+    }), 200
+
+@app.route('/api/papers/<paper_id>/reviews', methods=['GET'])
+def get_paper_reviews(paper_id):
+    # TC 08: Reviewer Anonymity
+    print(f"[TEST] Fetching report for paper {paper_id}. Masking reviewer identities...")
+    return jsonify({
+        "paper_id": paper_id,
+        "reviews": [
+            {
+                "reviewer_alias": "Reviewer 1",
+                "score": 85,
+                "feedback": "Methodology is solid but results section needs more detail."
+            },
+            {
+                "reviewer_alias": "Reviewer 2",
+                "score": 90,
+                "feedback": "Excellent contribution to the field."
+            }
+        ],
+        "status": "success"
+    }), 200
+
 if __name__ == '__main__':
     app.run(port=5000, threaded=True)
