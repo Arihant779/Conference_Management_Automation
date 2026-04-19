@@ -369,6 +369,29 @@ router.post("/invite/respond", async (req, res) => {
         .eq("role", "invited"); 
     }
 
+    // 3. Logic for REJECTION Cleanup: 
+    // If rejecting, check if user should be removed from the conference altogether
+    // (i.e. they were only in an 'invited' state and have no other active team invites/memberships)
+    if (status === 'rejected') {
+      const { data: otherInvolvements } = await supabase
+        .from("team_members")
+        .select("id")
+        .eq("conference_id", confId)
+        .eq("user_id", user_id)
+        .neq("status", "rejected");
+
+      if (!otherInvolvements || otherInvolvements.length === 0) {
+        // If they have no other team involvement, and their role is currently 'invited',
+        // we delete the conference_user entry to "revert" them to not being a member.
+        await supabase
+          .from("conference_user")
+          .delete()
+          .eq("conference_id", confId)
+          .eq("user_id", user_id)
+          .eq("role", "invited");
+      }
+    }
+
     // 3. Clean up the notification for this specific invite
     await supabase
       .from("notifications")

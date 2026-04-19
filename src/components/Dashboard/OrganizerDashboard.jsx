@@ -644,9 +644,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
             {/* ── PUBLISH STATUS BANNER ── */}
             {console.log('[Banner Render] isGlobalHead:', isGlobalHead, 'localPublished:', localPublished, 'conf.is_published:', conf.is_published)}
             {isGlobalHead && !localPublished && (
-              <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
+              <div 
                 className={`mb-10 p-8 rounded-[3rem] border bg-amber-500/5 border-amber-500/20 shadow-[0_0_50px_rgba(245,158,11,0.05)]`}
               >
                 <div className="flex flex-col md:flex-row items-center justify-between gap-8">
@@ -667,7 +665,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
                     {saving ? 'Publishing...' : 'Publish Now'}
                   </button>
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {/* ── TOP LEVEL INVITATIONS ── */}

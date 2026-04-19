@@ -672,18 +672,9 @@ const MemberDashboard = ({ conf, onBack }) => {
               </div>
             )}
 
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={section}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                className={cls('flex-1 min-h-0 flex flex-col', section !== 'chat' && 'pb-20')}
-              >
-                {renderContent()}
-              </motion.div>
-            </AnimatePresence>
+            <div className={cls('flex-1 min-h-0 flex flex-col', section !== 'chat' && 'pb-20')}>
+              {renderContent()}
+            </div>
           </div>
         </main>
       </div>

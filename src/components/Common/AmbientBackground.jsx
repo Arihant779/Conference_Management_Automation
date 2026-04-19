@@ -28,10 +28,8 @@ const AmbientBackground = ({ theme: propTheme }) => {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[600px] rounded-full opacity-[0.06] transition-all duration-700"
         style={{ background: isDark ? 'radial-gradient(ellipse, rgba(251,191,36,0.06) 0%, transparent 70%)' : 'radial-gradient(ellipse, rgba(251,191,36,0.12) 0%, transparent 70%)' }} />
 
-      {/* Subtle animated floating orb */}
-      <motion.div
-        animate={{ y: [0, -20, 0], x: [0, 15, 0] }}
-        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+      {/* Static soft wash instead of animated floating orb */}
+      <div
         className="absolute top-[20%] right-[30%] w-[400px] h-[400px] rounded-full opacity-[0.04] transition-all duration-700"
         style={{ background: isDark ? 'radial-gradient(circle, rgba(148,163,184,0.15) 0%, transparent 60%)' : 'radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 60%)' }}
       />

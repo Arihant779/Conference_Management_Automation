@@ -1138,8 +1138,6 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
   ]);
   const navBlur = useTransform(scrollY, [0, 60], ['blur(0px)', 'blur(20px)']);
 
-  const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.15 } } };
-  const itemVariants = { hidden: { opacity: 0, y: 24 }, show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } } };
 
   // ══════════════════════════════════════════════════════════════════════
   // RENDER
@@ -1151,8 +1149,8 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 
       {/* ═══ NAVBAR ═══ */}
-      <motion.nav
-        style={{ backgroundColor: navBg, borderBottomColor: navBorderColor, backdropFilter: navBlur, WebkitBackdropFilter: navBlur }}
+      <nav
+        style={{ borderBottomColor: navBorderColor }}
         className={`sticky top-0 z-40 px-6 py-3 border-b transition-colors duration-500 ${isDark ? 'border-white/[0.04]' : 'border-zinc-900/[0.08]'}`}
       >
         <div className="max-w-[90rem] mx-auto flex justify-between items-center">
@@ -1253,21 +1251,19 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
             </button>
           </div>
         </div>
-      </motion.nav>
+      </nav>
 
       {/* ═══ NOTIFICATIONS ═══ */}
-      <AnimatePresence>{showNotifications && <NotificationsPanel onClose={() => setShowNotifications(false)} theme={theme} notifs={notifs} conferences={conferences} invites={invites} onInviteAction={handleInviteAction} />}</AnimatePresence>
+      {showNotifications && <NotificationsPanel onClose={() => setShowNotifications(false)} theme={theme} notifs={notifs} conferences={conferences} invites={invites} onInviteAction={handleInviteAction} />}
 
       {/* ═══ MAIN CONTENT ═══ */}
       {currentSection === 'conferences' ? (
-        <motion.div variants={containerVariants} initial="hidden" animate="show" className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-20 relative z-10">
+        <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-20 relative z-10">
 
           {/* ── GLOBAL TEAM INVITATIONS BANNER ── */}
           {invites.length > 0 && (
-            <motion.div 
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`mb-12 p-8 rounded-[3rem] border animate-pulse-subtle ${isDark ? 'bg-amber-500/5 border-amber-500/20 shadow-[0_0_50px_rgba(245,158,11,0.05)]' : 'bg-amber-50/50 border-amber-200 shadow-sm'}`}
+            <div 
+              className={`mb-12 p-8 rounded-[3rem] border ${isDark ? 'bg-amber-500/5 border-amber-500/20 shadow-[0_0_50px_rgba(245,158,11,0.05)]' : 'bg-amber-50/50 border-amber-200 shadow-sm'}`}
             >
               <div className="flex flex-col md:flex-row items-center justify-between gap-8">
                 <div className="flex items-center gap-6">
@@ -1288,21 +1284,13 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* ── HERO SECTION ── */}
-          <motion.div variants={itemVariants} className="mb-10">
+          <div className="mb-10">
             <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
               <div>
-                <motion.p
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="text-sm text-zinc-500 font-medium mb-2 tracking-wide"
-                >
-                  Welcome back
-                </motion.p>
                 <h1 className={`text-4xl lg:text-5xl font-bold tracking-tight mb-3 leading-[1.1] transition-colors duration-300 ${isDark ? 'text-white' : 'text-zinc-900'}`}>
                   {firstName}'s Dashboard
                 </h1>
@@ -1318,7 +1306,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
                 Create Conference
               </MagneticButton>
             </div>
-          </motion.div>
+          </div>
 
           {/* ── STATS ROW ── */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
@@ -1331,7 +1319,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
           <div className="flex flex-col lg:flex-row gap-8">
 
             {/* LEFT SIDEBAR */}
-            <motion.div variants={itemVariants} className="w-full lg:w-[300px] xl:w-[320px] shrink-0 space-y-5">
+            <div className="w-full lg:w-[300px] xl:w-[320px] shrink-0 space-y-5">
 
               {/* Volunteer Preferences */}
               <GlowCard 
@@ -1381,40 +1369,38 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
               </GlowCard>
 
               {/* Team Invitations */}
-              <AnimatePresence>
-                {invites.length > 0 && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
-                    <GlowCard 
-                      theme={theme}
-                      glowColor="rgba(251,191,36,0.3)"
-                      className={`backdrop-blur-xl border rounded-2xl p-5 transition-all duration-300 ${isDark ? 'bg-amber-500/5 border-amber-500/20' : 'bg-amber-50 border-amber-500/30'}`}
-                    >
-                      <div className="relative z-10">
-                        <div className="flex items-center gap-2.5 mb-4">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-amber-500/20`}>
-                            <Bell size={14} className="text-amber-500" />
-                          </div>
-                          <h3 className={`text-sm font-bold transition-colors ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>Team Invitations</h3>
+              {invites.length > 0 && (
+                <div className="space-y-4">
+                  <GlowCard 
+                    theme={theme}
+                    glowColor="rgba(251,191,36,0.3)"
+                    className={`backdrop-blur-xl border rounded-2xl p-5 transition-all duration-300 ${isDark ? 'bg-amber-500/5 border-amber-500/20' : 'bg-amber-50 border-amber-500/30'}`}
+                  >
+                    <div className="relative z-10">
+                      <div className="flex items-center gap-2.5 mb-4">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-amber-500/20`}>
+                          <Bell size={14} className="text-amber-500" />
                         </div>
-                        <div className="space-y-4">
-                          {invites.map(invite => (
-                            <div key={invite.id} className={`p-3 rounded-xl border transition-all ${isDark ? 'bg-black/20 border-white/5' : 'bg-white border-amber-500/20 shadow-sm'}`}>
-                              <div className="mb-2">
-                                <p className={`text-[10px] uppercase font-bold tracking-wider ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>{invite.conference?.title}</p>
-                                <p className={`text-xs font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>{invite.conference_teams?.name}</p>
-                              </div>
-                              <div className="flex gap-1.5">
-                                <button onClick={() => handleInviteAction(invite.id, 'accept')} className="flex-1 py-1.5 bg-amber-500 text-black text-[10px] font-black rounded-lg hover:bg-amber-400 transition-all">ACCEPT</button>
-                                <button onClick={() => handleInviteAction(invite.id, 'reject')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg border ${isDark ? 'border-white/10 text-zinc-400 hover:text-white' : 'border-zinc-200 text-zinc-600 hover:bg-zinc-50'}`}>DECLINE</button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                        <h3 className={`text-sm font-bold transition-colors ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>Team Invitations</h3>
                       </div>
-                    </GlowCard>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                      <div className="space-y-4">
+                        {invites.map(invite => (
+                          <div key={invite.id} className={`p-3 rounded-xl border transition-all ${isDark ? 'bg-black/20 border-white/5' : 'bg-white border-amber-500/20 shadow-sm'}`}>
+                            <div className="mb-2">
+                              <p className={`text-[10px] uppercase font-bold tracking-wider ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>{invite.conference?.title}</p>
+                              <p className={`text-xs font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>{invite.conference_teams?.name}</p>
+                            </div>
+                            <div className="flex gap-1.5">
+                              <button onClick={() => handleInviteAction(invite.id, 'accept')} className="flex-1 py-1.5 bg-amber-500 text-black text-[10px] font-black rounded-lg hover:bg-amber-400 transition-all">ACCEPT</button>
+                              <button onClick={() => handleInviteAction(invite.id, 'reject')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg border ${isDark ? 'border-white/10 text-zinc-400 hover:text-white' : 'border-zinc-200 text-zinc-600 hover:bg-zinc-50'}`}>DECLINE</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </GlowCard>
+                </div>
+              )}
 
               {/* Quick actions */}
               <GlowCard 
@@ -1454,13 +1440,13 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
                   </div>
                 </div>
               </GlowCard>
-            </motion.div>
+            </div>
 
             {/* RIGHT MAIN HUB */}
             <div className="flex-1 min-w-0 space-y-6">
 
               {/* Tab Bar */}
-              <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className={`relative flex p-1 backdrop-blur-xl rounded-xl border transition-all duration-300 ${isDark ? 'bg-[#141416]/60 border-white/[0.05]' : 'bg-white border-zinc-900/[0.08] shadow-sm'}`}>
                   {[
                     { key: 'my', label: `My Conferences`, count: myConfs.length },
@@ -1474,7 +1460,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
                         : (isDark ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}
                     >
                       {activeTab === key && (
-                        <motion.div layoutId="activeTab" className={`absolute inset-0 rounded-lg -z-10 ${isDark ? 'bg-white/[0.08]' : 'bg-zinc-900/[0.04]'}`} transition={{ type: "spring", stiffness: 500, damping: 35 }} />
+                        <div className={`absolute inset-0 rounded-lg -z-10 ${isDark ? 'bg-white/[0.08]' : 'bg-zinc-900/[0.04]'}`} />
                       )}
                       {label}
                       <span className={`ml-2 text-xs transition-colors duration-300 ${activeTab === key ? (isDark ? 'text-zinc-300' : 'text-zinc-500') : (isDark ? 'text-zinc-600' : 'text-zinc-400')}`}>{count}</span>
@@ -1487,71 +1473,55 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
                   <Search size={14} className="text-zinc-500" />
                   <input className={`bg-transparent border-none outline-none text-sm w-full transition-colors duration-300 ${isDark ? 'text-white placeholder-zinc-600' : 'text-zinc-900 placeholder-zinc-400'}`} placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
                 </div>
-              </motion.div>
+              </div>
 
               {/* Conference Grid */}
-              <motion.div variants={itemVariants} layout className="grid grid-cols-1 xl:grid-cols-2 gap-5 pb-20">
-                <AnimatePresence mode="popLayout">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 pb-20">
                   {loadingRoles ? (
                     [...Array(4)].map((_, i) => (
-                      <motion.div key={`skel-${i}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                      <div key={`skel-${i}`}>
                         <CardSkeleton theme={theme} />
-                      </motion.div>
+                      </div>
                     ))
                   ) : visibleConfs.length > 0 ? (
                     visibleConfs.map((c, i) => (
-                      <motion.div
+                      <ConfCard 
                         key={c.conference_id}
-                        layout
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 25, delay: i * 0.05 }}
-                      >
-                        <ConfCard 
-                          conf={c} 
-                          role={roleMap[c.conference_id] || roleMap[c.id] || null} 
-                          hasPendingInvite={invites.some(inv => inv.conference_id === c.conference_id || inv.conference_id === c.id)}
-                          invites={invites}
-                          onInviteAction={handleInviteAction}
-                          onSelectConf={onSelectConf} 
-                          theme={theme} 
-                        />
-                      </motion.div>
+                        conf={c} 
+                        role={roleMap[c.conference_id] || roleMap[c.id] || null} 
+                        hasPendingInvite={invites.some(inv => inv.conference_id === c.conference_id || inv.conference_id === c.id)}
+                        invites={invites}
+                        onInviteAction={handleInviteAction}
+                        onSelectConf={onSelectConf} 
+                        theme={theme} 
+                      />
                     ))
                   ) : (
-                    <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="col-span-full">
+                    <div className="col-span-full">
                       <EmptyState activeTab={activeTab} onCreateConf={onCreateConf} theme={theme} />
-                    </motion.div>
+                    </div>
                   )}
-                </AnimatePresence>
-              </motion.div>
+                </div>
+              </div>
             </div>
           </div>
-        </motion.div>
-      ) : (
-        <motion.div
-          initial={{ opacity: 0, x: 50, filter: 'blur(10px)' }}
-          animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-          exit={{ opacity: 0, x: -50 }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          className="max-w-7xl mx-auto px-6 pt-12 pb-16 relative z-10"
-        >
-          <div className="flex items-center gap-3 mb-8">
-            <button onClick={() => setCurrentSection('conferences')} className={`p-2 rounded-xl transition-all ${isDark ? 'text-zinc-500 hover:text-white hover:bg-white/[0.05]' : 'text-zinc-400 hover:text-zinc-900 hover:bg-zinc-900/[0.04]'}`}>
-              <ChevronLeft size={20} />
-            </button>
-            <h1 className={`text-3xl font-bold tracking-tight transition-colors duration-300 ${isDark ? 'text-white' : 'text-zinc-900'}`}>Your Profile</h1>
+        ) : (
+        <div className="max-w-7xl mx-auto px-6 pt-12 pb-16 relative z-10">
+            <div className="flex items-center gap-3 mb-8">
+              <button onClick={() => setCurrentSection('conferences')} className={`p-2 rounded-xl transition-all ${isDark ? 'text-zinc-500 hover:text-white hover:bg-white/[0.05]' : 'text-zinc-400 hover:text-zinc-900 hover:bg-zinc-900/[0.04]'}`}>
+                <ChevronLeft size={20} />
+              </button>
+              <h1 className={`text-3xl font-bold tracking-tight transition-colors duration-300 ${isDark ? 'text-white' : 'text-zinc-900'}`}>Your Profile</h1>
+            </div>
+            <ProfileView 
+              user={user} 
+              volunteerPrefs={volunteerPrefs} 
+              ROLES={ROLES} 
+              onEditName={() => setShowNameModal(true)}
+              onEditVolunteer={() => setShowVolunteerModal(true)} 
+              theme={theme} 
+            />
           </div>
-          <ProfileView 
-            user={user} 
-            volunteerPrefs={volunteerPrefs} 
-            ROLES={ROLES} 
-            onEditName={() => setShowNameModal(true)}
-            onEditVolunteer={() => setShowVolunteerModal(true)} 
-            theme={theme} 
-          />
-        </motion.div>
       )}
 
       {/* ═══ EDIT NAME MODAL ═══ */}

@@ -81,30 +81,7 @@ const OverviewSection = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-        {volunteersCount > 0 && (
-          <SpotlightCard className="rounded-2xl">
-            <div className={`rounded-2xl p-6 h-full border backdrop-blur-xl transition-all duration-500 ${
-              isDark ? 'border-amber-500/10 bg-slate-900/50 hover:bg-slate-900/70' : 'border-amber-200 bg-amber-50/30 hover:bg-amber-100/30 shadow-sm'
-            }`}>
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center gap-2">
-                  <Sparkles size={16} className="text-amber-400" />
-                  <span className={`text-sm font-bold tracking-wide transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>Volunteer Preferences</span>
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full text-amber-500 bg-amber-500/10 border border-amber-500/20 shadow-sm">
-                  {volunteersCount} pending
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(VOLUNTEER_ROLE_LABELS).filter(([id]) => Object.values(volunteerMap).some(p => p.volunteer_roles?.includes(id))).map(([id, label]) => (
-                  <span key={id} className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-colors ${
-                    isDark ? 'text-amber-300 bg-amber-500/10 border-amber-500/15' : 'text-amber-700 bg-amber-100 border-amber-200'
-                  }`}>{label}</span>
-                ))}
-              </div>
-            </div>
-          </SpotlightCard>
-        )}
+
 
         {confPapers.length > 0 && (
           <SpotlightCard className="rounded-2xl">
