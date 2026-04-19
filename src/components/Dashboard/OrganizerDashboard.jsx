@@ -91,7 +91,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   const effectivePermissions = Array.from(new Set([...(permissions || []), ...(userRoles ? userRoles.flatMap(getRolePermissions) : [])]));
   const can = (p) => effectivePermissions.includes(p);
 
-  const roleLabel = isOrganizer ? 'Organizer' : ((userRoles || []).find(r => r !== 'team_head' && (r.endsWith('_head') || r.endsWith('_coord') || r.endsWith('_lead')))?.replace(/technical_head/g, 'Reviewing Team Head')?.replace(/outreach_head/g, 'Outreach Team Head')?.replace(/logistics_head/g, 'Logistics Team Head')?.replace(/event_head/g, 'Event Management Team Head')?.replace(/organizer_head/g, 'Organizing Team Head')?.replace(/_/g, ' ')?.replace(/\b\w/g, l => l.toUpperCase()) || (userRoles?.includes('team_head') || isTeamHead ? 'Team Lead' : (userRoles?.includes('reviewer') ? 'Reviewer' : 'Team Member')));
+  const roleLabel = isOrganizer ? 'Organizer' : ((userRoles || []).find(r => r !== 'team_head' && (r.endsWith('_head') || r.endsWith('_coord') || r.endsWith('_lead')))?.replace(/technical_head/g, 'Reviewing Team')?.replace(/outreach_head/g, 'Outreach Team')?.replace(/logistics_head/g, 'Logistics Team')?.replace(/event_head/g, 'Event Management Team')?.replace(/organizer_head/g, 'Organizing Team')?.replace(/_/g, ' ')?.replace(/\b\w/g, l => l.toUpperCase()) || (userRoles?.includes('team_head') || isTeamHead ? 'Team Lead' : (userRoles?.includes('reviewer') ? 'Reviewer' : 'Team Member')));
 
   const [notifs, setNotifs]           = useState([]);
   const [modal, setModal]             = useState(null);
