@@ -670,7 +670,7 @@ const ConfCard = ({ conf, role, hasPendingInvite, onSelectConf, onInviteAction, 
       />
 
       {/* Main card body */}
-      <div className={`relative backdrop-blur-xl border rounded-2xl overflow-hidden flex flex-col h-full z-10 transition-all duration-500 ${
+      <div className={`relative backdrop-blur-md border rounded-2xl overflow-hidden flex flex-col h-full z-10 transition-all duration-500 ${
         isDark 
           ? 'bg-[#141416]/80 border-white/[0.06] group-hover:border-white/[0.12]' 
           : 'bg-white border-zinc-900/[0.08] group-hover:border-zinc-900/[0.15] shadow-sm group-hover:shadow-md'
@@ -865,8 +865,16 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
   const { user, conferences, logout, fetchConferences, theme } = useApp();
   const isDark = theme === 'dark';
 
-  const [activeTab, setActiveTab] = useState('my');
-  const [currentSection, setCurrentSection] = useState('conferences');
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('confmanager_dashboard_tab') || 'my');
+  const [currentSection, setCurrentSection] = useState(() => localStorage.getItem('confmanager_dashboard_section') || 'conferences');
+
+  useEffect(() => {
+    localStorage.setItem('confmanager_dashboard_tab', activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
+    localStorage.setItem('confmanager_dashboard_section', currentSection);
+  }, [currentSection]);
   const [search, setSearch] = useState('');
   const [roleMap, setRoleMap] = useState({});
   const [loadingRoles, setLoadingRoles] = useState(true);
@@ -889,7 +897,10 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
     const { data: memberships } = await supabase.from('conference_user').select('id, conference_id, role').eq('user_id', user.id);
     
     // 2. Get all functional team memberships (with full records for actions)
-    const { data: teamMemberships } = await supabase.from('team_members').select('*').eq('user_id', user.id);
+    const { data: teamMemberships } = await supabase
+      .from('team_members')
+      .select('*, conference_teams(name, color), conference(title)')
+      .eq('user_id', user.id);
 
     const acceptedConfIds = new Set((teamMemberships || []).filter(tm => tm.status === 'accepted').map(tm => tm.conference_id));
 
@@ -904,31 +915,17 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
       });
     }
 
-    // 3. Find pending team invitations and mark conference roles accordingly
-    const pendingInvites = (teamMemberships || []).filter(tm => tm.status === 'pending');
+    // 4. Find pending team invitations correctly
+    const enrichedInvites = (teamMemberships || []).filter(tm => tm.status === 'pending');
     
-    pendingInvites.forEach(tm => {
+    enrichedInvites.forEach(tm => {
       if (!map[tm.conference_id]) {
         map[tm.conference_id] = 'invited';
       }
     });
-
-    // 4. Enrich invite objects with team/conference names — await fully before setting state
-    //    (avoids a race condition where the card renders before enrichment and can't find invite data)
-    let enrichedInvites = pendingInvites;
-    if (pendingInvites.length > 0) {
-      enrichedInvites = await Promise.all(pendingInvites.map(async (inv) => {
-        try {
-          const [{ data: team }, { data: conf }] = await Promise.all([
-            supabase.from('conference_teams').select('name, color').eq('id', inv.team_id).maybeSingle(),
-            supabase.from('conference').select('title').eq('conference_id', inv.conference_id).maybeSingle()
-          ]);
-          return { ...inv, conference_teams: team, conference: conf };
-        } catch (e) { return inv; }
-      }));
-    }
+    
     setInvites(enrichedInvites);
-    console.log('INVITE_DEBUG: Unified Fetch Complete. Invites Count:', enrichedInvites.length);
+    console.log('INVITE_DEBUG: Joined Fetch Complete. Invites Count:', enrichedInvites.length);
     
     // 5. Check if user is the Global Organizer
     conferences.forEach((c) => { if (c.conference_head_id === user.id) { map[c.conference_id] = 'organizer'; } });
@@ -1425,7 +1422,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
                         layout
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, filter: "blur(8px)" }}
+                        exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ type: "spring", stiffness: 300, damping: 25, delay: i * 0.05 }}
                       >
                         <ConfCard 

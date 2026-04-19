@@ -87,6 +87,11 @@ export const AppProvider = ({ children }) => {
     await supabase.auth.signOut();
     setUser(null);
     setConferences([]);
+    localStorage.removeItem('confmanager_view');
+    localStorage.removeItem('confmanager_selected_conf_id');
+    localStorage.removeItem('confmanager_initial_view');
+    localStorage.removeItem('confmanager_dashboard_section');
+    localStorage.removeItem('confmanager_dashboard_tab');
   };
 
   /* ── Add a newly created conference to local state ──────────────── */

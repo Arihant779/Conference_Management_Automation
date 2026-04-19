@@ -26,6 +26,9 @@ const PENDING_KEY = 'confmanager_pending';
 const savePending = (confId, intent) => sessionStorage.setItem(PENDING_KEY, JSON.stringify({ confId, intent }));
 const loadPending = () => { try { const r = sessionStorage.getItem(PENDING_KEY); return r ? JSON.parse(r) : null; } catch { return null; } };
 const clearPending = () => sessionStorage.removeItem(PENDING_KEY);
+const VIEW_KEY = 'confmanager_view';
+const CONF_ID_KEY = 'confmanager_selected_conf_id';
+const INTENT_KEY = 'confmanager_initial_view';
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -42,43 +45,77 @@ const App = () => {
   // ── On mount: read URL params → save pending → load conf ─────────────────
   useEffect(() => {
     const init = async () => {
-      const urlConfId = getConfIdFromURL();
-      const urlIntent = getIntentFromURL();
-      const urlView   = getViewFromURL();
+      try {
+        const urlConfId = getConfIdFromURL();
+        const urlIntent = getIntentFromURL();
+        const urlView = getViewFromURL();
 
-      if (urlView === 'invitation-thank-you') {
-        setView('invitation-thank-you');
-        setLoading(false);
-        return;
-      }
-
-      if (urlConfId) {
-        clearURLParams();
-        savePending(urlConfId, urlIntent || 'home');
-      }
-
-      const pending = loadPending();
-
-      if (pending?.confId) {
-        const { data: confData } = await supabase
-          .from('conference')
-          .select('*')
-          .eq('conference_id', pending.confId)
-          .maybeSingle();
-
-        if (confData) {
-          setSelectedConf(confData);
-          setInitialView(pending.intent || 'home');
-          setView('conference');
-          setActiveConfId(pending.confId);
+        if (urlView === 'invitation-thank-you') {
+          setView('invitation-thank-you');
+          return;
         }
-      }
 
-      setLoading(false);
+        if (urlConfId) {
+          clearURLParams();
+          savePending(urlConfId, urlIntent || 'home');
+        }
+
+        // Parallelize localStorage reads (synchronous but grouped for logic)
+        const pending = loadPending();
+        const savedView = localStorage.getItem(VIEW_KEY);
+        const savedConfId = localStorage.getItem(CONF_ID_KEY);
+        const savedIntent = localStorage.getItem(INTENT_KEY);
+
+        // Determine target conference if any
+        const targetConfId = pending?.confId || (savedView === 'conference' ? savedConfId : null);
+        const targetIntent = (pending?.confId ? pending.intent : (savedView === 'conference' ? savedIntent : 'home')) || 'home';
+
+        if (targetConfId) {
+          const { data: confData, error } = await supabase
+            .from('conference')
+            .select('*')
+            .eq('conference_id', targetConfId)
+            .maybeSingle();
+
+          if (!error && confData) {
+            setSelectedConf(confData);
+            setInitialView(targetIntent);
+            setView('conference');
+            setActiveConfId(targetConfId);
+            clearPending();
+          } else {
+            setView('dashboard');
+          }
+        } else if (savedView) {
+          setView(savedView);
+        }
+      } catch (err) {
+        console.error("Init synchronization failed:", err);
+        setView('dashboard');
+      } finally {
+        setLoading(false);
+      }
     };
 
     init();
   }, []);
+
+  // ── Perspective Persistence ────────────────────────────────────────────────
+  useEffect(() => {
+    if (loading || !user) return;
+    localStorage.setItem(VIEW_KEY, view);
+    if (view === 'conference' && selectedConf) {
+      localStorage.setItem(CONF_ID_KEY, selectedConf.conference_id ?? selectedConf.id);
+      localStorage.setItem(INTENT_KEY, initialView);
+    } else {
+      localStorage.removeItem(CONF_ID_KEY);
+      localStorage.removeItem(INTENT_KEY);
+      // If we are explicitly on the dashboard or create view, clear any stale pending pointers
+      if (view === 'dashboard' || view === 'create') {
+        clearPending();
+      }
+    }
+  }, [view, selectedConf, initialView, loading, user]);
 
   // ── After login: restore pending conf + intent ────────────────────────────
   // Key fix: we check prevUser so this only fires on the null→user transition,
