@@ -6,7 +6,6 @@ import {
   ArrowRight, Sparkles, Navigation, MonitorPlay, ChevronRight, Award, Zap, Target
 } from 'lucide-react';
 import ScheduleEditor from '../ScheduleEditor';
-import ConferenceRegistration from './../ConferenceRegistration';
 
 /* ═════════════════════════════════════════════════════════
    AWWWARDS-LEVEL INTERACTIVE EFFECTS
@@ -402,6 +401,8 @@ const ModernTemplate = ({
   autoOpenRegister = false,
   onSwitchToTab = null,
   onDelete = null,
+  showReg = false,
+  setShowReg = null,
 }) => {
   const [conf, setConf] = useState(initialConf);
   const [isEditing, setIsEditing] = useState(false);
@@ -410,7 +411,6 @@ const ModernTemplate = ({
   const [saveError, setSaveError] = useState(null);
   const [showScheduleEditor, setShowScheduleEditor] = useState(false);
   const [activeNav, setActiveNav] = useState('about');
-  const [showReg, setShowReg] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   const scrollRef = useRef(null);
@@ -430,45 +430,60 @@ const ModernTemplate = ({
     return () => el.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const [pageData, setPageData] = useState({
-    title: initialConf.title || 'Untitled Conference',
-    tagline: initialConf.tagline || 'Where Innovation Meets Excellence',
-    banner_url: initialConf.banner_url || '',
-    contact_email: initialConf.contact_email || 'contact@conference.org',
-    contact_phone: initialConf.contact_phone || '+1 (555) 000-0000',
-    website: initialConf.website || 'https://yourconference.org',
-    twitter: initialConf.twitter || '',
-    linkedin: initialConf.linkedin || '',
-    schedule: initialConf.schedule || [],
-    speakers: initialConf.speakers || [
+  const getInitialPageData = (c) => ({
+    title: c.title || 'Untitled Conference',
+    tagline: c.tagline || 'Where Innovation Meets Excellence',
+    banner_url: c.banner_url || '',
+    contact_email: c.contact_email || 'contact@conference.org',
+    contact_phone: c.contact_phone || '+1 (555) 000-0000',
+    website: c.website || 'https://yourconference.org',
+    twitter: c.twitter || '',
+    linkedin: c.linkedin || '',
+    schedule: c.schedule || [],
+    speakers: c.speakers || [
       { name: 'Dr. Alex Rivera', role: 'Lead Researcher', org: 'MIT', img: 'https://i.pravatar.cc/150?img=21', bio: 'Pioneering researcher in AI ethics and policy.' },
       { name: 'Prof. Sarah Chen', role: 'Director', org: 'Stanford AI Lab', img: 'https://i.pravatar.cc/150?img=47', bio: 'Expert in machine learning and computer vision.' },
       { name: 'James Okafor', role: 'CEO', org: 'Nexus Technologies', img: 'https://i.pravatar.cc/150?img=33', bio: 'Industry leader building ethical AI systems at scale.' },
       { name: 'Dr. Priya Patel', role: 'Senior Scientist', org: 'DeepMind', img: 'https://i.pravatar.cc/150?img=41', bio: 'Specializes in reinforcement learning and robotics.' },
     ],
-    sponsors: initialConf.sponsors || [
+    sponsors: c.sponsors || [
       { name: 'NovaTech', tier: 'platinum' },
       { name: 'FutureCorp', tier: 'gold' },
       { name: 'DataStream', tier: 'gold' },
       { name: 'InnovateCo', tier: 'silver' },
       { name: 'TechBridge', tier: 'silver' },
     ],
-    important_dates: initialConf.important_dates || [
+    important_dates: c.important_dates || [
       { label: 'Abstract Submission Deadline', date: 'March 15, 2025' },
       { label: 'Notification of Acceptance', date: 'April 30, 2025' },
       { label: 'Early Bird Registration', date: 'May 15, 2025' },
       { label: 'Full Paper Submission', date: 'June 1, 2025' },
-      { label: 'Conference Dates', date: `${initialConf.start_date || 'TBD'} – ${initialConf.end_date || 'TBD'}` },
+      { label: 'Conference Dates', date: `${c.start_date || 'TBD'} – ${c.end_date || 'TBD'}` },
     ],
-    venue_name: initialConf.venue_name || 'Grand Convention Center',
-    venue_address: initialConf.venue_address || initialConf.location || 'City, Country',
-    venue_description: initialConf.venue_description || 'A world-class venue equipped with state-of-the-art facilities, multiple breakout rooms, and excellent transport links.',
-    capacity: initialConf.capacity || '500+',
-    registration_fee_general: initialConf.registration_fee_general || '$299',
-    registration_fee_student: initialConf.registration_fee_student || '$149',
-    registration_fee_early: initialConf.registration_fee_early || '$199',
-    about_extra: initialConf.about_extra || 'Join us for groundbreaking presentations, hands-on workshops, and unparalleled networking opportunities with leading researchers and practitioners from around the globe.',
+    venue_name: c.venue_name || 'Grand Convention Center',
+    venue_address: c.venue_address || c.location || 'City, Country',
+    venue_description: c.venue_description || 'A world-class venue equipped with state-of-the-art facilities, multiple breakout rooms, and excellent transport links.',
+    capacity: c.capacity || '500+',
+    registration_fee_general: c.registration_fee_general || '$299',
+    registration_fee_student: c.registration_fee_student || '$149',
+    registration_fee_early: c.registration_fee_early || '$199',
+    about_extra: c.about_extra || 'Join us for groundbreaking presentations, hands-on workshops, and unparalleled networking opportunities with leading researchers and practitioners from around the globe.',
   });
+
+  const [pageData, setPageData] = useState(() => getInitialPageData(initialConf));
+
+  // Sync state if initialConf changes from parent
+  useEffect(() => {
+    setConf(initialConf);
+    setPageData(getInitialPageData(initialConf));
+  }, [initialConf]);
+
+  const handleCancel = () => {
+    setPageData(getInitialPageData(initialConf));
+    setConf(initialConf);
+    setIsEditing(false);
+    setSaveError(null);
+  };
 
   const update = (key, value) => setPageData(p => ({ ...p, [key]: value }));
   const updateNested = (key, index, field, value) => {
@@ -541,23 +556,6 @@ const ModernTemplate = ({
       {/* Morphing blob accent */}
       <div className="fixed top-[20%] right-[10%] w-[300px] h-[300px] pointer-events-none z-[1] opacity-[0.04]" style={{ background: 'linear-gradient(135deg, #fbbf24, #3b82f6)', animation: 'morphBlob 15s ease-in-out infinite', filter: 'blur(60px)' }} />
 
-      {/* ── Registration Modal ── */}
-      <AnimatePresence>
-        {showReg && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] bg-black/85 backdrop-blur-xl flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
-              className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl"
-              style={{ background: '#0B0F1A', border: '1px solid rgba(251,191,36,0.15)' }}>
-              <button onClick={() => setShowReg(false)}
-                className="absolute top-6 right-6 z-10 text-slate-400 hover:text-white transition-all hover:rotate-90 bg-white/5 hover:bg-white/10 rounded-full p-2">
-                <X size={20} />
-              </button>
-              <ConferenceRegistration conf={conf} currentUser={currentUser} onSuccess={() => setShowReg(false)} onBack={() => setShowReg(false)} />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* ── Organizer Edit Bar ── */}
       {isOrganizer && (
@@ -581,7 +579,7 @@ const ModernTemplate = ({
                 >
                   <Trash2 size={14} /> Delete Conference
                 </button>
-                <button onClick={() => setIsEditing(false)} className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white border border-white/5 hover:bg-white/5 transition-all">
+                <button onClick={handleCancel} className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white border border-white/5 hover:bg-white/5 transition-all">
                   <X size={14} /> Cancel
                 </button>
                 <button onClick={handleSave} disabled={saving}
