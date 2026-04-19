@@ -29,9 +29,9 @@ import TaskModal from './Organizer/components/Modals/TaskModal';
 const cls = (...c) => c.filter(Boolean).join(' ');
 
 const ROLE_STYLE = {
-  organizer: 'bg-violet-500/10 text-violet-300 border-violet-500/25',
+  organizer: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
   reviewer: 'bg-amber-500/10  text-amber-300  border-amber-500/25',
-  presenter: 'bg-blue-500/10   text-blue-300   border-blue-500/25',
+  presenter: 'bg-amber-600/15   text-amber-200   border-amber-600/30',
   member: 'bg-slate-500/10  text-slate-300  border-slate-500/25',
 };
 
