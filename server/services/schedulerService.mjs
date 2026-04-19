@@ -1,6 +1,6 @@
 import cron from "node-cron";
-import { supabase } from "../lib/supabaseClient.js";
-import { sendEmailsToRecipients } from "./emailService.js";
+import { supabase } from "../lib/supabaseClient.mjs";
+import { sendEmailsToRecipients } from "./emailService.mjs";
 
 /**
  * Scheduled Email Worker

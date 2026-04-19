@@ -1,4 +1,4 @@
-import { createDefaultTransporter, DEFAULT_SENDER } from "../config/email.js";
+import { createDefaultTransporter, DEFAULT_SENDER } from "../config/email.mjs";
 
 export async function sendEmailsToRecipients(to, subject, body) {
   const transporter = createDefaultTransporter();

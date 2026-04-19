@@ -1,9 +1,9 @@
 import express from "express";
-import { findConferenceSpeakers, searchLinkedInExperts, findSpeakerEmail, findEmailsForSpeakers, generateEmailPatterns, inferDomain, _serperSearch } from "../services/speakerFinder.js";
-import { callLLM } from "../services/llmService.js";
-import { sendEmailsToRecipients } from "../services/emailService.js";
-import { supabase } from "../lib/supabaseClient.js";
-import { authMiddleware } from "../middleware/authMiddleware.js";
+import { findConferenceSpeakers, searchLinkedInExperts, findSpeakerEmail, findEmailsForSpeakers, generateEmailPatterns, inferDomain, _serperSearch } from "../services/speakerFinder.mjs";
+import { callLLM } from "../services/llmService.mjs";
+import { sendEmailsToRecipients } from "../services/emailService.mjs";
+import { supabase } from "../lib/supabaseClient.mjs";
+import { authMiddleware } from "../middleware/authMiddleware.mjs";
 
 const router = express.Router();
 
