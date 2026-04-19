@@ -223,14 +223,14 @@ const ReviewerDashboard = ({ conf, onBack }) => {
                 </div>
               </div>
 
-              <div className={`${isDark ? 'bg-[#0d1117] border-indigo-500/20 shadow-indigo-500/5' : 'bg-white border-indigo-100 shadow-indigo-100/20'} border rounded-2xl p-6 shadow-xl transition-all`}>
+              <div className={`${isDark ? 'bg-[#0d1117] border-amber-500/20 shadow-amber-500/5' : 'bg-white border-amber-100 shadow-amber-100/20'} border rounded-2xl p-6 shadow-xl transition-all`}>
                 <div className="flex items-center gap-2 mb-4">
-                  <Star size={18} className="text-indigo-400 fill-indigo-400/20" />
+                  <Star size={18} className="text-amber-400 fill-amber-400/20" />
                   <h3 className={`text-sm font-bold uppercase tracking-wider transition-colors ${isDark ? 'text-white' : 'text-zinc-800'}`}>Expertise & Availability</h3>
                   {!isEditing && (
                     <button
                       onClick={() => setIsEditing(true)}
-                      className={`ml-auto text-xs font-semibold px-2 py-1 rounded-md transition-all ${isDark ? 'text-indigo-400 hover:text-indigo-300 hover:bg-white/5' : 'text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50'}`}
+                      className={`ml-auto text-xs font-semibold px-2 py-1 rounded-md transition-all ${isDark ? 'text-amber-400 hover:text-amber-300 hover:bg-white/5' : 'text-amber-600 hover:text-amber-700 hover:bg-amber-50'}`}
                     >
                       Edit Preferences
                     </button>
@@ -248,7 +248,7 @@ const ReviewerDashboard = ({ conf, onBack }) => {
                     <div className="space-y-1">
                       <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Review Capacity</div>
                       <div className={`text-sm font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-zinc-800'}`}>
-                        <FileText size={14} className="text-indigo-400" />
+                        <FileText size={14} className="text-amber-400" />
                         {maxPapers} papers maximum
                       </div>
                     </div>
@@ -259,8 +259,8 @@ const ReviewerDashboard = ({ conf, onBack }) => {
                       <label className="text-xs text-slate-500 font-semibold mb-1.5 block">Reviewer Expertise Description</label>
                       <textarea
                         placeholder="Describe your areas of expertise..."
-                        className={cls("w-full border rounded-xl p-3.5 text-sm h-24 focus:border-indigo-500 outline-none resize-none font-medium transition-all", 
-                          isDark ? "bg-white/5 border-white/20 text-white" : "bg-white border-zinc-200 text-zinc-900 shadow-sm focus:ring-4 focus:ring-indigo-500/5")}
+                        className={cls("w-full border rounded-xl p-3.5 text-sm h-24 focus:border-amber-500 outline-none resize-none font-medium transition-all", 
+                          isDark ? "bg-white/5 border-white/20 text-white" : "bg-white border-zinc-200 text-zinc-900 shadow-sm focus:ring-4 focus:ring-amber-500/5")}
                         value={localExpertise}
                         onChange={e => setLocalExpertise(e.target.value)}
                       />
@@ -292,7 +292,7 @@ const ReviewerDashboard = ({ conf, onBack }) => {
                         onClick={savePrefs}
                         disabled={savingPrefs}
                         className={cls("flex-[2] py-2.5 rounded-xl text-xs font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2", 
-                          isDark ? "bg-indigo-600 hover:bg-indigo-500 text-white" : "bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20 active:scale-95")}
+                          isDark ? "bg-amber-600 hover:bg-amber-500 text-white" : "bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20 active:scale-95")}
                       >
                         {savingPrefs ? "Saving..." : "Apply Preferences"}
                       </button>
@@ -303,7 +303,7 @@ const ReviewerDashboard = ({ conf, onBack }) => {
 
               {loadingPapers ? (
                 <div className="py-24 text-center">
-                  <Loader2 className="animate-spin text-indigo-500 mx-auto mb-4" size={32} />
+                  <Loader2 className="animate-spin text-amber-500 mx-auto mb-4" size={32} />
                   <p className="text-slate-500 text-sm">Loading your assignments...</p>
                 </div>
               ) : assignedPapers.length > 0 ? (
@@ -386,8 +386,8 @@ const ScoreButton = ({ score, currentScore, onSelect }) => (
     type="button"
     onClick={() => onSelect(score)}
     className={`w-9 h-9 rounded-lg text-xs font-bold transition-all border ${currentScore === score
-      ? 'bg-indigo-600 border-indigo-500 text-white'
-      : 'border-zinc-200 text-zinc-500 hover:border-indigo-300 hover:text-indigo-600 bg-zinc-50'
+      ? 'bg-amber-600 border-amber-500 text-white'
+      : 'border-zinc-200 text-zinc-500 hover:border-amber-300 hover:text-amber-600 bg-zinc-50'
       }`}
   >
     {score / 10}
@@ -404,8 +404,8 @@ const PaperCard = ({ paper, isExpanded, onToggle, submitting, onReview, isReview
   }, [paper.feedback, paper.score]);
 
   const cardClasses = isDark 
-    ? (isExpanded ? 'border-indigo-500/40 ring-1 ring-indigo-500/20 shadow-lg shadow-indigo-500/5 bg-[#0d1117]' : 'border-white/6 hover:border-white/10 bg-[#0d1117]')
-    : (isExpanded ? 'border-indigo-500/40 ring-1 ring-indigo-500/20 shadow-lg shadow-indigo-500/5 bg-white' : 'border-zinc-200 hover:border-zinc-300 bg-white');
+    ? (isExpanded ? 'border-amber-500/40 ring-1 ring-amber-500/20 shadow-lg shadow-amber-500/5 bg-[#0d1117]' : 'border-white/6 hover:border-white/10 bg-[#0d1117]')
+    : (isExpanded ? 'border-amber-500/40 ring-1 ring-amber-500/20 shadow-lg shadow-amber-500/5 bg-white' : 'border-zinc-200 hover:border-zinc-300 bg-white');
 
   return (
     <div className={`border rounded-2xl overflow-hidden transition-all duration-300 ${cardClasses}`}>
@@ -414,7 +414,7 @@ const PaperCard = ({ paper, isExpanded, onToggle, submitting, onReview, isReview
           <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold border ${
             isReviewed 
               ? (isDark ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/15' : 'bg-emerald-50 text-emerald-600 border-emerald-100') 
-              : (isDark ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/15' : 'bg-indigo-50 text-indigo-600 border-indigo-100')
+              : (isDark ? 'bg-amber-500/10 text-amber-400 border-amber-500/15' : 'bg-amber-50 text-amber-600 border-amber-100')
           }`}>
             {paper.title?.charAt(0)}
           </div>
@@ -426,7 +426,7 @@ const PaperCard = ({ paper, isExpanded, onToggle, submitting, onReview, isReview
         <div className="flex items-center gap-2">
           {paper.file_url && (
             <a href={paper.file_url} target="_blank" rel="noreferrer" className={`p-1.5 rounded-lg border text-xs font-bold flex items-center gap-1.5 transition-all ${
-              isDark ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/20' : 'bg-indigo-50 text-indigo-600 border-indigo-100 hover:bg-indigo-100'
+              isDark ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20' : 'bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100'
             }`}>
               <ExternalLink size={14} /> View
             </a>
@@ -439,7 +439,7 @@ const PaperCard = ({ paper, isExpanded, onToggle, submitting, onReview, isReview
               <button
                 onClick={onToggle}
                 className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md border transition-all ${
-                  isDark ? 'text-indigo-400 hover:text-indigo-300 bg-indigo-500/5 hover:bg-indigo-500/10 border-indigo-500/10' : 'text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border-indigo-100'
+                  isDark ? 'text-amber-400 hover:text-amber-300 bg-amber-500/5 hover:bg-amber-500/10 border-amber-500/10' : 'text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 border-amber-100'
                 }`}
               >
                 {isExpanded ? 'Close' : 'Edit Review'}
@@ -479,8 +479,8 @@ const PaperCard = ({ paper, isExpanded, onToggle, submitting, onReview, isReview
               placeholder="Enter your confidential feedback..."
               className={`w-full border rounded-xl p-3.5 text-sm h-28 outline-none resize-none font-medium transition-all ${
                 isDark 
-                  ? 'bg-zinc-900 border-white/10 text-white focus:border-indigo-500' 
-                  : 'bg-white border-zinc-200 text-zinc-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5'
+                  ? 'bg-zinc-900 border-white/10 text-white focus:border-amber-500' 
+                  : 'bg-white border-zinc-200 text-zinc-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/5'
               }`}
               value={localFeedback}
               onChange={e => setLocalFeedback(e.target.value)}

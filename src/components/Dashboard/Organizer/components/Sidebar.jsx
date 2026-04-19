@@ -12,7 +12,7 @@ const Sidebar = ({ nav, section, setSection, isOrganizer, roleLabel }) => {
       style={{
         height: '100vh',
         backdropFilter: 'blur(20px)',
-        borderRight: isDark ? '1px solid rgba(251,191,36,0.1)' : '1px solid rgba(15,23,42,0.08)',
+        borderRight: isDark ? '1px solid rgba(251,191,36,0.1)' : '1px solid rgba(15,23,42,0.15)',
         padding: '32px 16px'
       }}>
 
@@ -37,8 +37,8 @@ const Sidebar = ({ nav, section, setSection, isOrganizer, roleLabel }) => {
               initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 * i }}
               whileHover={{ x: 5 }} whileTap={{ scale: 0.98 }}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold w-full text-left transition-all relative overflow-hidden group ${active
-                  ? (isDark ? 'text-amber-400' : 'text-amber-600')
-                  : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-zinc-500 hover:text-zinc-900')
+                  ? (isDark ? 'text-amber-400' : 'text-amber-700')
+                  : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-zinc-600 hover:text-zinc-900')
                 }`}
               style={active
                 ? {
@@ -48,7 +48,7 @@ const Sidebar = ({ nav, section, setSection, isOrganizer, roleLabel }) => {
                 : { background: 'rgba(255,255,255,0)', border: '1px solid transparent' }}
             >
               {active && <motion.div layoutId="activeNavIndicator" className="absolute left-0 top-1/4 bottom-1/4 w-1 rounded-r-full" style={{ background: '#fbbf24', boxShadow: '0 0 10px rgba(251,191,36,0.5)' }} />}
-              <Icon size={16} className={`${active ? (isDark ? 'text-amber-400' : 'text-amber-600') : (isDark ? 'text-slate-500 group-hover:text-amber-400' : 'text-zinc-400 group-hover:text-amber-500')} transition-colors`} />
+              <Icon size={16} className={`${active ? (isDark ? 'text-amber-400' : 'text-amber-700') : (isDark ? 'text-slate-500 group-hover:text-amber-400' : 'text-zinc-500 group-hover:text-amber-600')} transition-colors`} />
               <span className="flex-1 text-[13px]">{label}</span>
               {badge && (
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-black border transition-colors ${isDark
@@ -66,13 +66,13 @@ const Sidebar = ({ nav, section, setSection, isOrganizer, roleLabel }) => {
       {/* Footer Actions */}
       <div className={`mt-auto pt-6 flex flex-col gap-4 border-t transition-colors ${isDark ? 'border-white/5' : 'border-zinc-100'}`}>
         <div className="flex items-center justify-between px-2">
-          <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Theme</span>
+          <span className={`text-[10px] font-black uppercase tracking-wider ${isDark ? 'text-zinc-500' : 'text-zinc-600'}`}>Theme</span>
           <ThemeToggle />
         </div>
 
         <button
           onClick={logout}
-          className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold w-full text-left transition-all group ${isDark ? 'text-zinc-500 hover:text-red-400 hover:bg-red-500/5' : 'text-zinc-400 hover:text-red-600 hover:bg-red-50/80'
+          className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold w-full text-left transition-all group ${isDark ? 'text-zinc-500 hover:text-red-400 hover:bg-red-500/5' : 'text-zinc-500 hover:text-red-600 hover:bg-red-50/80'
             }`}
         >
           <LogOut size={16} />

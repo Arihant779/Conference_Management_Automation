@@ -231,10 +231,12 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
         .map(g => RECIPIENT_GROUPS.find(r => r.key === g)?.label).filter(Boolean).join(', ')
         || 'conference members';
 
+      const contextIntent = intent + " (IMPORTANT: Do NOT greet the group generally, e.g., 'Dear All Members'. You must use exactly the literal placeholder '{Name}' in your greeting (e.g. 'Dear {Name},') so the system can personalize each email dynamically.)";
+
       const res = await fetch(`${API_BASE_URL}/api/generate-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ intent, tone, subject, recipientDescription, conferenceTitle: conf?.title, senderRole }),
+        body: JSON.stringify({ intent: contextIntent, tone, subject, recipientDescription, conferenceTitle: conf?.title, senderRole }),
       });
       if (!res.ok) throw new Error('Generation failed');
       const data = await res.json();
@@ -371,24 +373,46 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
         setSentCount(sent);
         setStep('sent');
       } else {
-        // Normal flow: bulk send without attachments
-        const res = await fetch(`${API_BASE_URL}/api/send-email`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: resolvedRecipients,
-            subject,
-            body,
-            senderRole,
-          }),
+        // Normal flow: bulk send with personalization
+        const emailToName = {};
+        members.forEach(m => {
+          if (m.email) emailToName[m.email.toLowerCase()] = m.full_name || m.email.split('@')[0];
         });
+        
+        let sent = 0;
+        let failed = 0;
 
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || 'Send failed');
+        // Iterate to allow replacing {Name} dynamically for each recipient
+        for (let i = 0; i < resolvedRecipients.length; i++) {
+          const email = resolvedRecipients[i];
+          const name = emailToName[email.toLowerCase()] || email.split('@')[0];
+          const personalizedBody = body.replace(/{Name}/gi, name);
+
+          try {
+            const res = await fetch(`${API_BASE_URL}/api/send-email`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                to: [email],
+                subject,
+                body: personalizedBody,
+                senderRole,
+              }),
+            });
+
+            if (!res.ok) throw new Error('Send failed');
+            sent++;
+          } catch {
+            failed++;
+          }
+
+          if (i < resolvedRecipients.length - 1) {
+            await new Promise(r => setTimeout(r, 100)); // slight delay
+          }
         }
-        const result = await res.json();
-        setSentCount(result.sent || resolvedRecipients.length);
+
+        if (sent === 0 && failed > 0) throw new Error('Failed to send messages');
+        setSentCount(sent);
         setStep('sent');
       }
     } catch (err) {

@@ -18,7 +18,7 @@ export const Modal = ({ title, onClose, children, width = 'max-w-lg' }) => {
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[200] flex items-center justify-center p-4"
       style={{ 
-        background: isDark ? 'rgba(4,7,13,0.85)' : 'rgba(15,23,42,0.4)', 
+        background: isDark ? 'rgba(4,7,13,0.85)' : 'rgba(15,23,42,0.65)', 
         backdropFilter: 'blur(12px)' 
       }}
       onClick={e => e.target === e.currentTarget && onClose()}
@@ -28,14 +28,14 @@ export const Modal = ({ title, onClose, children, width = 'max-w-lg' }) => {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
         className={cls('w-full shadow-2xl max-h-[90vh] overflow-y-auto rounded-3xl p-8 transition-colors duration-500', width, 
-          isDark ? 'bg-[#0B0F1A]/95 border border-white/[0.08]' : 'bg-white border border-zinc-200'
+          isDark ? 'bg-[#0B0F1A]/95 border border-white/[0.08]' : 'bg-white border border-zinc-300 shadow-xl shadow-zinc-200/50'
         )}
       >
         <div className="flex justify-between items-center mb-8">
           <h3 className={`text-xl font-bold tracking-tight transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>{title}</h3>
           <button onClick={onClose}
             className={`p-2 rounded-full transition-all hover:rotate-90 ${
-              isDark ? 'text-zinc-500 hover:text-white hover:bg-white/10 bg-white/5' : 'text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 bg-zinc-50'
+              isDark ? 'text-zinc-500 hover:text-white hover:bg-white/10 bg-white/5' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200 bg-zinc-100'
             }`}>
             <X size={18} />
           </button>
@@ -60,7 +60,7 @@ export const Input = ({ className, ...props }) => {
   return (
     <input {...props} className={cls(
       'w-full rounded-xl px-4 py-3 text-sm outline-none transition-all duration-300',
-      isDark ? 'text-white placeholder-zinc-600 bg-white/[0.03] border-white/[0.08]' : 'text-zinc-900 placeholder-zinc-400 bg-zinc-50 border-zinc-200 focus:bg-white',
+      isDark ? 'text-white placeholder-zinc-600 bg-white/[0.03] border-white/[0.08]' : 'text-zinc-900 placeholder-zinc-400 bg-white border-zinc-300 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/5',
       className,
     )} 
       style={{ 
@@ -73,7 +73,7 @@ export const Input = ({ className, ...props }) => {
         e.target.style.boxShadow = '0 0 15px rgba(251,191,36,0.15)'; 
       }}
       onBlur={e => { 
-        e.target.style.borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(228,228,231,1)'; 
+        e.target.style.borderColor = isDark ? 'rgba(255,255,255,0.08)' : '#d4d4d8'; 
         e.target.style.boxShadow = 'none'; 
       }}
     />
@@ -87,7 +87,7 @@ export const Sel = ({ children, className, ...props }) => {
   return (
     <select {...props} className={cls(
       'w-full rounded-xl px-4 py-3 text-sm outline-none transition-all cursor-pointer duration-300',
-      isDark ? 'text-white bg-[#0B0F1A]/90 border-white/[0.08]' : 'text-zinc-900 bg-zinc-50 border-zinc-200',
+      isDark ? 'text-white bg-[#0B0F1A]/90 border-white/[0.08]' : 'text-zinc-900 bg-white border-zinc-300',
       className,
     )} 
       style={{ 
@@ -96,7 +96,7 @@ export const Sel = ({ children, className, ...props }) => {
         backdropFilter: isDark ? 'blur(10px)' : 'none' 
       }}
       onFocus={e => { e.target.style.borderColor = 'rgba(251,191,36,0.5)'; }}
-      onBlur={e => { e.target.style.borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(228,228,231,1)'; }}
+      onBlur={e => { e.target.style.borderColor = isDark ? 'rgba(255,255,255,0.08)' : '#d4d4d8'; }}
     >
       {children}
     </select>
@@ -110,7 +110,7 @@ export const Textarea = ({ className, ...props }) => {
   return (
     <textarea {...props} className={cls(
       'w-full rounded-xl px-4 py-3 text-sm outline-none resize-none transition-all duration-300',
-      isDark ? 'text-white placeholder-zinc-600 bg-white/[0.03] border-white/[0.08]' : 'text-zinc-900 placeholder-zinc-400 bg-zinc-50 border-zinc-200 focus:bg-white',
+      isDark ? 'text-white placeholder-zinc-600 bg-white/[0.03] border-white/[0.08]' : 'text-zinc-900 placeholder-zinc-400 bg-white border-zinc-300 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/5',
       className,
     )} 
       style={{ 
@@ -123,7 +123,7 @@ export const Textarea = ({ className, ...props }) => {
         e.target.style.boxShadow = '0 0 15px rgba(251,191,36,0.15)'; 
       }}
       onBlur={e => { 
-        e.target.style.borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(228,228,231,1)'; 
+        e.target.style.borderColor = isDark ? 'rgba(255,255,255,0.08)' : '#d4d4d8'; 
         e.target.style.boxShadow = 'none'; 
       }}
     />
@@ -147,9 +147,9 @@ export const Btn = ({ variant = 'primary', children, className, ...props }) => {
         };
       case 'secondary':
         return { 
-          background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(15,23,42,0.04)', 
-          border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(15,23,42,0.1)'}`,
-          color: isDark ? '#D4D4D8' : '#3F3F46'
+          background: isDark ? 'rgba(255,255,255,0.05)' : '#ffffff', 
+          border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : '#d4d4d8'}`,
+          color: isDark ? '#D4D4D8' : '#18181b'
         };
       case 'danger':
         return { 
@@ -161,7 +161,7 @@ export const Btn = ({ variant = 'primary', children, className, ...props }) => {
         return { 
           background: 'transparent', 
           border: 'none',
-          color: isDark ? '#71717A' : '#A1A1AA'
+          color: isDark ? '#71717A' : '#71717A'
         };
       default:
         return {};
@@ -203,9 +203,9 @@ export const Empty = ({ icon: Icon, msg, action }) => {
 
   return (
     <div className={`py-16 text-center rounded-2xl border-dashed transition-colors duration-500`} 
-      style={{ border: `1px dashed ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.12)'}` }}>
-      <Icon size={28} className="text-zinc-500 mx-auto mb-3" />
-      <p className="text-zinc-500 text-sm">{msg}</p>
+      style={{ border: `1px dashed ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.3)'}` }}>
+      <Icon size={28} className={isDark ? "text-zinc-500 mx-auto mb-3" : "text-zinc-400 mx-auto mb-3"} />
+      <p className={isDark ? "text-zinc-500 text-sm" : "text-zinc-600 font-medium text-sm"}>{msg}</p>
       {action && (
         <button onClick={action.onClick} className="mt-3 text-sm font-semibold hover:underline" style={{ color: '#f5c518' }}>
           {action.label}
@@ -224,8 +224,8 @@ export const LoadingRows = () => {
       {[...Array(4)].map((_, i) => (
         <div key={i} className={`h-14 rounded-xl animate-pulse transition-colors duration-500`} 
           style={{ 
-            background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(15,23,42,0.02)', 
-            border: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(15,23,42,0.05)'}` 
+            background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(15,23,42,0.08)', 
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(15,23,42,0.15)'}` 
           }} 
         />
       ))}

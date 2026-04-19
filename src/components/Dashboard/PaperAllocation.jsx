@@ -159,6 +159,28 @@ const PaperAllocation = ({ conf, onRefresh }) => {
     }
   };
 
+  const handleSelectAllPapers = () => {
+    const allSelected = dbPapers.every(p => papers.some(x => x.dbId === p.id));
+    if (allSelected) {
+      // Clear only DB papers
+      setPapers(prev => prev.filter(x => !x.dbId));
+    } else {
+      // Add missing DB papers
+      const manual = papers.filter(x => !x.dbId);
+      const allDb = dbPapers.map(p => ({ dbId: p.id, name: p.name, file_url: p.file_url }));
+      setPapers([...manual, ...allDb]);
+    }
+  };
+
+  const handleSelectAllReviewers = () => {
+    const allSelected = dbReviewers.every(r => reviewers.some(x => x.dbId === r.id));
+    if (allSelected) {
+      setReviewers([]);
+    } else {
+      setReviewers(dbReviewers.map(r => ({ ...r, dbId: r.id })));
+    }
+  };
+
   const addFiles = (fileList) => {
     const pdfs = Array.from(fileList).filter(f => f.name.toLowerCase().endsWith('.pdf'));
     setPapers(prev => [...prev, ...pdfs.map(f => ({ file: f, name: f.name }))]);
@@ -429,7 +451,17 @@ const PaperAllocation = ({ conf, onRefresh }) => {
 
             {showPaperDbSelector && (
               <div className={cls("mb-6 border rounded-2xl p-4 animate-in slide-in-from-top-4", isDark ? "bg-amber-500/5 border-amber-500/10" : "bg-zinc-50 border-zinc-100")}>
-                <div className={cls("text-[10px] font-bold uppercase tracking-[0.2em] mb-4", isDark ? "text-amber-400" : "text-amber-600")}>CONF. DATABASE PAPERS</div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className={cls("text-[10px] font-bold uppercase tracking-[0.2em]", isDark ? "text-amber-400" : "text-amber-600")}>CONF. DATABASE PAPERS</div>
+                  <button 
+                    onClick={handleSelectAllPapers}
+                    className={cls("text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg transition-all", 
+                      isDark ? "bg-white/5 text-slate-400 hover:bg-white/10 hover:text-amber-400" : "bg-white text-zinc-500 hover:bg-amber-50 hover:text-amber-600 border border-zinc-200"
+                    )}
+                  >
+                    {dbPapers.every(p => papers.some(x => x.dbId === p.id)) ? 'Deselect All' : 'Select All'}
+                  </button>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                   {dbPapers.length === 0 ? (
                     <div className="col-span-full py-8 text-center text-xs italic text-slate-500">Empty repository for this conference.</div>
@@ -501,9 +533,19 @@ const PaperAllocation = ({ conf, onRefresh }) => {
 
             {showDbSelector && (
               <div className={cls("mb-8 border rounded-2xl p-6 animate-in slide-in-from-top-4", isDark ? "bg-amber-500/5 border-amber-500/10" : "bg-zinc-50 border-zinc-100")}>
-                <div className={cls("text-[10px] font-bold uppercase tracking-[0.2em] mb-4 flex justify-between", isDark ? "text-amber-400" : "text-amber-600")}>
-                  AVAILABLE MEMBERS
-                  {loadingReviewers && <Loader2 size={12} className="animate-spin" />}
+                <div className="flex items-center justify-between mb-4">
+                  <div className={cls("text-[10px] font-bold uppercase tracking-[0.2em] flex items-center gap-3", isDark ? "text-amber-400" : "text-amber-600")}>
+                    AVAILABLE MEMBERS
+                    {loadingReviewers && <Loader2 size={12} className="animate-spin" />}
+                  </div>
+                  <button 
+                    onClick={handleSelectAllReviewers}
+                    className={cls("text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg transition-all", 
+                      isDark ? "bg-white/5 text-slate-400 hover:bg-white/10 hover:text-amber-400" : "bg-white text-zinc-500 hover:bg-amber-50 hover:text-amber-600 border border-zinc-200"
+                    )}
+                  >
+                    {dbReviewers.every(r => reviewers.some(x => x.dbId === r.id)) ? 'Deselect All' : 'Select All'}
+                  </button>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {dbReviewers.map(r => {

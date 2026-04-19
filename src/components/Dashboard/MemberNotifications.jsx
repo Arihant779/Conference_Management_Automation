@@ -57,10 +57,10 @@ const MemberNotifications = ({ conf }) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-6">
-        <Bell size={18} className="text-indigo-400" />
+        <Bell size={18} className="text-amber-400" />
         <h3 className={cls("text-lg font-bold transition-colors", isDark ? "text-white" : "text-zinc-900")}>Announcements</h3>
         {userRole && (
-          <span className={cls("text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase tracking-wider ml-auto", isDark ? "bg-indigo-500/10 text-indigo-300 border-indigo-500/20" : "bg-indigo-50 text-indigo-600 border-indigo-100")}>
+          <span className={cls("text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase tracking-wider ml-auto", isDark ? "bg-amber-500/10 text-amber-300 border-amber-500/20" : "bg-amber-50 text-amber-600 border-amber-100")}>
             Showing for: {userRole}
           </span>
         )}

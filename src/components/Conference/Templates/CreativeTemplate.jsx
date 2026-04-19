@@ -26,36 +26,13 @@ const T = {
 
 const MeshGradient = () => (
   <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none opacity-40">
-    <motion.div
-      animate={{
-        scale: [1, 1.2, 1],
-        x: [0, 100, 0],
-        y: [0, 50, 0],
-        rotate: [0, 180, 360],
-      }}
-      transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-      className="absolute top-[-20%] left-[-10%] w-[80vw] h-[80vw] rounded-full"
+    <div className="absolute top-[-20%] left-[-10%] w-[80vw] h-[80vw] rounded-full"
       style={{ background: 'radial-gradient(circle, rgba(245,197,24,0.3) 0%, transparent 70%)', filter: 'blur(80px)' }}
     />
-    <motion.div
-      animate={{
-        scale: [1, 1.3, 1],
-        x: [0, -80, 0],
-        y: [0, 100, 0],
-        rotate: [360, 180, 0],
-      }}
-      transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-      className="absolute bottom-[-10%] right-[-5%] w-[70vw] h-[70vw] rounded-full"
+    <div className="absolute bottom-[-10%] right-[-5%] w-[70vw] h-[70vw] rounded-full"
       style={{ background: 'radial-gradient(circle, rgba(251,191,36,0.2) 0%, transparent 70%)', filter: 'blur(100px)' }}
     />
-    <motion.div
-      animate={{
-        scale: [1, 1.2, 1],
-        x: [0, 50, 0],
-        y: [0, -100, 0],
-      }}
-      transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-      className="absolute top-[20%] right-[10%] w-[50vw] h-[50vw] rounded-full"
+    <div className="absolute top-[20%] right-[10%] w-[50vw] h-[50vw] rounded-full"
       style={{ background: 'radial-gradient(circle, rgba(252,211,77,0.2) 0%, transparent 70%)', filter: 'blur(120px)' }}
     />
   </div>
@@ -232,26 +209,10 @@ const CreativeTemplate = ({
       {/* ── HIGH-END AMBIENT EFFECTS ── */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         {/* Animated Aurora */}
-        <motion.div 
-          animate={{ 
-            scale: [1, 1.2, 1],
-            rotate: [0, 90, 0],
-            x: [-100, 100, -100],
-            y: [-50, 50, -50]
-          }}
-          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-          className="absolute -top-[20%] -left-[10%] w-[80vw] h-[80vw] rounded-full opacity-[0.08]"
+        <div className="absolute -top-[20%] -left-[10%] w-[80vw] h-[80vw] rounded-full opacity-[0.08]"
           style={{ background: 'radial-gradient(circle, #f5c518 0%, #fbbf24 50%, transparent 70%)', filter: 'blur(100px)' }}
         />
-        <motion.div 
-          animate={{ 
-            scale: [1.3, 1, 1.3],
-            rotate: [0, -60, 0],
-            x: [100, -100, 100],
-            y: [50, -50, 50]
-          }}
-          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-          className="absolute -bottom-[20%] -right-[10%] w-[70vw] h-[70vw] rounded-full opacity-[0.06]"
+        <div className="absolute -bottom-[20%] -right-[10%] w-[70vw] h-[70vw] rounded-full opacity-[0.06]"
           style={{ background: 'radial-gradient(circle, #fcd34d 0%, #f5c518 50%, transparent 70%)', filter: 'blur(120px)' }}
         />
         {/* Subtle Mesh Grid */}
@@ -429,7 +390,6 @@ const CreativeTemplate = ({
          </motion.div>
         </section>
 
-        {/* ── SECTION NAV ── */}
         <nav className={`sticky top-0 z-[100] transition-all duration-500 ${scrolled ? 'py-4 bg-white/70 backdrop-blur-3xl border-b border-black/5' : 'py-10 bg-transparent border-transparent'}`}>
            <div className="max-w-7xl mx-auto px-10 flex items-center justify-between">
               <div className="flex gap-12 overflow-x-auto no-scrollbar">
@@ -447,11 +407,13 @@ const CreativeTemplate = ({
                   </button>
                 ))}
               </div>
-              <div className="hidden md:flex items-center gap-4">
-                 <div className="text-[10px] font-black text-slate-300 mr-4">PORTAL STATUS: ALPHA</div>
-                 <div className="w-12 h-[1px] bg-black/5" />
-                 <Star size={16} className="text-p-secondary animate-pulse" />
-              </div>
+              
+              <PrismButton
+                onClick={() => setShowReg(true)}
+                className={`!py-2 !px-6 !text-[10px] transition-all duration-500 ${scrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+              >
+                Join the Spectrum
+              </PrismButton>
            </div>
         </nav>
 
