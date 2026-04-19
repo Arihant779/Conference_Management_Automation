@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
 import { protectedFetch, API_BASE_URL } from '../../utils/api';
+import { triggerEmailAutomation } from '../../utils/automationHelper';
 import MemberNotifications from './MemberNotifications';
 import Sidebar from './Organizer/components/Sidebar';
 import AmbientBackground from '../Common/AmbientBackground';
@@ -214,6 +215,21 @@ const MemberDashboard = ({ conf, onBack }) => {
     const { error } = await supabase.from('paper').upsert({ paper_id: paperId, status: newStatus, conference_id: confId }, { onConflict: 'paper_id' });
     setSaving(false);
     if (error) { alert(`Failed to update status: ${error.message}`); return; }
+    
+    // Check if status changed to accepted or rejected & trigger automation
+    const p = confPapers.find(p => p.paper_id === paperId);
+    if (p && p.status !== newStatus) {
+      if (newStatus === 'accepted') {
+        const email = p.users?.user_email || '';
+        const name = p.users?.user_name || p.author_id;
+        triggerEmailAutomation(confId, 'on_paper_accepted', { authorEmail: email, authorName: name, paperTitle: p.paper_title || p.title || 'Untitled' });
+      } else if (newStatus === 'rejected') {
+        const email = p.users?.user_email || '';
+        const name = p.users?.user_name || p.author_id;
+        triggerEmailAutomation(confId, 'on_paper_rejected', { authorEmail: email, authorName: name, paperTitle: p.paper_title || p.title || 'Untitled' });
+      }
+    }
+    
     setConfPapers(prev => prev.map(p => p.paper_id === paperId ? { ...p, status: newStatus } : p));
   };
 
