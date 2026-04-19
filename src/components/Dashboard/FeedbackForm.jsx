@@ -155,7 +155,7 @@ const FeedbackForm = ({ conf }) => {
           <button 
             onClick={() => fetchForm()}
             className={cls("px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-lg", 
-              isDark ? "bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20" : "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20")}
+              isDark ? "bg-amber-600 hover:bg-amber-500 text-white shadow-amber-500/20" : "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20")}
           >
             Check for Updates
           </button>
@@ -216,7 +216,7 @@ const FeedbackForm = ({ conf }) => {
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className={cls("w-10 h-10 border rounded-xl flex items-center justify-center transition-all", 
-          isDark ? "bg-indigo-500/10 border-indigo-500/15 text-indigo-400" : "bg-indigo-50 border-indigo-100 text-indigo-600 shadow-sm")}>
+          isDark ? "bg-amber-500/10 border-amber-500/15 text-amber-400" : "bg-amber-50 border-amber-100 text-amber-600 shadow-sm")}>
           <MessageSquare size={20} />
         </div>
         <div>
@@ -293,8 +293,8 @@ const FeedbackForm = ({ conf }) => {
               <div className="ml-6">
                 <textarea
                   className={cls(
-                    "w-full border rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none transition-all", 
-                    isDark ? "bg-white/4 border-white/8 text-white placeholder-slate-600" : "bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:ring-4 focus:ring-indigo-500/5"
+                    "w-full border rounded-xl px-4 py-3 text-sm focus:border-amber-500 outline-none transition-all", 
+                    isDark ? "bg-white/4 border-white/8 text-white placeholder-slate-600" : "bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:ring-4 focus:ring-amber-500/5"
                   )}
                   style={{ 
                     minHeight: '120px',
@@ -324,7 +324,7 @@ const FeedbackForm = ({ conf }) => {
         onClick={handleSubmit}
         disabled={submitting || answeredCount === 0}
         className={cls("w-full py-3 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed text-sm font-bold transition-all flex items-center justify-center gap-2", 
-          isDark ? "bg-indigo-600 hover:bg-indigo-500 text-white" : "bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20 active:scale-95")}
+          isDark ? "bg-amber-600 hover:bg-amber-500 text-white" : "bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20 active:scale-95")}
       >
         {submitting ? (
           <>

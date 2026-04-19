@@ -80,7 +80,7 @@ const ConferencePage = ({ conf, onBack }) => {
 
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-center w-full px-6">
 
-          <div className="inline-block bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest mb-3">
+          <div className="inline-block bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest mb-3">
             {conf.theme ?? 'Academic Conference'}
           </div>
 
@@ -99,14 +99,14 @@ const ConferencePage = ({ conf, onBack }) => {
 
           {dateLabel && (
             <div className="flex items-center gap-2 text-slate-400">
-              <Calendar size={16} className="text-indigo-400" />
+              <Calendar size={16} className="text-amber-400" />
               {dateLabel}
             </div>
           )}
 
           {conf.location && (
             <div className="flex items-center gap-2 text-slate-400">
-              <MapPin size={16} className="text-indigo-400" />
+              <MapPin size={16} className="text-amber-400" />
               {conf.location}
             </div>
           )}
@@ -116,7 +116,7 @@ const ConferencePage = ({ conf, onBack }) => {
               href={conf.website}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-2 text-indigo-400 hover:text-indigo-300 transition-colors"
+              className="flex items-center gap-2 text-amber-400 hover:text-amber-300 transition-colors"
             >
               <Globe size={16} />
               Conference Website
@@ -201,7 +201,7 @@ const ConferencePage = ({ conf, onBack }) => {
               <button
                 onClick={handleSubmit}
                 disabled={submitting || !paperTitle.trim()}
-                className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold"
+                className="flex-1 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-sm font-semibold"
               >
                 {submitting ? 'Submitting...' : 'Submit Paper'}
               </button>

@@ -17,22 +17,22 @@ const cls = (...c) => c.filter(Boolean).join(' ');
 const StatusBadge = ({ status }) => {
   const { theme } = useApp();
   const isDark = theme === 'dark';
-  
+
   const statusConfig = {
-    pending: { 
-      label: 'Under Review', 
-      color: isDark ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' : 'bg-amber-50 text-amber-700 border-amber-300 font-bold', 
-      dot: 'bg-amber-500' 
+    pending: {
+      label: 'Under Review',
+      color: isDark ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' : 'bg-amber-50 text-amber-700 border-amber-300 font-bold',
+      dot: 'bg-amber-500'
     },
-    accepted: { 
-      label: 'Accepted', 
-      color: isDark ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-emerald-50 text-emerald-700 border-emerald-300 font-bold', 
-      dot: 'bg-emerald-500' 
+    accepted: {
+      label: 'Accepted',
+      color: isDark ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-emerald-50 text-emerald-700 border-emerald-300 font-bold',
+      dot: 'bg-emerald-500'
     },
-    rejected: { 
-      label: 'Not Accepted', 
-      color: isDark ? 'bg-red-500/10 text-red-400 border-red-500/30' : 'bg-red-50 text-red-700 border-red-300 font-bold', 
-      dot: 'bg-red-500' 
+    rejected: {
+      label: 'Not Accepted',
+      color: isDark ? 'bg-red-500/10 text-red-400 border-red-500/30' : 'bg-red-50 text-red-700 border-red-300 font-bold',
+      dot: 'bg-red-500'
     },
   };
 
@@ -57,7 +57,7 @@ const TIME_SLOTS = [
 /* ═══════════════════════════════════════════════════════════════════════════
    SLIDE UPLOAD PANEL — per paper
 ═══════════════════════════════════════════════════════════════════════════ */
-const SlideUploadPanel = ({ paper, onSlideUploaded }) => {
+const SlideUploadPanel = ({ paper, onSlideUploaded, isDark }) => {
   const { user } = useApp();
   const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState('');
@@ -84,33 +84,38 @@ const SlideUploadPanel = ({ paper, onSlideUploaded }) => {
 
     try {
       const ext = selectedFile.name.split('.').pop();
-      const newPath = `${paper.conference_id}/${user?.id || 'unknown'}_${paper.paper_id}.${ext}`;
-      const newFullUrl = supabase.storage.from('slides').getPublicUrl(newPath).data.publicUrl;
+      // Use timestamp to ensure a unique URL every time, preventing browser caching issues
+      const timestamp = Date.now();
+      const newPath = `${paper.conference_id}/${user?.id || 'unknown'}_${paper.paper_id}_${timestamp}.${ext}`;
 
-      // 1. Delete old file ONLY if the path has changed (e.g. extension changed)
-      if (paper.slide_url && paper.slide_url !== newFullUrl) {
+      // 1. Delete old file from storage if it exists
+      if (paper.slide_url) {
         try {
+          // Extract the path from the public URL
+          // Format expected: .../storage/v1/object/public/slides/PATH
           const urlParts = paper.slide_url.split('/storage/v1/object/public/slides/');
           if (urlParts.length === 2) {
             const oldPath = decodeURI(urlParts[1]);
             await supabase.storage.from('slides').remove([oldPath]);
           }
         } catch (delErr) {
-          console.error('Failed to delete old slide:', delErr);
+          console.error('[SlideUpload] Cleanup failed:', delErr);
+          // Continue anyway, orphaned files are better than blocked uploads
         }
       }
 
-      // 2. Upload new file (using upsert: true with fixed path)
+      // 2. Upload new file
       const { error: upErr } = await supabase.storage
         .from('slides')
         .upload(newPath, selectedFile, {
-          cacheControl: '0', // disable cache so changes show immediately
+          cacheControl: '0',
           upsert: true
         });
 
       if (upErr) throw new Error(upErr.message);
 
-      const slideUrl = newFullUrl;
+      // 3. Get the new public URL
+      const { data: { publicUrl: slideUrl } } = supabase.storage.from('slides').getPublicUrl(newPath);
 
       // 3. Update DB
       const { error: dbErr } = await supabase
@@ -131,7 +136,6 @@ const SlideUploadPanel = ({ paper, onSlideUploaded }) => {
   };
 
   const { theme } = useApp();
-  const isDark = theme === 'dark';
 
   if (localUrl) {
     return (
@@ -156,10 +160,7 @@ const SlideUploadPanel = ({ paper, onSlideUploaded }) => {
         </div>
         <button
           onClick={() => { setLocalUrl(''); inputRef.current?.click(); }}
-          className={cls(
-            "text-[10px] font-bold transition-colors shrink-0",
-            isDark ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600"
-          )}
+          className={cls("text-[10px] font-semibold transition-colors shrink-0", isDark ? "text-slate-500 hover:text-slate-300" : "text-zinc-500 hover:text-zinc-900")}
         >
           Replace
         </button>
@@ -174,20 +175,18 @@ const SlideUploadPanel = ({ paper, onSlideUploaded }) => {
         <label
           className={cls(
             'flex items-center gap-3 border border-dashed rounded-xl px-4 py-3 cursor-pointer transition-all',
-            isDark 
-              ? 'border-white/10 hover:border-indigo-500/40 hover:bg-indigo-500/5' 
-              : 'border-zinc-300 bg-white hover:bg-zinc-50 shadow-sm transition-all'
+            isDark ? 'border-white/10 hover:border-indigo-500/40 hover:bg-indigo-500/5' : 'border-zinc-200 hover:border-indigo-500/40 hover:bg-indigo-500/5'
           )}
         >
           <div className={cls(
             "w-8 h-8 border rounded-lg flex items-center justify-center shrink-0",
-            isDark ? "bg-indigo-500/10 border-indigo-500/20" : "bg-indigo-50 border-indigo-100"
+            isDark ? "bg-amber-500/10 border-amber-500/20" : "bg-amber-50 border-amber-100"
           )}>
-            <Upload size={14} className={isDark ? "text-indigo-400" : "text-indigo-600"} />
+            <Upload size={14} className={isDark ? "text-amber-400" : "text-amber-600"} />
           </div>
           <div>
             <p className={cls("text-xs font-semibold", isDark ? "text-slate-300" : "text-zinc-700")}>Select presentation slides</p>
-            <p className="text-[10px] text-slate-500 mt-0.5">PDF, PPT, PPTX or Keynote</p>
+            <p className={cls("text-[10px] mt-0.5", isDark ? "text-slate-600" : "text-zinc-400")}>PDF, PPT, PPTX or Keynote</p>
           </div>
           <input
             ref={inputRef}
@@ -200,25 +199,22 @@ const SlideUploadPanel = ({ paper, onSlideUploaded }) => {
       ) : (
         <div className={cls(
           "border rounded-xl p-3",
-            isDark ? "bg-indigo-500/5 border-indigo-500/20" : "bg-white border-zinc-300 shadow-md shadow-zinc-200/50"
+          isDark ? "bg-amber-500/5 border-amber-500/20" : "bg-white border-zinc-300 shadow-md shadow-zinc-200/50"
         )}>
           <div className="flex items-center gap-3 mb-3">
             <div className={cls(
               "w-8 h-8 border rounded-lg flex items-center justify-center shrink-0",
-              isDark ? "bg-indigo-500/10 border-indigo-500/20" : "bg-indigo-50 border-indigo-100"
+              isDark ? "bg-amber-500/10 border-amber-500/20" : "bg-amber-50 border-amber-100"
             )}>
-              <FileText size={14} className={isDark ? "text-indigo-400" : "text-indigo-600"} />
+              <FileText size={14} className={isDark ? "text-amber-400" : "text-amber-600"} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className={cls("text-xs font-semibold truncate", isDark ? "text-slate-200" : "text-zinc-900")}>{selectedFile.name}</p>
-              <p className="text-[10px] text-slate-500">{(selectedFile.size / 1024).toFixed(0)} KB · Ready to upload</p>
+              <p className={cls("text-xs font-semibold truncate", isDark ? "text-slate-200" : "text-zinc-800")}>{selectedFile.name}</p>
+              <p className={cls("text-[10px]", isDark ? "text-slate-500" : "text-zinc-400")}>{(selectedFile.size / 1024).toFixed(0)} KB · Ready to upload</p>
             </div>
             <button
               onClick={() => setSelectedFile(null)}
-              className={cls(
-                "p-1 rounded-lg transition-all",
-                isDark ? "hover:bg-white/5 text-slate-500 hover:text-white" : "hover:bg-zinc-100 text-zinc-400 hover:text-zinc-900"
-              )}
+              className={cls("p-1 rounded-lg transition-all", isDark ? "hover:bg-white/5 text-slate-500 hover:text-white" : "hover:bg-zinc-100 text-zinc-400 hover:text-zinc-900")}
             >
               <X size={14} />
             </button>
@@ -227,7 +223,7 @@ const SlideUploadPanel = ({ paper, onSlideUploaded }) => {
           <button
             onClick={handleUpload}
             disabled={uploading}
-            className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold py-2 rounded-lg transition-all shadow-sm"
+            className="w-full flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white text-xs font-bold py-2 rounded-lg transition-all shadow-sm"
           >
             {uploading ? (
               <RefreshCw size={12} className="animate-spin" />
@@ -248,9 +244,7 @@ const SlideUploadPanel = ({ paper, onSlideUploaded }) => {
 ═══════════════════════════════════════════════════════════════════════════ */
 const MIN_SLOTS = 3;
 
-const TimePreferencePanel = ({ paper, onSaved }) => {
-  const { theme } = useApp();
-  const isDark = theme === 'dark';
+const TimePreferencePanel = ({ paper, onSaved, isDark }) => {
   // Initialise: if already saved use those, else all slots selected
   const initSlots = () => {
     if (Array.isArray(paper.preferred_slots) && paper.preferred_slots.length > 0)
@@ -313,29 +307,25 @@ const TimePreferencePanel = ({ paper, onSaved }) => {
       {saved && (
         <div className={cls(
           "flex items-start gap-3 border rounded-xl px-4 py-3",
-          isDark ? "bg-blue-500/8 border-blue-500/20" : "bg-white border-blue-300 shadow-sm"
+          isDark ? "bg-amber-500/8 border-amber-500/20" : "bg-white border-amber-300 shadow-sm"
         )}>
-          <CheckCircle size={14} className={isDark ? "text-blue-400 shrink-0 mt-0.5" : "text-blue-500 shrink-0 mt-0.5"} />
+          <CheckCircle size={14} className={isDark ? "text-amber-400 shrink-0 mt-0.5" : "text-amber-500 shrink-0 mt-0.5"} />
           <div className="flex-1 min-w-0">
-            <p className={cls("text-xs font-semibold mb-1.5", isDark ? "text-blue-300" : "text-blue-700")}>
+            <p className={cls("text-xs font-semibold mb-1.5", isDark ? "text-amber-300" : "text-amber-700")}>
               Time preference saved — {selected.size} slot{selected.size !== 1 ? 's' : ''} available
             </p>
             <div className="flex flex-wrap gap-1.5">
               {TIME_SLOTS.filter(s => selected.has(s)).map(s => (
                 <span key={s} className={cls(
                   "text-[10px] font-bold px-2 py-0.5 rounded-lg border",
-                  isDark ? "bg-blue-500/15 border-blue-500/25 text-blue-300" : "bg-white border-blue-200 text-blue-600"
+                  isDark ? "bg-amber-500/15 border-amber-500/25 text-amber-300" : "bg-white border-amber-200 text-amber-600"
                 )}>
                   {s}
                 </span>
               ))}
             </div>
           </div>
-          <button onClick={() => setSaved(false)} 
-            className={cls(
-              "text-[10px] font-bold transition-colors shrink-0",
-              isDark ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600"
-            )}>
+          <button onClick={() => setSaved(false)} className={cls("text-[10px] transition-colors font-semibold shrink-0", isDark ? "text-slate-500 hover:text-slate-300" : "text-zinc-500 hover:text-zinc-900")}>
             Edit
           </button>
         </div>
@@ -345,14 +335,11 @@ const TimePreferencePanel = ({ paper, onSaved }) => {
       {!saved && (
         <>
           {/* Instruction */}
-          <div className={cls(
-            "flex items-start gap-2 border rounded-xl px-4 py-3",
-            isDark ? "bg-[#0d1117] border-white/15" : "bg-zinc-50 border-zinc-300"
-          )}>
-            <Info size={12} className="text-slate-400 shrink-0 mt-0.5" />
-            <p className={cls("text-[11px] font-medium leading-relaxed", isDark ? "text-slate-500" : "text-zinc-500")}>
-              All time slots are selected. <span className={isDark ? "text-slate-400" : "text-zinc-700 font-bold"}>Deselect slots you <strong>cannot</strong> attend.</span> A minimum of <span className="text-purple-500 font-black">{MIN_SLOTS}</span> slots must remain selected.
-              <span className={cls("ml-1", isDark ? "text-slate-600" : "text-zinc-400 italic")}>({selected.size} / {TIME_SLOTS.length} selected)</span>
+          <div className={cls("flex items-start gap-2 border rounded-xl px-4 py-3", isDark ? "bg-[#0d1117] border-white/6" : "bg-zinc-50 border-zinc-200")}>
+            <Info size={12} className="text-slate-500 shrink-0 mt-0.5" />
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              All time slots are selected. <span className={isDark ? "text-slate-400" : "text-zinc-600"}>Deselect slots you <strong>cannot</strong> attend.</span> A minimum of <span className="text-purple-400 font-bold">{MIN_SLOTS}</span> slots must remain selected.
+              <span className="ml-1 text-slate-600">({selected.size} / {TIME_SLOTS.length} selected)</span>
             </p>
           </div>
 
@@ -369,12 +356,12 @@ const TimePreferencePanel = ({ paper, onSaved }) => {
                   className={cls(
                     'px-3 py-1.5 rounded-xl text-xs font-bold border transition-all select-none',
                     isOn
-                      ? (isDark ? 'bg-purple-500/15 border-purple-500/40 text-purple-200 hover:bg-purple-500/10' : 'bg-purple-50 border-purple-200 text-purple-600')
-                      : (isDark ? 'bg-white/3 border-white/8 text-slate-500 hover:border-white/16 hover:text-slate-400' : 'bg-zinc-50 border-zinc-200 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'),
-                    wouldHitMin && 'opacity-40 cursor-not-allowed'
+                      ? (isDark ? 'bg-purple-500/15 border-purple-500/40 text-purple-200 hover:bg-purple-500/10' : 'bg-purple-500/10 border-purple-500/30 text-purple-600 hover:bg-purple-500/20')
+                      : (isDark ? 'bg-white/3 border-white/8 text-slate-500 hover:border-white/16 hover:text-slate-400' : 'bg-zinc-100 border-zinc-200 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-700'),
+                    wouldHitMin && 'opacity-60 cursor-not-allowed'
                   )}
                 >
-                  {isOn && <span className={isDark ? "mr-1 text-purple-400" : "mr-1 text-purple-500"}>✓</span>}
+                  {isOn && <span className={isDark ? "mr-1 text-amber-400" : "mr-1 text-amber-500"}>✓</span>}
                   {slot}
                 </button>
               );
@@ -392,8 +379,8 @@ const TimePreferencePanel = ({ paper, onSaved }) => {
               rows={2}
               placeholder="e.g. I am unavailable on the first day morning…"
               className={cls(
-                "w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-purple-500 resize-none transition-all",
-                isDark ? "bg-white/5 border-white/8 text-white placeholder-slate-600" : "bg-white border-zinc-200 text-zinc-900 placeholder-zinc-300"
+                "w-full border rounded-xl px-3 py-2 text-sm outline-none transition-colors resize-none",
+                isDark ? "bg-white/5 border-white/8 text-white placeholder-slate-600 focus:border-purple-500" : "bg-white border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:border-purple-500 shadow-sm"
               )}
             />
           </div>
@@ -407,7 +394,7 @@ const TimePreferencePanel = ({ paper, onSaved }) => {
           <button
             onClick={handleSave}
             disabled={saving || selected.size < MIN_SLOTS}
-            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 shadow-lg shadow-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black px-6 py-2.5 rounded-xl transition-all"
+            className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 shadow-lg shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black px-6 py-2.5 rounded-xl transition-all"
           >
             <Send size={12} />
             {saving ? 'Saving…' : `Save ${selected.size} Slot${selected.size !== 1 ? 's' : ''}`}
@@ -419,20 +406,75 @@ const TimePreferencePanel = ({ paper, onSaved }) => {
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   PAPER CHECKLIST — individual status tracker
+═══════════════════════════════════════════════════════════════════════════ */
+const PaperChecklist = ({ paper, isDark }) => {
+  const isAccepted = paper.status === 'accepted';
+  const hasSlides = !!paper.slide_url;
+  const hasTimePref = Array.isArray(paper.preferred_slots) && paper.preferred_slots.length >= 3;
+
+  const items = [
+    {
+      done: true,
+      label: 'Submit your research paper',
+      sub: 'Paper received by the conference'
+    },
+    {
+      done: isAccepted,
+      label: 'Receive acceptance from reviewers',
+      sub: isAccepted ? 'Paper has been accepted' : 'Awaiting review decision'
+    },
+    {
+      done: hasSlides,
+      label: 'Upload presentation slides',
+      sub: 'Upload PDF, PPTX or Keynote file'
+    },
+    {
+      done: hasTimePref,
+      label: 'Submit your time preference',
+      sub: 'Help the organiser build the schedule',
+      hidden: !isAccepted && !hasTimePref
+    }
+  ];
+
+  return (
+    <div className={cls(
+      'border rounded-2xl p-5 transition-all duration-300',
+      isDark ? 'bg-[#0d1117] border-white/6' : 'bg-white border-zinc-200 shadow-sm'
+    )}>
+      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Paper Checklist</h4>
+      <div className="space-y-2.5">
+        {items.filter(i => !i.hidden).map(({ done, label, sub }) => (
+          <div key={label} className="flex items-start gap-3">
+            <div className={cls(
+              'w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5',
+              done ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'border-white/10 text-slate-600'
+            )}>
+              {done && <CheckCircle size={12} />}
+            </div>
+            <div>
+              <p className={cls('text-sm font-semibold transition-colors', done ? (isDark ? 'text-slate-200' : 'text-zinc-800') : 'text-slate-500')}>{label}</p>
+              <p className="text-[11px] text-slate-600">{sub}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
    PAPER CARD
 ═══════════════════════════════════════════════════════════════════════════ */
-const PaperCard = ({ paper, onSlideUploaded, onTimeSaved }) => {
-  const { theme } = useApp();
-  const isDark = theme === 'dark';
+const PaperCard = ({ paper, onSlideUploaded, onTimeSaved, isDark }) => {
   const [expanded, setExpanded] = useState(paper.status === 'accepted');
   const isAccepted = paper.status === 'accepted';
 
   return (
     <div className={cls(
-      'border rounded-2xl overflow-hidden transition-all duration-300',
-      isDark 
-        ? (isAccepted ? 'bg-[#0d1117] border-emerald-500/20' : 'bg-[#0d1117] border-white/10')
-        : (isAccepted ? 'bg-white border-emerald-300 shadow-md shadow-emerald-500/5' : 'bg-white border-zinc-300 shadow-md shadow-zinc-200/50')
+      'border rounded-2xl overflow-hidden transition-all',
+      isDark ? 'bg-[#0d1117]' : 'bg-white shadow-sm',
+      isAccepted ? (isDark ? 'border-emerald-500/20' : 'border-emerald-500/30') : (isDark ? 'border-white/6' : 'border-zinc-200')
     )}>
       {/* ── Card header ── */}
       <div className="p-5 flex items-start justify-between gap-4">
@@ -441,12 +483,12 @@ const PaperCard = ({ paper, onSlideUploaded, onTimeSaved }) => {
             'w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 mt-0.5',
             isAccepted
               ? (isDark ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-emerald-50 border-emerald-100 text-emerald-600')
-              : (isDark ? 'bg-indigo-500/10 border-indigo-500/15 text-indigo-400' : 'bg-indigo-50 border-indigo-100 text-indigo-600')
+              : (isDark ? 'bg-amber-500/10 border-amber-500/15 text-amber-400' : 'bg-amber-50 border-amber-100 text-amber-600')
           )}>
             <FileText size={18} />
           </div>
           <div>
-            <h3 className={cls("font-bold text-base leading-snug transition-colors", isDark ? "text-white" : "text-zinc-900")}>{paper.paper_title}</h3>
+            <h3 className={cls("font-bold text-base leading-snug", isDark ? "text-white" : "text-zinc-900")}>{paper.paper_title}</h3>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
               {paper.research_area && (
                 <span className={cls("text-[10px] font-bold uppercase tracking-wider", isDark ? "text-slate-500" : "text-zinc-500")}>
@@ -494,50 +536,49 @@ const PaperCard = ({ paper, onSlideUploaded, onTimeSaved }) => {
 
       {/* ── Abstract strip ── */}
       {paper.abstract && (
-        <p className={cls(
-          "px-5 pb-4 text-sm leading-relaxed line-clamp-2 border-t pt-3",
-          isDark ? "text-slate-500 border-white/4" : "text-zinc-500 border-zinc-100"
-        )}>
+        <p className={cls("px-5 pb-4 text-sm leading-relaxed line-clamp-2 border-t pt-3", isDark ? "text-slate-500 border-white/4" : "text-zinc-500 border-zinc-100")}>
           {paper.abstract}
         </p>
       )}
 
       {/* ── Expanded actions ── */}
       {expanded && (
-        <div className={cls(
-          "border-t px-5 py-5 space-y-5",
-          isDark ? "border-white/6 bg-[#080b11]/60" : "border-zinc-100 bg-zinc-50/30"
-        )}>
+        <div className={cls("border-t px-5 py-5 space-y-6", isDark ? "border-white/6 bg-[#080b11]/60" : "border-zinc-100 bg-zinc-50/50")}>
+
+          {/* Checklist at the top of expanded view */}
+          <PaperChecklist paper={paper} isDark={isDark} />
+
+          <div className={cls("h-px", isDark ? "bg-white/5" : "bg-zinc-200/50")} />
 
           {/* Upload slides */}
           <div>
             <div className="flex items-center gap-2 mb-2.5">
-              <Presentation size={14} className="text-blue-500" />
+              <Presentation size={14} className="text-blue-400" />
               <span className={cls("text-xs font-bold uppercase tracking-wider", isDark ? "text-slate-300" : "text-zinc-600")}>Presentation Slides</span>
             </div>
-            <SlideUploadPanel paper={paper} onSlideUploaded={onSlideUploaded} />
+            <SlideUploadPanel paper={paper} onSlideUploaded={onSlideUploaded} isDark={isDark} />
           </div>
 
           {/* Time preference — only for accepted papers */}
           {isAccepted && (
             <div>
               <div className="flex items-center gap-2 mb-2.5">
-                <Clock size={14} className="text-purple-500" />
+                <Clock size={14} className="text-purple-400" />
                 <span className={cls("text-xs font-bold uppercase tracking-wider", isDark ? "text-slate-300" : "text-zinc-600")}>Presentation Time Preference</span>
               </div>
               <div className={cls(
                 "border rounded-xl px-4 py-3 mb-3",
-                isDark ? "bg-purple-500/5 border-purple-500/15" : "bg-purple-50 border-purple-100"
+                isDark ? "bg-amber-500/5 border-amber-500/15" : "bg-amber-50 border-amber-100"
               )}>
                 <div className="flex items-start gap-2">
-                  <Info size={12} className="text-purple-500 shrink-0 mt-0.5" />
-                  <p className={cls("text-[11px] leading-relaxed", isDark ? "text-purple-300/70" : "text-purple-700 font-medium")}>
-                    Your paper has been <strong className={isDark ? "text-purple-300" : "text-purple-900"}>accepted</strong>.
+                  <Info size={12} className="text-amber-500 shrink-0 mt-0.5" />
+                  <p className={cls("text-[11px] leading-relaxed", isDark ? "text-amber-300/70" : "text-amber-700 font-medium")}>
+                    Your paper has been <strong className={isDark ? "text-amber-300" : "text-amber-900"}>accepted</strong>.
                     Please share your preferred date and time slot — the organiser will finalise the schedule accordingly.
                   </p>
                 </div>
               </div>
-              <TimePreferencePanel paper={paper} onSaved={onTimeSaved} />
+              <TimePreferencePanel paper={paper} onSaved={onTimeSaved} isDark={isDark} />
             </div>
           )}
 
@@ -586,7 +627,7 @@ const PresenterDashboard = ({ conf, onBack }) => {
 
   const [papers, setPapers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState('');
+  const [error, setError] = useState('');
   const [section, setSection] = useState('overview');
 
   const nav = [
@@ -670,9 +711,8 @@ const PresenterDashboard = ({ conf, onBack }) => {
                 </div>
 
                 {/* ── Conference info strip ── */}
-                <div className={`border transition-all duration-300 rounded-xl p-4 flex items-center gap-6 flex-wrap ${
-                  isDark ? 'bg-[#0d1117] border-white/10' : 'bg-white border-zinc-300 shadow-md shadow-zinc-200/50'
-                }`}>
+                <div className={`border transition-all duration-300 rounded-xl p-4 flex items-center gap-6 flex-wrap ${isDark ? 'bg-[#0d1117] border-white/10' : 'bg-white border-zinc-300 shadow-md shadow-zinc-200/50'
+                  }`}>
                   <div>
                     <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Conference</div>
                     <div className={`text-sm font-semibold transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>{conf.title}</div>
@@ -702,12 +742,11 @@ const PresenterDashboard = ({ conf, onBack }) => {
                   <div className="grid grid-cols-3 gap-4">
                     {[
                       { label: 'Total Submissions', value: papers.length, color: isDark ? 'text-slate-200' : 'text-zinc-800', icon: FileText },
-                      { label: 'Accepted',          value: accepted,       color: 'text-emerald-400', icon: CheckCircle },
-                      { label: 'Slides Uploaded',   value: withSlides,     color: 'text-blue-400', icon: Presentation },
+                      { label: 'Accepted', value: accepted, color: 'text-emerald-400', icon: CheckCircle },
+                      { label: 'Slides Uploaded', value: withSlides, color: 'text-amber-400', icon: Presentation },
                     ].map(({ label, value, color, icon: Icon }) => (
-                      <div key={label} className={`border rounded-xl p-4 transition-all duration-300 ${
-                        isDark ? 'bg-[#0d1117] border-white/10' : 'bg-white border-zinc-300 shadow-md shadow-zinc-200/50'
-                      }`}>
+                      <div key={label} className={`border rounded-xl p-4 transition-all duration-300 ${isDark ? 'bg-[#0d1117] border-white/10' : 'bg-white border-zinc-300 shadow-md shadow-zinc-200/50'
+                        }`}>
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-[10px] text-slate-500 uppercase tracking-wider font-extrabold">{label}</span>
                           <Icon size={14} className={cls(color, 'opacity-60')} />
@@ -771,7 +810,7 @@ const PresenterDashboard = ({ conf, onBack }) => {
                     </div>
                     <h3 className={cls("text-lg font-bold mb-2 transition-colors", isDark ? "text-white" : "text-zinc-900")}>No Papers Submitted</h3>
                     <p className={cls("text-sm max-w-xs mx-auto transition-colors", isDark ? "text-slate-500" : "text-zinc-500")}>
-                      You have not submitted any papers to this conference yet. 
+                      You have not submitted any papers to this conference yet.
                       Submit your research through the conference page.
                     </p>
                   </div>
@@ -789,49 +828,13 @@ const PresenterDashboard = ({ conf, onBack }) => {
                         paper={paper}
                         onSlideUploaded={handleSlideUploaded}
                         onTimeSaved={handleTimeSaved}
+                        isDark={isDark}
                       />
                     ))}
                   </div>
                 )}
 
-                {/* ── Guide section ── */}
-                {!loading && papers.length > 0 && (
-                  <div className={`border rounded-2xl p-6 transition-all duration-500 ${
-                    isDark ? 'bg-[#0d1117] border-white/10' : 'bg-white border-zinc-300 shadow-md shadow-zinc-200/50'
-                  }`}>
-                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6 py-1 border-b border-zinc-100 flex items-center gap-2">
-                       <span className="w-1 h-1 rounded-full bg-amber-500" />
-                       Presenter Checklist
-                    </h4>
-                    <div className="space-y-4">
-                      {[
-                        { done: papers.length > 0,                label: 'Submit your research paper',           sub: 'Paper received by the conference' },
-                        { done: accepted > 0,                      label: 'Receive acceptance from reviewers',    sub: 'At least one paper accepted' },
-                        { done: withSlides > 0,                    label: 'Upload presentation slides',           sub: 'Upload PDF, PPTX or Keynote file' },
-                        { done: papers.some(p => Array.isArray(p.preferred_slots) && p.preferred_slots.length >= 3), label: 'Submit your time preference', sub: 'Help the organiser build the schedule' },
-                      ].map(({ done, label, sub }) => (
-                        <div key={label} className="flex items-start gap-3 group">
-                          <div className={cls(
-                            'w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-all duration-300',
-                            done 
-                              ? (isDark ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-500') 
-                              : (isDark ? 'border-white/10 text-slate-600' : 'border-zinc-200 text-zinc-300 group-hover:border-zinc-300 group-hover:text-zinc-500')
-                          )}>
-                            {done && <CheckCircle size={12} />}
-                          </div>
-                          <div>
-                            <p className={cls('text-sm font-bold transition-colors', 
-                              done 
-                                ? (isDark ? 'text-slate-200' : 'text-zinc-800') 
-                                : (isDark ? 'text-slate-500' : 'text-zinc-400')
-                            )}>{label}</p>
-                            <p className={cls("text-[11px] transition-colors", isDark ? "text-slate-600" : "text-zinc-500")}>{sub}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                {/* ── Guide section — removed (now per-paper) ── */}
               </>
             )}
 
@@ -857,9 +860,9 @@ const PresenterDashboard = ({ conf, onBack }) => {
 
           </div>
         </main>
+      </div>
     </div>
-  </div>
-);
+  );
 };
 
 export default PresenterDashboard;
