@@ -130,10 +130,10 @@ const [isReviewer, setIsReviewer] = useState(false);
       // Fetch Conference Validation Settings
       const { data: confData } = await supabase.from('conference').select('submission_settings').eq('conference_id', confId).single();
       if (confData?.submission_settings) setSettings(confData.submission_settings);
-      else setSettings({ allowed_extensions: ['.pdf', '.docx'], max_file_size_mb: 10, require_indentation: false });
+        else setSettings({ allowed_extensions: ['.pdf', '.docx'], max_file_size_mb: 10 });
     })();
   }, [confId, user?.id]);
-
+  // â”€â”€ Validate Paper when file changes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     if (!file || !settings) return;
     const runValidation = async () => {
@@ -316,23 +316,23 @@ const [isReviewer, setIsReviewer] = useState(false);
       )}
 
       {isReviewer && (
-  <div className="flex flex-col items-center justify-center py-20 text-center">
-    <div className="w-16 h-16 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto mb-5">
-      <AlertCircle size={28} className="text-amber-400" />
-    </div>
-    <h3 className="text-xl font-bold text-white mb-2">Submission Not Allowed</h3>
-    <p className="text-slate-400 text-sm max-w-sm leading-relaxed">
-      You are part of the <span className="text-amber-400 font-semibold">reviewing team</span> for this conference.
-      Reviewers cannot submit papers to maintain the integrity of the review process.
-    </p>
-    <p className="text-slate-600 text-xs mt-4">
-      If you believe this is a mistake, please contact the conference organizer.
-    </p>
-  </div>
-)}
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-16 h-16 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto mb-5">
+            <AlertCircle size={28} className="text-amber-400" />
+          </div>
+          <h3 className="text-xl font-bold text-white mb-2">Submission Not Allowed</h3>
+          <p className="text-slate-400 text-sm max-w-sm leading-relaxed">
+            You are part of the <span className="text-amber-400 font-semibold">reviewing team</span> for this conference.
+            Reviewers cannot submit papers to maintain the integrity of the review process.
+          </p>
+          <p className="text-slate-600 text-xs mt-4">
+            If you believe this is a mistake, please contact the conference organizer.
+          </p>
+        </div>
+      )}
 
-  {!isReviewer && (
-      <form onSubmit={handleSubmit}>
+      {!isReviewer && (
+        <form onSubmit={handleSubmit}>
         <div className="bg-[#0f1117] border border-white/10 rounded-xl p-8 space-y-8">
 
           {/* â”€â”€ Paper details â”€â”€ */}

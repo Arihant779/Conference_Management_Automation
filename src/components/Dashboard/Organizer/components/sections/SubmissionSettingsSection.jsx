@@ -12,8 +12,6 @@ const SubmissionSettingsSection = ({ conf }) => {
 
   const [settings, setSettings] = useState({
     allowed_extensions: ['.pdf', '.docx'],
-    require_indentation: false,
-    indentation_cm: 0.5,
     max_file_size_mb: 10,
     check_font_size: false,
     min_font_size: 10
@@ -147,41 +145,6 @@ const SubmissionSettingsSection = ({ conf }) => {
             </div>
 
             <div className="space-y-6">
-              {/* Indentation */}
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <h4 className={`text-sm font-bold ${isDark ? 'text-slate-200' : 'text-zinc-800'}`}>Require PDF Indentation</h4>
-                  <p className="text-[11px] text-slate-500 mt-1">Automatically check if paragraphs have the required left indentation (Hanging/First-line).</p>
-                </div>
-                <div 
-                  onClick={() => setSettings({ ...settings, require_indentation: !settings.require_indentation })}
-                  className={`w-12 h-6 rounded-full relative transition-all cursor-pointer grow-0 shrink-0 ${
-                    settings.require_indentation ? 'bg-amber-500' : 'bg-slate-700'
-                  }`}
-                >
-                  <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${
-                    settings.require_indentation ? 'left-7' : 'left-1'
-                  }`} />
-                </div>
-              </div>
-
-              {settings.require_indentation && (
-                <div className="mt-2 animate-in fade-in slide-in-from-top-1">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Minimum Indentation (cm)</label>
-                  <input 
-                    type="number"
-                    step="0.1"
-                    value={settings.indentation_cm}
-                    onChange={e => setSettings({ ...settings, indentation_cm: parseFloat(e.target.value) })}
-                    className={`w-full p-3 rounded-xl border bg-transparent text-sm focus:border-amber-500 outline-none transition-all ${
-                      isDark ? 'border-white/10 text-white' : 'border-zinc-200 text-zinc-900'
-                    }`}
-                  />
-                </div>
-              )}
-
-              <hr className="border-white/5" />
-
               {/* Font Size */}
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
