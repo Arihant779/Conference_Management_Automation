@@ -75,48 +75,6 @@ const MarqueeBand = ({ items, speed = 30 }) => {
   );
 };
 
-/* --- FLOATING GEOMETRIC SHAPES --- */
-const FloatingShapes = () => {
-  const shapes = useMemo(() => [
-    { type: 'ring', x: '8%', y: '15%', size: 60, duration: 22, delay: 0 },
-    { type: 'diamond', x: '85%', y: '25%', size: 30, duration: 18, delay: 3 },
-    { type: 'ring', x: '75%', y: '60%', size: 40, duration: 25, delay: 5 },
-    { type: 'cross', x: '15%', y: '70%', size: 20, duration: 20, delay: 2 },
-    { type: 'diamond', x: '50%', y: '85%', size: 25, duration: 24, delay: 7 },
-    { type: 'ring', x: '35%', y: '40%', size: 35, duration: 28, delay: 4 },
-    { type: 'cross', x: '90%', y: '80%', size: 18, duration: 19, delay: 6 },
-  ], []);
-
-  return (
-    <div className="fixed inset-0 pointer-events-none z-[1] overflow-hidden">
-      {shapes.map((s, i) => (
-        <motion.div key={i} className="absolute"
-          style={{ left: s.x, top: s.y }}
-          animate={{
-            y: [0, -30, 0, 20, 0],
-            x: [0, 15, 0, -10, 0],
-            rotate: [0, 90, 180, 270, 360],
-            opacity: [0.06, 0.12, 0.06],
-          }}
-          transition={{ duration: s.duration, repeat: Infinity, delay: s.delay, ease: 'easeInOut' }}>
-          {s.type === 'ring' && (
-            <div style={{ width: s.size, height: s.size, border: '1.5px solid rgba(251,191,36,0.15)', borderRadius: '50%' }} />
-          )}
-          {s.type === 'diamond' && (
-            <div style={{ width: s.size, height: s.size, border: '1.5px solid rgba(59,130,246,0.12)', transform: 'rotate(45deg)' }} />
-          )}
-          {s.type === 'cross' && (
-            <div className="relative" style={{ width: s.size, height: s.size }}>
-              <div className="absolute top-1/2 left-0 w-full" style={{ height: 1.5, background: 'rgba(251,191,36,0.12)', transform: 'translateY(-50%)' }} />
-              <div className="absolute left-1/2 top-0 h-full" style={{ width: 1.5, background: 'rgba(251,191,36,0.12)', transform: 'translateX(-50%)' }} />
-            </div>
-          )}
-        </motion.div>
-      ))}
-    </div>
-  );
-};
-
 /* --- SCROLL PROGRESS BAR --- */
 const ScrollProgressBar = ({ scrollRef }) => {
   const { scrollYProgress } = useScroll({ container: scrollRef });
@@ -150,66 +108,15 @@ const RevealText = ({ children, className = '', delay = 0 }) => {
 /* ---------------------------------------------
    PARTICLES / ANIMATED BACKGROUND
    --------------------------------------------- */
-const FloatingParticles = () => {
-  const particles = useMemo(() => Array.from({ length: 40 }, (_, i) => ({
-    id: i,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    size: Math.random() * 3 + 1,
-    duration: Math.random() * 20 + 15,
-    delay: Math.random() * 10,
-    opacity: Math.random() * 0.4 + 0.1,
-  })), []);
-
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {particles.map(p => (
-        <motion.div
-          key={p.id}
-          className="absolute rounded-full"
-          style={{
-            left: `${p.x}%`, top: `${p.y}%`,
-            width: p.size, height: p.size,
-            background: `radial-gradient(circle, rgba(251,191,36,${p.opacity}) 0%, transparent 70%)`,
-            boxShadow: `0 0 ${p.size * 4}px rgba(251,191,36,${p.opacity * 0.5})`,
-          }}
-          animate={{
-            y: [0, -80, 0], x: [0, Math.random() * 40 - 20, 0],
-            opacity: [p.opacity, p.opacity * 1.8, p.opacity],
-          }}
-          transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}
-        />
-      ))}
-    </div>
-  );
-};
+const FloatingParticles = () => null;
 
 const CinematicBackground = () => (
   <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none" style={{ background: '#04070D' }}>
     <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay" />
-    {/* Warm amber nebula */}
-    <motion.div
-      animate={{ scale: [1, 1.3, 1], opacity: [0.12, 0.25, 0.12], rotate: [0, 45, 0] }}
-      transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
-      className="absolute top-[-15%] left-[-10%] w-[50vw] h-[50vw] rounded-full"
-      style={{ background: 'radial-gradient(circle, rgba(251,191,36,0.15) 0%, rgba(245,158,11,0.05) 50%, transparent 70%)', filter: 'blur(80px)' }}
-    />
-    {/* Deep blue accent */}
-    <motion.div
-      animate={{ scale: [1, 1.4, 1], opacity: [0.1, 0.2, 0.1], x: [0, 80, 0] }}
-      transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
-      className="absolute top-[30%] right-[-10%] w-[40vw] h-[40vw] rounded-full"
-      style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.12) 0%, rgba(37,99,235,0.04) 50%, transparent 70%)', filter: 'blur(100px)' }}
-    />
-    {/* Subtle warm glow bottom */}
-    <motion.div
-      animate={{ scale: [1, 1.2, 1], opacity: [0.08, 0.18, 0.08] }}
-      transition={{ duration: 35, repeat: Infinity, ease: 'linear' }}
-      className="absolute bottom-[-10%] left-[30%] w-[45vw] h-[45vw] rounded-full"
-      style={{ background: 'radial-gradient(circle, rgba(234,88,12,0.1) 0%, transparent 60%)', filter: 'blur(120px)' }}
-    />
-    <FloatingParticles />
-    <FloatingShapes />
+    <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] rounded-full opacity-[0.08]" 
+      style={{ background: 'radial-gradient(circle, #fbbf24 0%, transparent 70%)', filter: 'blur(100px)' }} />
+    <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full opacity-[0.05]" 
+      style={{ background: 'radial-gradient(circle, #3b82f6 0%, transparent 70%)', filter: 'blur(120px)' }} />
   </div>
 );
 
@@ -217,30 +124,7 @@ const CinematicBackground = () => (
    ANIMATED COUNTER
    --------------------------------------------- */
 const AnimatedCounter = ({ value, suffix = '', className = '' }) => {
-  const num = parseInt(value) || 0;
-  const [count, setCount] = useState(0);
-  const ref = useRef(null);
-  const [inView, setInView] = useState(false);
-
-  useEffect(() => {
-    const obs = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) setInView(true); }, { threshold: 0.3 });
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!inView) return;
-    let start = 0;
-    const step = Math.ceil(num / 40);
-    const timer = setInterval(() => {
-      start += step;
-      if (start >= num) { setCount(num); clearInterval(timer); }
-      else setCount(start);
-    }, 30);
-    return () => clearInterval(timer);
-  }, [inView, num]);
-
-  return <span ref={ref} className={className}>{count}{suffix}</span>;
+  return <span className={className}>{value}{suffix}</span>;
 };
 
 /* ---------------------------------------------
@@ -425,7 +309,7 @@ const ModernTemplate = ({
   useEffect(() => {
     const el = document.getElementById('conf-scroll-area');
     if (!el) return;
-    const handleScroll = (e) => setScrolled(e.target.scrollTop > 50);
+    const handleScroll = (e) => setScrolled(e.target.scrollTop > 400);
     el.addEventListener('scroll', handleScroll);
     return () => el.removeEventListener('scroll', handleScroll);
   }, []);
@@ -537,9 +421,6 @@ const ModernTemplate = ({
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
       <ScrollProgressBar scrollRef={scrollRef} />
       <CinematicBackground />
-
-      {/* Morphing blob accent */}
-      <div className="fixed top-[20%] right-[10%] w-[300px] h-[300px] pointer-events-none z-[1] opacity-[0.04]" style={{ background: 'linear-gradient(135deg, #fbbf24, #3b82f6)', animation: 'morphBlob 15s ease-in-out infinite', filter: 'blur(60px)' }} />
 
       {/* ── Registration Modal ── */}
       <AnimatePresence>
@@ -718,16 +599,29 @@ const ModernTemplate = ({
       </div>
 
       {/* ── STICKY NAV ── */}
-      <nav className={`sticky top-0 z-[90] transition-all duration-500 ${scrolled ? 'py-2' : 'py-4'}`}
-        style={{ background: scrolled ? 'rgba(4,7,13,0.92)' : '#04070D', backdropFilter: scrolled ? 'blur(20px)' : 'none', borderBottom: scrolled ? '1px solid rgba(255,255,255,0.05)' : '1px solid transparent' }}>
-        <div className="max-w-7xl mx-auto px-6 flex items-center gap-1 overflow-x-auto no-scrollbar">
-          {navItems.map(item => (
-            <button key={item.id} onClick={() => scrollTo(item.id)}
-              className={`px-5 py-2 text-sm font-semibold whitespace-nowrap rounded-full transition-all duration-300 ${activeNav === item.id ? 'text-amber-400' : 'text-slate-500 hover:text-slate-300'}`}
-              style={activeNav === item.id ? { background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.2)' } : { border: '1px solid transparent' }}>
-              {item.label}
-            </button>
-          ))}
+      <nav className={`sticky top-0 z-[90] transition-all duration-700 ${scrolled ? 'py-4 opacity-100 translate-y-0' : 'py-6 opacity-0 -translate-y-4 pointer-events-none'}`}
+        style={{
+          background: scrolled ? 'rgba(4,7,13,0.92)' : 'transparent',
+          backdropFilter: scrolled ? 'blur(20px)' : 'none',
+          borderBottom: scrolled ? '1px solid rgba(255,255,255,0.05)' : '1px solid transparent'
+        }}>
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+            {navItems.map(item => (
+              <button key={item.id} onClick={() => scrollTo(item.id)}
+                className={`px-5 py-2 text-sm font-semibold whitespace-nowrap rounded-full transition-all duration-300 ${activeNav === item.id ? 'text-amber-400' : 'text-slate-500 hover:text-slate-300'}`}
+                style={activeNav === item.id ? { background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.2)' } : { border: '1px solid transparent' }}>
+                {item.label}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={handleRegisterClick}
+            className={`px-6 py-2 rounded-full text-xs font-bold text-black transition-all duration-300 ${scrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}
+            style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', boxShadow: '0 0 15px rgba(251,191,36,0.2)' }}
+          >
+            Register Now
+          </button>
         </div>
       </nav>
 

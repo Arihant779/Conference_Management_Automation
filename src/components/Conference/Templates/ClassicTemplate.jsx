@@ -97,7 +97,7 @@ const sessionTypeStyle = {
    ───────────────────────────────────────────── */
 const DEFAULT_AVATAR = 'https://i.pinimg.com/736x/8b/16/7a/8b167afad976f5947fb84260a1280dd9.jpg';
 
-const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEditSchedule = false, currentUserId = null, members = [], onScheduleSave, onDelete }) => {
+const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEditSchedule = false, currentUser = null, members = [], onScheduleSave, onDelete, onRequireAuthForRegister, isGuest, autoOpenRegister }) => {
   const [conf, setConf] = useState(initialConf);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -106,6 +106,9 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEd
   const [activeNav, setActiveNav] = useState('about');
   const [scheduleTab, setScheduleTab] = useState(0);
   const [showScheduleEditor, setShowScheduleEditor] = useState(false);
+  const [showReg, setShowReg] = useState(false);
+
+  useEffect(() => { if (autoOpenRegister && !isGuest) setShowReg(true); }, [autoOpenRegister, isGuest]);
 
   const [pageData, setPageData] = useState({
     title: initialConf.title || 'Untitled Conference',
@@ -240,10 +243,6 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEd
       {/* ── STYLE INJECTION ── */}
       <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet" />
       <style>{`
-        @keyframes subtlePan {
-          from { transform: scale(1.05) translate(0, 0); }
-          to { transform: scale(1.1) translate(-1%, -1%); }
-        }
         .herald-serif { font-family: 'Playfair Display', serif; }
         .herald-sans { font-family: 'Plus Jakarta Sans', sans-serif; }
         .drop-cap::first-letter {
@@ -341,7 +340,6 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEd
           {/* Animated Background Image */}
           <div style={{ 
             position: 'absolute', inset: 0, 
-            animation: 'subtlePan 40s infinite linear alternate',
             transformOrigin: 'center center'
           }}>
             <img
@@ -387,7 +385,9 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEd
               </div>
 
               <div style={{ display: 'flex', gap: 20 }}>
-                <button className="herald-sans" style={{ 
+                <button 
+                  onClick={() => setShowReg(true)}
+                  className="herald-sans" style={{ 
                   background: C.accent, color: C.ink, border: 'none', padding: '16px 36px', 
                   fontSize: 12, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em', 
                   cursor: 'pointer', transition: 'all 0.3s', boxShadow: `0 10px 30px -10px ${C.accent}40`
@@ -446,24 +446,38 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEd
           background: C.paper, borderBottom: `1px solid ${C.rule}`,
           boxShadow: '0 4px 20px rgba(0,0,0,0.03)'
         }}>
-          <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 40px', display: 'flex', overflowX: 'auto', gap: 0 }}>
-            {navItems.map(item => (
-              <button
-                key={item.id}
-                onClick={() => scrollTo(item.id)}
-                className="herald-sans"
-                style={{
-                  background: 'transparent', border: 'none', cursor: 'pointer',
-                  padding: '16px 24px', fontSize: 11, fontWeight: 800, letterSpacing: '0.15em',
-                  textTransform: 'uppercase', whiteSpace: 'nowrap',
-                  color: activeNav === item.id ? C.accent : C.inkMuted,
-                  borderBottom: activeNav === item.id ? `3px solid ${C.accent}` : '3px solid transparent',
-                  transition: 'all 0.3s',
-                }}
-              >
-                {item.label}
-              </button>
-            ))}
+          <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', overflowX: 'auto', gap: 0, noFallback: true }} className="no-scrollbar">
+              {navItems.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => scrollTo(item.id)}
+                  className="herald-sans"
+                  style={{
+                    background: 'transparent', border: 'none', cursor: 'pointer',
+                    padding: '16px 24px', fontSize: 11, fontWeight: 800, letterSpacing: '0.15em',
+                    textTransform: 'uppercase', whiteSpace: 'nowrap',
+                    color: activeNav === item.id ? C.accent : C.inkMuted,
+                    borderBottom: activeNav === item.id ? `3px solid ${C.accent}` : '3px solid transparent',
+                    transition: 'all 0.3s',
+                  }}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            
+            <button
+               onClick={() => setShowReg(true)}
+               className="herald-sans"
+               style={{
+                 background: C.ink, color: C.bg, border: 'none', padding: '10px 24px',
+                 fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em',
+                 cursor: 'pointer', transition: 'all 0.3s'
+               }}
+            >
+               Register Now
+            </button>
           </div>
         </nav>
 
@@ -525,7 +539,9 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEd
                    ))}
                 </div>
 
-                <button className="herald-sans" style={{ 
+                <button 
+                  onClick={() => setShowReg(true)}
+                  className="herald-sans" style={{ 
                   width: '100%', background: C.ink, color: C.bg, border: 'none', padding: '18px', 
                   fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.25em', 
                   cursor: 'pointer', transition: 'all 0.3s' 
