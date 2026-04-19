@@ -487,7 +487,8 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
                           type="email"
                           placeholder="you@example.com"
                           value={form.email}
-                          onChange={e => set('email', e.target.value)}
+                          readOnly
+                          className="opacity-60 cursor-not-allowed select-none bg-white/[0.02]"
                           error={errors.email}
                         />
                       </div>
