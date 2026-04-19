@@ -92,7 +92,9 @@ const sessionTypeStyle = {
 /* ─────────────────────────────────────────────
    MAIN COMPONENT
    ───────────────────────────────────────────── */
-const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEditSchedule = false, currentUserId = null, members = [], onScheduleSave }) => {
+const DEFAULT_AVATAR = 'https://i.pinimg.com/736x/8b/16/7a/8b167afad976f5947fb84260a1280dd9.jpg';
+
+const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEditSchedule = false, currentUserId = null, members = [], onScheduleSave, onDelete }) => {
   const [conf, setConf] = useState(initialConf);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -103,6 +105,7 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEd
   const [showScheduleEditor, setShowScheduleEditor] = useState(false);
 
   const [pageData, setPageData] = useState({
+    title: initialConf.title || 'Untitled Conference',
     tagline: initialConf.tagline || 'Advancing Knowledge, Forging Connections',
     banner_url: initialConf.banner_url || '',
     contact_email: initialConf.contact_email || 'contact@conference.org',
@@ -209,7 +212,6 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEd
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Edit3 size={14} color={C.accentWarm} />
             <span style={{ color: '#fdfaf4', fontWeight: 700, fontSize: 13, ...sansS }}>Organizer Edit Mode</span>
-            {!isEditing && <span style={{ color: '#8c7e72', fontSize: 12, ...sansS }}>— Click "Edit Page" to modify content</span>}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {saveError && (
@@ -220,6 +222,18 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEd
             {saved && <span style={{ color: '#6ee7b7', fontSize: 12, fontWeight: 600, ...sansS }}>✓ Saved!</span>}
             {isEditing ? (
               <>
+                <button
+                  onClick={onDelete}
+                  style={{
+                    background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444',
+                    padding: '6px 14px', borderRadius: 4, fontSize: 12, fontWeight: 700, cursor: 'pointer', ...sansS,
+                    display: 'flex', alignItems: 'center', gap: 6, marginRight: 8
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)'}
+                >
+                  <Trash2 size={12} /> Delete Conference
+                </button>
                 <button onClick={() => setIsEditing(false)} style={{
                   background: 'transparent', border: '1px solid #4a3f35', color: '#8c7e72',
                   padding: '6px 14px', borderRadius: 4, fontSize: 12, cursor: 'pointer', ...sansS,
@@ -283,9 +297,11 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEd
               letterSpacing: '-0.02em', lineHeight: 1.1, margin: '0 0 16px',
               textShadow: '0 2px 20px rgba(0,0,0,0.5)', ...s,
             }}>
-              {displayName}
+              {isEditing
+                ? <div style={{ minWidth: '300px' }}><EditableText value={pageData.title} onChange={v => update('title', v)} className="" isEditing={isEditing} placeholder="Conference Title…" /></div>
+                : displayName}
             </h1>
-            
+
             {isEditing && (
               <div style={{ marginBottom: 20, width: '100%', maxWidth: 400 }}>
                 <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.gold, marginBottom: 4, ...sansS }}>Change Header Image URL</div>
@@ -570,16 +586,29 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEd
                     <X size={14} />
                   </button>
                 )}
-                <div style={{ width: 80, height: 80, marginBottom: 14, overflow: 'hidden', background: C.rule }}>
-                  {!isEditing && sp.img && (
-                    <img src={sp.img} alt={sp.name} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(80%)' }} />
-                  )}
-                  {isEditing && (
-                    <div style={{ padding: 4, height: '100%', display: 'flex', alignItems: 'center' }}>
-                      <EditableText value={sp.img} onChange={v => updateNested('speakers', i, 'img', v)} className="" isEditing={isEditing} placeholder="Image URL" />
-                    </div>
-                  )}
+                <div style={{ width: 80, height: 80, marginBottom: 14, overflow: 'hidden', background: C.rule, position: 'relative' }}>
+                  <img 
+                    src={sp.img || DEFAULT_AVATAR} 
+                    alt={sp.name} 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', filter: isEditing ? 'none' : 'grayscale(80%)' }} 
+                  />
                 </div>
+
+                {isEditing && (
+                  <div style={{ 
+                    marginBottom: 16, padding: '8px 12px', borderRadius: 4, 
+                    background: 'rgba(0,0,0,0.03)', border: `1px solid ${C.rule}`,
+                  }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', color: C.accentWarm, marginBottom: 4, ...sansS }}>Photo URL</div>
+                    <EditableText 
+                      value={sp.img || ''} 
+                      onChange={v => updateNested('speakers', i, 'img', v)} 
+                      className="text-[10px]" 
+                      isEditing={isEditing} 
+                      placeholder="Paste link..." 
+                    />
+                  </div>
+                )}
                 <h4 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 4px', color: C.ink }}>
                   {isEditing
                     ? <EditableText value={sp.name} onChange={v => updateNested('speakers', i, 'name', v)} className="" isEditing={isEditing} />
@@ -606,7 +635,7 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEd
               <div
                 onClick={() => update('speakers', [...pageData.speakers, {
                   name: 'New Speaker', role: 'Role', org: 'Institution',
-                  img: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
+                  img: '',
                   bio: 'Speaker biography goes here.',
                 }])}
                 style={{

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Sparkles, ArrowRight, CheckCircle } from 'lucide-react';
+import { Sparkles, ArrowRight, CheckCircle, Clock, MapPin, AlignLeft, Calendar } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
 
@@ -43,7 +44,6 @@ const CreateConference = ({ onCancel, onSuccess }) => {
     }
 
     try {
-      // 1. Create the conference row
       const { data: inserted, error: insertError } = await supabase
         .from('conference')
         .insert({
@@ -62,17 +62,12 @@ const CreateConference = ({ onCancel, onSuccess }) => {
 
       if (insertError) throw insertError;
 
-      // 2. Call RPC to insert organizer role.
-      //    The function runs as security definer (postgres owner) so it
-      //    bypasses RLS on conference_user — no permission denied errors.
       const { error: roleError } = await supabase.rpc('add_conference_organizer', {
         p_conference_id: inserted.conference_id,
       });
       if (roleError) throw roleError;
 
-      // Refetch conferences so UserDashboard's roleMap picks up the new organizer row
       await fetchConferences();
-
       onSuccess(inserted);
     } catch (err) {
       setError(err.message ?? 'Something went wrong. Please try again.');
@@ -84,193 +79,308 @@ const CreateConference = ({ onCancel, onSuccess }) => {
   const canProceed = data.title && data.theme && data.start_date && data.location && (data.start_date >= today);
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-200 p-6 flex items-center justify-center">
-      <div className="max-w-5xl w-full bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[600px]">
+    <div className="min-h-screen w-full bg-[#04070D] text-white flex items-center justify-center p-4 md:p-8" 
+         style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
+      
+      {/* Background elements */}
+      <div className="fixed inset-0 pointer-events-none opacity-20"
+        style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+      <div className="fixed inset-0 pointer-events-none opacity-[0.02] mix-blend-overlay"
+        style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/carbon-fibre.png")' }} />
 
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-6xl w-full bg-[#080B12] border border-white/5 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row relative z-10 min-h-[700px]"
+      >
+        
         {/* Sidebar */}
-        <div className="bg-slate-950/50 p-8 border-r border-white/5 md:w-1/3 flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500" />
-
-          <div>
-            <div className="flex items-center gap-2 mb-8">
-              <div className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
-                <Sparkles size={18} />
+        <div className="w-full md:w-[35%] p-8 md:p-12 border-r border-white/5 flex flex-col relative bg-black/20 overflow-hidden">
+          {/* Accent Line */}
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-500 to-amber-700" />
+          
+          <div className="mb-auto relative z-10">
+            <div className="flex items-center gap-3 mb-12">
+              <div className="w-10 h-10 bg-amber-500/10 border border-amber-500/20 flex items-center justify-center rounded-xl">
+                <Sparkles className="text-amber-500 w-6 h-6" />
               </div>
-              <span className="font-bold text-white tracking-wide">Studio</span>
+              <span className="text-xl font-black tracking-tighter uppercase">Studio</span>
             </div>
 
-            <h2 className="text-3xl font-bold text-white mb-2">Create Event</h2>
-            <p className="text-slate-400 text-sm leading-relaxed">
+            <h2 className="text-4xl font-black text-white mb-4 tracking-tighter uppercase leading-none">
+              Create Event
+            </h2>
+            <p className="text-white/40 font-medium text-sm leading-relaxed mb-12">
               Design a world-class experience for your attendees in just a few steps.
             </p>
 
-            <div className="mt-12 space-y-6">
+            <div className="space-y-8">
               {[
                 { num: 1, label: 'Basic Details', sub: 'Name, date, and theme' },
                 { num: 2, label: 'Look & Feel', sub: 'Branding and cover' },
               ].map(({ num, label, sub }, i) => (
-                <React.Fragment key={num}>
-                  {i > 0 && <div className="w-0.5 h-12 bg-slate-800 ml-5" />}
-                  <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${step >= num ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'bg-slate-800 text-slate-500'
+                <div key={num} className="flex items-start gap-4 group">
+                  <div className="flex flex-col items-center">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm transition-all duration-500 border
+                      ${step >= num 
+                        ? 'bg-amber-500 text-black border-amber-500 shadow-lg shadow-amber-500/20' 
+                        : 'bg-white/5 text-white/20 border-white/5'
                       }`}>
                       {num}
                     </div>
-                    <div>
-                      <span className={`block font-bold ${step >= num ? 'text-white' : 'text-slate-500'}`}>{label}</span>
-                      <span className="text-xs text-slate-500">{sub}</span>
-                    </div>
+                    {i === 0 && (
+                      <div className={`w-px h-12 mt-2 transition-colors duration-500 ${step > 1 ? 'bg-amber-500/50' : 'bg-white/5'}`} />
+                    )}
                   </div>
-                </React.Fragment>
+                  <div className="pt-1">
+                    <span className={`block font-black uppercase tracking-widest text-xs transition-colors duration-500 ${step >= num ? 'text-white' : 'text-white/20'}`}>
+                      {label}
+                    </span>
+                    <span className={`text-[10px] font-medium uppercase tracking-wider transition-colors duration-500 ${step >= num ? 'text-white/40' : 'text-white/10'}`}>
+                      {sub}
+                    </span>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
 
-          <button onClick={onCancel} className="text-slate-400 hover:text-white text-sm flex items-center gap-2 transition-colors mt-8">
-            <ArrowRight className="rotate-180" size={16} /> Cancel & Exit
+          <button 
+            onClick={onCancel} 
+            className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 hover:text-white transition-all flex items-center gap-3 mt-12 group relative z-10"
+          >
+            <div className="w-8 h-8 rounded-lg border border-white/5 flex items-center justify-center group-hover:border-white/20 transition-all">
+              <ArrowRight className="rotate-180 w-4 h-4" />
+            </div>
+            Cancel & Exit
           </button>
         </div>
 
         {/* Form Area */}
-        <div className="p-10 md:w-2/3 bg-slate-900/30">
-          <form onSubmit={handleSubmit} className="h-full flex flex-col">
+        <div className="flex-1 p-8 md:p-12 lg:p-16 flex flex-col bg-[#080B12]/40">
+          <form onSubmit={handleSubmit} className="flex-1 flex flex-col max-w-2xl">
+            
+            <AnimatePresence mode="wait">
+              {step === 1 ? (
+                <motion.div 
+                  key="step1"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-8 flex-1"
+                >
+                  <div className="space-y-1">
+                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter leading-none">
+                      Conference Essentials
+                    </h3>
+                    <p className="text-white/30 text-xs font-semibold uppercase tracking-widest">
+                      Set the foundation for your event
+                    </p>
+                  </div>
 
-            {/* Step 1 */}
-            {step === 1 && (
-              <div className="space-y-6 flex-1">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-2xl font-bold text-white">Conference Essentials</h3>
-                  {error && step === 1 && (
-                    <span className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-1 animate-pulse">
-                      {error}
-                    </span>
-                  )}
-                </div>
-
-                <div className="space-y-5">
-                  <Field label="Conference Name">
-                    <Input required value={data.title} onChange={update('title')} placeholder="e.g. Future Tech Summit 2025" />
-                  </Field>
-
-                  <div className="grid grid-cols-2 gap-5">
-                    <Field label="Topic / Theme">
-                      <Input required value={data.theme} onChange={update('theme')} placeholder="e.g. AI Ethics" />
+                  <div className="space-y-6">
+                    <Field label="Conference Name">
+                      <Input 
+                        required 
+                        value={data.title} 
+                        onChange={update('title')} 
+                        placeholder="e.g. Future Tech Summit 2025" 
+                        icon={<Sparkles size={16} />}
+                      />
                     </Field>
-                    <Field label="Start Date">
-                      <Input required type="date" value={data.start_date} onChange={update('start_date')} min={today} className="[color-scheme:dark]" />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <Field label="Topic / Theme">
+                        <Input 
+                          required 
+                          value={data.theme} 
+                          onChange={update('theme')} 
+                          placeholder="e.g. AI Ethics" 
+                          icon={<AlignLeft size={16} />}
+                        />
+                      </Field>
+                      <Field label="Start Date">
+                        <Input 
+                          required 
+                          type="date" 
+                          value={data.start_date} 
+                          onChange={update('start_date')} 
+                          min={today} 
+                          className="[color-scheme:dark]"
+                          icon={<Calendar size={16} />}
+                        />
+                      </Field>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <Field label="End Date (optional)">
+                        <Input 
+                          type="date" 
+                          value={data.end_date} 
+                          onChange={update('end_date')} 
+                          min={data.start_date || today} 
+                          className="[color-scheme:dark]"
+                          icon={<Clock size={16} />}
+                        />
+                      </Field>
+                      <Field label="Location">
+                        <Input 
+                          required 
+                          value={data.location} 
+                          onChange={update('location')} 
+                          placeholder="City, Country or Online" 
+                          icon={<MapPin size={16} />}
+                        />
+                      </Field>
+                    </div>
+
+                    <Field label="Description">
+                      <textarea
+                        className="w-full px-5 py-4 bg-white/[0.04] border border-white/5 rounded-2xl focus:border-amber-500/50 focus:bg-white/[0.06] transition-all outline-none text-white font-bold placeholder:text-white/5 shadow-inner h-32 resize-none"
+                        value={data.description}
+                        onChange={update('description')}
+                        placeholder="What is this event about?"
+                      />
                     </Field>
                   </div>
 
-                  <Field label="End Date (optional)">
-                    <Input type="date" value={data.end_date} onChange={update('end_date')} min={data.start_date || today} className="[color-scheme:dark]" />
-                  </Field>
+                  {error && (
+                    <p className="text-[10px] font-black text-red-500 uppercase tracking-widest bg-red-500/5 p-3 rounded-lg border border-red-500/10">
+                      {error}
+                    </p>
+                  )}
 
-                  <Field label="Location">
-                    <Input required value={data.location} onChange={update('location')} placeholder="City, Country or Online" />
-                  </Field>
+                  <div className="pt-8 flex justify-end">
+                    <motion.button
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.98 }}
+                      type="button"
+                      onClick={() => setStep(2)}
+                      disabled={!canProceed}
+                      className="bg-amber-500 text-black font-black px-10 py-4 rounded-xl uppercase tracking-[0.2em] text-sm hover:bg-amber-400 disabled:opacity-20 disabled:cursor-not-allowed transition-all flex items-center gap-3 shadow-2xl shadow-amber-500/10"
+                    >
+                      Next Step <ArrowRight size={18} />
+                    </motion.button>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div 
+                  key="step2"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-8 flex-1 flex flex-col"
+                >
+                  <div className="space-y-1">
+                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter leading-none">
+                      Visual Identity
+                    </h3>
+                    <p className="text-white/30 text-xs font-semibold uppercase tracking-widest">
+                      Customize how your event looks
+                    </p>
+                  </div>
 
-                  <Field label="Description">
-                    <textarea
-                      className="w-full p-4 bg-black/20 border border-white/10 focus:border-indigo-500 rounded-xl h-28 transition-all outline-none resize-none text-white focus:bg-black/40"
-                      value={data.description}
-                      onChange={update('description')}
-                      placeholder="What is this event about?"
-                    />
-                  </Field>
-                </div>
+                  <div className="space-y-8">
+                    <Field label="Banner Image URL">
+                      <Input 
+                        value={data.banner_url} 
+                        onChange={update('banner_url')} 
+                        placeholder="https://..." 
+                        icon={<Sparkles size={16} />}
+                      />
+                    </Field>
 
-                <div className="flex justify-end pt-8">
-                  <button
-                    type="button"
-                    onClick={() => setStep(2)}
-                    disabled={!canProceed}
-                    className="bg-white text-slate-900 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed px-8 py-3 rounded-xl font-bold transition-all flex items-center gap-2"
-                  >
-                    Next Step <ArrowRight size={18} />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Step 2 */}
-            {step === 2 && (
-              <div className="flex-1 flex flex-col">
-                <h3 className="text-2xl font-bold text-white mb-6">Visual Identity</h3>
-
-                <div className="space-y-6">
-                  <Field label="Banner Image URL">
-                    <Input value={data.banner_url} onChange={update('banner_url')} placeholder="https://..." />
-                  </Field>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 ml-1">
-                      Select Template
-                    </label>
-                    <div className="grid grid-cols-3 gap-4">
-                      {['modern', 'classic', 'minimal'].map((t) => (
-                        <div
-                          key={t}
-                          onClick={() => setData((prev) => ({ ...prev, template: t }))}
-                          className={`cursor-pointer border-2 rounded-2xl p-4 transition-all relative overflow-hidden ${data.template === t
-                              ? 'border-indigo-500 bg-indigo-500/10'
-                              : 'border-slate-800 hover:border-slate-600 bg-slate-900/40'
-                            }`}
-                        >
-                          <div className={`h-24 rounded-lg mb-3 ${t === 'modern' ? 'bg-gradient-to-br from-indigo-500 to-purple-600'
-                              : t === 'classic' ? 'bg-[#e2e2e2]'
-                                : 'bg-slate-800 border border-slate-700'
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">
+                        Select Template
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        {['modern', 'classic', 'minimal'].map((t) => (
+                          <motion.div
+                            key={t}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setData((prev) => ({ ...prev, template: t }))}
+                            className={`cursor-pointer group flex flex-col p-4 border rounded-2xl transition-all duration-300 relative
+                              ${data.template === t 
+                                ? 'bg-amber-500/10 border-amber-500/50' 
+                                : 'bg-white/[0.04] border-white/5 hover:border-white/10 hover:bg-white/[0.06]'
+                              }`}
+                          >
+                            <div className={`h-24 rounded-xl mb-4 transition-all duration-500 
+                              ${t === 'modern' ? 'bg-gradient-to-br from-amber-500 to-amber-700' 
+                                : t === 'classic' ? 'bg-[#e2e2e2]' 
+                                : 'bg-black/40 border border-white/5'
                             }`} />
-                          <h4 className="font-bold text-white capitalize text-sm">{t}</h4>
-                          <div className={`absolute top-3 right-3 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${data.template === t ? 'bg-indigo-500 border-indigo-500 scale-100' : 'border-slate-600 scale-90 opacity-50'
-                            }`}>
-                            {data.template === t && <div className="w-2 h-2 bg-white rounded-full" />}
-                          </div>
-                        </div>
-                      ))}
+                            <span className={`font-black uppercase tracking-widest text-[10px] ${data.template === t ? 'text-amber-500' : 'text-white/40 group-hover:text-white/60'}`}>
+                              {t}
+                            </span>
+                            <div className={`absolute top-2 right-2 w-4 h-4 rounded-full border flex items-center justify-center transition-all duration-300
+                              ${data.template === t ? 'border-amber-500 bg-amber-500' : 'border-white/10'}`}>
+                              {data.template === t && <div className="w-1.5 h-1.5 bg-black rounded-full" />}
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {error && (
-                  <p className="mt-4 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl p-3">
-                    {error}
-                  </p>
-                )}
+                  {error && (
+                    <p className="text-[10px] font-black text-red-500 uppercase tracking-widest bg-red-500/5 p-3 rounded-lg border border-red-500/10 mt-6">
+                      {error}
+                    </p>
+                  )}
 
-                <div className="mt-auto flex justify-between border-t border-white/10 pt-8">
-                  <button type="button" onClick={() => setStep(1)} className="text-slate-400 hover:text-white font-medium px-4">
-                    Back
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-indigo-500/20 transition-all flex items-center gap-2 hover:translate-y-[-2px]"
-                  >
-                    <CheckCircle size={18} />
-                    {loading ? 'Launching…' : 'Launch Event'}
-                  </button>
-                </div>
-              </div>
-            )}
+                  <div className="mt-auto pt-12 flex items-center justify-between">
+                    <button 
+                      type="button" 
+                      onClick={() => setStep(1)} 
+                      className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 hover:text-white transition-all px-4"
+                    >
+                      Back
+                    </button>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      type="submit"
+                      disabled={loading}
+                      className="bg-amber-500 text-black font-black px-12 py-4 rounded-xl uppercase tracking-[0.2em] text-sm hover:bg-amber-400 disabled:opacity-20 disabled:cursor-not-allowed shadow-2xl shadow-amber-500/20 transition-all flex items-center gap-3"
+                    >
+                      <CheckCircle size={18} />
+                      {loading ? 'Launching…' : 'Launch Event'}
+                    </motion.button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </form>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
 
 const Field = ({ label, children }) => (
-  <div>
-    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">{label}</label>
+  <div className="space-y-2 group">
+    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 group-focus-within:text-amber-500/50 transition-colors">
+      {label}
+    </label>
     {children}
   </div>
 );
 
-const Input = ({ className = '', ...props }) => (
-  <input
-    className={`w-full p-4 bg-black/20 border border-white/10 focus:border-indigo-500 rounded-xl transition-all outline-none text-white focus:bg-black/40 ${className}`}
-    {...props}
-  />
+const Input = ({ className = '', icon, ...props }) => (
+  <div className="relative group/input">
+    {icon && (
+      <div className="absolute left-5 top-1/2 -translate-y-1/2 text-white/20 group-focus-within/input:text-amber-500/50 transition-colors">
+        {icon}
+      </div>
+    )}
+    <input
+      className={`w-full ${icon ? 'pl-12 pr-5' : 'px-5'} py-4 bg-white/[0.04] border border-white/5 rounded-2xl group-focus-within/input:border-amber-500/50 group-focus-within/input:bg-white/[0.06] transition-all outline-none text-white font-bold placeholder:text-white/5 shadow-inner ${className}`}
+      {...props}
+    />
+  </div>
 );
 
 export default CreateConference;

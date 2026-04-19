@@ -386,9 +386,8 @@ const SectionHeading = ({ badge, title, highlight, subtitle, align = 'left' }) =
   </div>
 );
 
-/* ═════════════════════════════════════════════
-   MAIN TEMPLATE
-   ═════════════════════════════════════════════ */
+const DEFAULT_AVATAR = 'https://i.pinimg.com/736x/8b/16/7a/8b167afad976f5947fb84260a1280dd9.jpg';
+
 const ModernTemplate = ({
   conf: initialConf,
   isOrganizer = false,
@@ -402,6 +401,7 @@ const ModernTemplate = ({
   onRequireAuthForRegister = null,
   autoOpenRegister = false,
   onSwitchToTab = null,
+  onDelete = null,
 }) => {
   const [conf, setConf] = useState(initialConf);
   const [isEditing, setIsEditing] = useState(false);
@@ -431,6 +431,7 @@ const ModernTemplate = ({
   }, []);
 
   const [pageData, setPageData] = useState({
+    title: initialConf.title || 'Untitled Conference',
     tagline: initialConf.tagline || 'Where Innovation Meets Excellence',
     banner_url: initialConf.banner_url || '',
     contact_email: initialConf.contact_email || 'contact@conference.org',
@@ -536,7 +537,7 @@ const ModernTemplate = ({
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
       <ScrollProgressBar scrollRef={scrollRef} />
       <CinematicBackground />
-      
+
       {/* Morphing blob accent */}
       <div className="fixed top-[20%] right-[10%] w-[300px] h-[300px] pointer-events-none z-[1] opacity-[0.04]" style={{ background: 'linear-gradient(135deg, #fbbf24, #3b82f6)', animation: 'morphBlob 15s ease-in-out infinite', filter: 'blur(60px)' }} />
 
@@ -568,13 +569,18 @@ const ModernTemplate = ({
               <Edit3 size={16} className="text-amber-400" />
             </div>
             <span className="text-sm font-bold text-white tracking-wide">Organizer Panel</span>
-            {!isEditing && <span className="text-xs text-slate-500 hidden sm:inline-block">— Click "Edit Page" to modify</span>}
           </div>
           <div className="flex items-center gap-3">
             {saveError && <span className="flex items-center gap-1 text-xs text-red-400 bg-red-400/10 px-3 py-1 rounded-full"><AlertCircle size={12} /> {saveError}</span>}
             {saved && <span className="text-xs text-emerald-400 font-medium bg-emerald-400/10 px-3 py-1 rounded-full">✓ Saved!</span>}
             {isEditing ? (
               <div className="flex gap-2">
+                <button
+                  onClick={onDelete}
+                  className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium text-red-400 hover:text-red-300 border border-red-500/20 hover:bg-red-500/10 transition-all mr-2"
+                >
+                  <Trash2 size={14} /> Delete Conference
+                </button>
                 <button onClick={() => setIsEditing(false)} className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white border border-white/5 hover:bg-white/5 transition-all">
                   <X size={14} /> Cancel
                 </button>
@@ -599,11 +605,11 @@ const ModernTemplate = ({
       <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden">
         {(pageData.banner_url || conf.banner_url) && (
           <div className="absolute inset-0 z-0 overflow-hidden">
-            <motion.img 
+            <motion.img
               initial={{ scale: 1.1 }} animate={{ scale: 1 }} transition={{ duration: 2, ease: 'easeOut' }}
               key={pageData.banner_url || conf.banner_url}
-              src={pageData.banner_url || conf.banner_url} alt="Banner" 
-              className="w-full h-full object-cover opacity-[0.55] mix-blend-luminosity" 
+              src={pageData.banner_url || conf.banner_url} alt="Banner"
+              className="w-full h-full object-cover opacity-[0.55] mix-blend-luminosity"
             />
             <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, rgba(4,7,13,0.2) 0%, #04070D 100%)' }} />
             <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 0%, rgba(4,7,13,0.7) 75%, #04070D 100%)' }} />
@@ -633,7 +639,19 @@ const ModernTemplate = ({
             <motion.h1 variants={fadeUp}
               className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-[-0.04em] leading-[0.9] mb-8"
               style={{ color: 'transparent', backgroundClip: 'text', WebkitBackgroundClip: 'text', backgroundImage: 'linear-gradient(135deg, #ffffff 0%, #e2e8f0 40%, #94a3b8 100%)' }}>
-              <RevealText delay={0.3}>{displayName}</RevealText>
+              {isEditing ? (
+                <div className="w-full max-w-4xl mx-auto">
+                  <EditableText
+                    value={pageData.title}
+                    onChange={v => update('title', v)}
+                    className="text-center w-full"
+                    isEditing={isEditing}
+                    placeholder="Conference Title…"
+                  />
+                </div>
+              ) : (
+                <RevealText delay={0.3}>{displayName}</RevealText>
+              )}
             </motion.h1>
 
             {/* Tagline */}
@@ -705,8 +723,7 @@ const ModernTemplate = ({
         <div className="max-w-7xl mx-auto px-6 flex items-center gap-1 overflow-x-auto no-scrollbar">
           {navItems.map(item => (
             <button key={item.id} onClick={() => scrollTo(item.id)}
-              className={`px-5 py-2 text-sm font-semibold whitespace-nowrap rounded-full transition-all duration-300 ${
-                activeNav === item.id ? 'text-amber-400' : 'text-slate-500 hover:text-slate-300'}`}
+              className={`px-5 py-2 text-sm font-semibold whitespace-nowrap rounded-full transition-all duration-300 ${activeNav === item.id ? 'text-amber-400' : 'text-slate-500 hover:text-slate-300'}`}
               style={activeNav === item.id ? { background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.2)' } : { border: '1px solid transparent' }}>
               {item.label}
             </button>
@@ -827,36 +844,36 @@ const ModernTemplate = ({
                       const headMember = session.head_id ? members.find(m => m.user_id === session.head_id) : null;
                       return (
                         <SpotlightCard key={si} className="rounded-2xl" spotlightColor={isSessionHead ? 'rgba(251,191,36,0.1)' : 'rgba(251,191,36,0.05)'}>
-                        <motion.div whileHover={{ scale: 1.01, x: 5 }}
-                          className={`flex flex-col md:flex-row md:items-start gap-4 md:gap-8 rounded-2xl p-6 transition-all relative overflow-hidden group ${isSessionHead
-                            ? 'ring-1 ring-amber-500/25'
-                            : ''}`}
-                          style={isSessionHead
-                            ? { background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.2)' }
-                            : { background: 'rgba(11,15,26,0.6)', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)' }}>
-                          <div className="absolute top-0 left-0 w-1 h-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(to bottom, #fbbf24, #f59e0b)' }} />
-                          <div className="md:min-w-[120px] text-slate-400 text-sm font-mono md:pt-1 flex items-center gap-2">
-                            <Clock size={14} className="opacity-50" /> {session.time}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex flex-wrap gap-2 items-start justify-between mb-2">
-                              <h4 className="font-bold text-white text-xl leading-tight group-hover:text-amber-200 transition-colors">{session.title}</h4>
-                              <span className={`text-[10px] px-3 py-1 rounded-full border font-bold uppercase tracking-wider bg-gradient-to-r ${sessionTypeStyle[session.type] || sessionTypeStyle.talk}`}>
-                                {session.type}
-                              </span>
+                          <motion.div whileHover={{ scale: 1.01, x: 5 }}
+                            className={`flex flex-col md:flex-row md:items-start gap-4 md:gap-8 rounded-2xl p-6 transition-all relative overflow-hidden group ${isSessionHead
+                              ? 'ring-1 ring-amber-500/25'
+                              : ''}`}
+                            style={isSessionHead
+                              ? { background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.2)' }
+                              : { background: 'rgba(11,15,26,0.6)', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)' }}>
+                            <div className="absolute top-0 left-0 w-1 h-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(to bottom, #fbbf24, #f59e0b)' }} />
+                            <div className="md:min-w-[120px] text-slate-400 text-sm font-mono md:pt-1 flex items-center gap-2">
+                              <Clock size={14} className="opacity-50" /> {session.time}
                             </div>
-                            {session.speaker && <p className="text-amber-400/70 font-medium text-sm mb-3">by {session.speaker}</p>}
-                            {headMember && (
-                              <div className="flex flex-wrap items-center gap-2 mt-4">
-                                <span className={`text-[10px] font-bold px-3 py-1 rounded-full border uppercase tracking-wider ${isSessionHead ? 'text-amber-300 border-amber-500/30' : 'text-slate-400 border-white/10'}`}
-                                  style={isSessionHead ? { background: 'rgba(251,191,36,0.1)' } : { background: 'rgba(255,255,255,0.04)' }}>
-                                  Session Head: {headMember.full_name || headMember.email}
+                            <div className="flex-1">
+                              <div className="flex flex-wrap gap-2 items-start justify-between mb-2">
+                                <h4 className="font-bold text-white text-xl leading-tight group-hover:text-amber-200 transition-colors">{session.title}</h4>
+                                <span className={`text-[10px] px-3 py-1 rounded-full border font-bold uppercase tracking-wider bg-gradient-to-r ${sessionTypeStyle[session.type] || sessionTypeStyle.talk}`}>
+                                  {session.type}
                                 </span>
-                                {isSessionHead && <span className="text-[10px] font-bold px-3 py-1 rounded-full text-black" style={{ background: '#fbbf24' }}>This is You</span>}
                               </div>
-                            )}
-                          </div>
-                        </motion.div>
+                              {session.speaker && <p className="text-amber-400/70 font-medium text-sm mb-3">by {session.speaker}</p>}
+                              {headMember && (
+                                <div className="flex flex-wrap items-center gap-2 mt-4">
+                                  <span className={`text-[10px] font-bold px-3 py-1 rounded-full border uppercase tracking-wider ${isSessionHead ? 'text-amber-300 border-amber-500/30' : 'text-slate-400 border-white/10'}`}
+                                    style={isSessionHead ? { background: 'rgba(251,191,36,0.1)' } : { background: 'rgba(255,255,255,0.04)' }}>
+                                    Session Head: {headMember.full_name || headMember.email}
+                                  </span>
+                                  {isSessionHead && <span className="text-[10px] font-bold px-3 py-1 rounded-full text-black" style={{ background: '#fbbf24' }}>This is You</span>}
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
                         </SpotlightCard>
                       );
                     })}
@@ -887,15 +904,29 @@ const ModernTemplate = ({
                         style={{ background: 'conic-gradient(from 0deg, #fbbf24, transparent 30%, transparent 70%, #fbbf24)', padding: 2, borderRadius: '50%' }}>
                         <div className="w-full h-full rounded-full" style={{ background: '#0B0F1A' }} />
                       </motion.div>
-                      <div className="absolute inset-[3px] rounded-full overflow-hidden">
-                        {!isEditing && sp.img && <img src={sp.img} alt={sp.name} className="w-full h-full object-cover filter grayscale hover:grayscale-0 transition-all duration-500" />}
-                        {isEditing && (
-                          <div className="w-full h-full flex items-center justify-center bg-slate-800 rounded-full">
-                            <EditableText value={sp.img} onChange={v => updateNested('speakers', i, 'img', v)} className="text-[10px] text-center" isEditing={isEditing} placeholder="Image URL" />
-                          </div>
-                        )}
+                      <div className="absolute inset-[3px] rounded-full overflow-hidden relative">
+                        <img 
+                          src={sp.img || DEFAULT_AVATAR} 
+                          alt={sp.name} 
+                          className={`w-full h-full object-cover transition-all duration-500 ${!isEditing ? 'filter grayscale hover:grayscale-0' : ''}`} 
+                        />
                       </div>
                     </div>
+
+                    {isEditing && (
+                      <div className="mb-6 px-3 py-4 rounded-2xl bg-[#0B0F1A] border-2 border-amber-500 shadow-[0_0_20px_rgba(251,191,36,0.2)]">
+                        <div className="text-[10px] font-black text-amber-400 uppercase tracking-[0.2em] text-center mb-3">Update Photo URL</div>
+                        <input 
+                          type="text"
+                          value={sp.img || ''} 
+                          onChange={e => updateNested('speakers', i, 'img', e.target.value)} 
+                          onBlur={handleSave}
+                          className="w-full bg-white/5 text-white text-[11px] px-3 py-2 rounded-xl border border-white/10 outline-none focus:ring-2 focus:ring-amber-500/50 font-mono" 
+                          placeholder="Paste image link here..." 
+                        />
+                        <div className="mt-2 text-[8px] text-slate-500 text-center italic">Changes save when you click "Save Changes" at the top</div>
+                      </div>
+                    )}
                     <div className="text-center">
                       <h4 className="font-bold text-white text-lg mb-1">
                         {isEditing ? <EditableText value={sp.name} onChange={v => updateNested('speakers', i, 'name', v)} className="font-bold text-center" isEditing={isEditing} /> : sp.name}
@@ -916,7 +947,7 @@ const ModernTemplate = ({
             ))}
             {isEditing && (
               <motion.button whileHover={{ scale: 1.02 }}
-                onClick={() => update('speakers', [...pageData.speakers, { name: 'New Speaker', role: 'Role', org: 'Organization', img: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`, bio: 'Speaker bio goes here.' }])}
+                onClick={() => update('speakers', [...pageData.speakers, { name: 'New Speaker', role: 'Role', org: 'Organization', img: '', bio: 'Speaker bio goes here.' }])}
                 className="border-2 border-dashed rounded-3xl p-6 flex flex-col items-center justify-center gap-4 transition-all min-h-[300px]"
                 style={{ borderColor: 'rgba(255,255,255,0.1)', color: '#6b7280' }}>
                 <div className="p-4 rounded-full" style={{ background: 'rgba(255,255,255,0.05)' }}><Plus size={24} /></div>
@@ -984,9 +1015,9 @@ const ModernTemplate = ({
                       conf.submission_settings.check_font_size ? `Minimum Font Size: ${conf.submission_settings.min_font_size}pt` : null,
                       `Maximum File Size: ${conf.submission_settings.max_file_size_mb}MB`
                     ].filter(Boolean) : [
-                      'Original unpublished research', 
-                      'Full papers (8–12 pages)', 
-                      'Extended abstracts (2–4 pages)', 
+                      'Original unpublished research',
+                      'Full papers (8–12 pages)',
+                      'Extended abstracts (2–4 pages)',
                       'Poster submissions'
                     ]).map(item => (
                       <div key={item} className="flex items-center gap-3 text-slate-300">
@@ -995,7 +1026,7 @@ const ModernTemplate = ({
                       </div>
                     ))}
                   </div>
-                  <button 
+                  <button
                     onClick={() => onSwitchToTab && onSwitchToTab('submitPaper')}
                     className="w-full font-black py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-black hover:scale-[1.02] active:scale-[0.98]"
                     style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)' }}>

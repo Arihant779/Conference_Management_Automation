@@ -165,6 +165,7 @@ const ConferenceView = ({
 
   const handleSave = async (pageData) => {
     const { error } = await supabase.from('conference').update({
+      title: pageData.title,
       tagline: pageData.tagline, description: pageData.description,
       contact_email: pageData.contact_email, contact_phone: pageData.contact_phone,
       website: pageData.website, twitter: pageData.twitter, linkedin: pageData.linkedin,
@@ -177,6 +178,28 @@ const ConferenceView = ({
       map_url: pageData.map_url, banner_url: pageData.banner_url,
     }).eq('conference_id', confId);
     if (error) throw new Error(error.message);
+    // If template changed, reload to apply new design system
+    if (pageData.template && pageData.template !== conf.template) {
+      window.location.reload();
+    }
+  };
+
+  const handleDelete = async () => {
+    const confirmed = window.confirm("⚠️ PERMANENT DELETION: Are you sure you want to delete this conference? This will remove all associated data and cannot be undone.");
+    if (!confirmed) return;
+
+    try {
+      const { error } = await supabase
+        .from('conference')
+        .delete()
+        .eq('conference_id', confId);
+
+      if (error) throw error;
+      onBack(); // Go back to dashboard
+    } catch (err) {
+      console.error("Deletion error:", err);
+      alert("Failed to delete conference: " + err.message);
+    }
   };
 
   const handleScheduleSave = async (newSchedule) => {
@@ -194,7 +217,7 @@ const ConferenceView = ({
       });
 
       const result = await response.json();
-      
+
       if (!response.ok) {
         if (result.details) {
           throw new Error(`${result.error}: ${result.details.join(' ')}`);
@@ -218,6 +241,7 @@ const ConferenceView = ({
     currentUser: user,
     members,
     onScheduleSave: handleScheduleSave,
+    onDelete: handleDelete,
     isGuest,
     onRequireAuthForRegister: handleRequireAuthForRegister,
     autoOpenRegister,

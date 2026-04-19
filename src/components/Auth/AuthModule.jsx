@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Sparkles, Mail, Lock, User, ArrowRight, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../Supabase/supabaseclient';
@@ -9,9 +9,17 @@ import ConferenceHero from './ConferenceHero';
 const AuthModule = ({ onSuccess }) => {
   const { setUser } = useApp();
   const [isLogin, setIsLogin] = useState(true);
-  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const scrollContainerRef = useRef(null);
+
+  // Reset scroll position when toggling views
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [isLogin]);
 
   const handleAuthSuccess = (user) => {
     setUser(user);
@@ -32,14 +40,41 @@ const AuthModule = ({ onSuccess }) => {
         if (err) throw err;
         handleAuthSuccess(data.user);
       } else {
-        if (!formData.name || !formData.email || !formData.password) throw new Error("All fields are required");
+        if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+          throw new Error("All fields are required");
+        }
+
+        // Logical Relations & Validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email)) {
+          throw new Error("Please enter a valid email address");
+        }
+
+        if (formData.password.length < 6) {
+          throw new Error("Password must be at least 6 characters long");
+        }
+
+        if (formData.password !== formData.confirmPassword) {
+          throw new Error("Passwords do not match");
+        }
+
         const { data, error: err } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
         });
+
         if (err) throw err;
-        await supabase.from("users").insert({ user_id: data.user.id, user_name: formData.name });
-        handleAuthSuccess(data.user);
+
+        if (data.user) {
+          await supabase.from("users").insert({
+            user_id: data.user.id,
+            user_name: formData.name,
+            email: formData.email
+          });
+          handleAuthSuccess(data.user);
+        } else {
+          throw new Error("Signup failed. Please try again.");
+        }
       }
     } catch (err) {
       setError(err.message);
@@ -60,13 +95,16 @@ const AuthModule = ({ onSuccess }) => {
     <div className="flex h-screen w-full overflow-hidden bg-[#04070D] text-white" style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
 
       {/* LEFT: FORM PANEL */}
-      <div className="w-full md:w-[45%] lg:w-[35%] h-full flex flex-col p-8 md:p-12 lg:p-16 border-r border-white/5 relative z-20 bg-[#080B12] overflow-hidden">
-        
+      <div 
+        ref={scrollContainerRef}
+        className={`w-full md:w-[45%] lg:w-[35%] h-full flex flex-col p-8 pb-8 md:p-12 md:pb-12 lg:p-16 lg:pb-16 border-r border-white/5 relative z-20 bg-[#080B12] ${isLogin ? 'overflow-hidden' : 'overflow-y-auto no-scrollbar'}`}
+      >
+
         {/* Textures */}
-        <div className="absolute inset-0 pointer-events-none opacity-20" 
-             style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-        <div className="absolute inset-0 pointer-events-none opacity-[0.03] mix-blend-overlay"
-             style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/carbon-fibre.png")' }} />
+        <div className="fixed inset-0 pointer-events-none opacity-20"
+          style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+        <div className="fixed inset-0 pointer-events-none opacity-[0.03] mix-blend-overlay"
+          style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/carbon-fibre.png")' }} />
 
         <div className="relative z-10 mb-auto flex flex-col items-center">
           <div className="flex items-center justify-center gap-2 mb-10 w-full">
@@ -133,6 +171,26 @@ const AuthModule = ({ onSuccess }) => {
                 />
               </div>
 
+              <AnimatePresence mode="popLayout">
+                {!isLogin && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="space-y-2 group"
+                  >
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">Confirm Password</label>
+                    <input
+                      type="password"
+                      placeholder="••••••••"
+                      className="w-full px-5 py-4 bg-white/[0.04] border border-white/5 rounded-2xl group-focus-within:border-amber-500/50 group-focus-within:bg-white/[0.06] transition-all outline-none text-white font-bold placeholder:text-white/5 shadow-inner"
+                      value={formData.confirmPassword}
+                      onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {error && <p className="text-xs font-bold text-red-500 uppercase tracking-widest">{error}</p>}
 
               <div className="pt-2 space-y-4">
@@ -146,29 +204,33 @@ const AuthModule = ({ onSuccess }) => {
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </motion.button>
 
-                <div className="text-center py-2">
-                  <span className="text-[10px] font-black text-white/5 uppercase tracking-[0.3em]">OR</span>
-                </div>
+                {isLogin && (
+                  <>
+                    <div className="text-center py-2">
+                      <span className="text-[10px] font-black text-white/5 uppercase tracking-[0.3em]">OR</span>
+                    </div>
 
-                <motion.button
-                  whileHover={{ scale: 1.01, backgroundColor: 'rgba(255,255,255,0.03)' }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleGoogleLogin}
-                  type="button"
-                  className="w-full py-4 border border-white/10 text-white font-bold uppercase tracking-[0.1em] text-[10px] flex items-center justify-center gap-3 hover:border-white/20 transition-all rounded-xl"
-                >
-                  <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-4 h-4" />
-                  Continue with Google
-                </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.01, backgroundColor: 'rgba(255,255,255,0.03)' }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleGoogleLogin}
+                      type="button"
+                      className="w-full py-4 border border-white/10 text-white font-bold uppercase tracking-[0.1em] text-[10px] flex items-center justify-center gap-3 hover:border-white/20 transition-all rounded-xl"
+                    >
+                      <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-4 h-4" />
+                      Continue with Google
+                    </motion.button>
+                  </>
+                )}
               </div>
             </form>
           </motion.div>
         </div>
 
-        <div className="mt-12 flex items-center justify-between">
+        <div className="mt-auto pt-10 mb-4 flex items-center justify-between">
           <button
             onClick={() => setIsLogin(!isLogin)}
-            className="text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-white transition-colors flex items-center gap-2"
+            className="text-[12px] font-black uppercase tracking-widest text-white/30 hover:text-white transition-colors flex items-center gap-2"
           >
             {isLogin ? 'Create account' : 'Already have an account?'}
             {isLogin ? <ArrowRight size={12} /> : <ArrowLeft size={12} />}

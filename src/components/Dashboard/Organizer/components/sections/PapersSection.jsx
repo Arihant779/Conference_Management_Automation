@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FileText, CheckCircle, XCircle, Clock } from 'lucide-react';
-import { LoadingRows, Empty } from '../common/Primitives';
+import { LoadingRows, Empty, Modal, Btn } from '../common/Primitives';
 import { SpotlightCard, AnimatedSection } from '../common/Effects';
 import { useApp } from '../../../../../context/AppContext';
 
@@ -11,6 +11,7 @@ const PapersSection = ({
 }) => {
   const { theme } = useApp();
   const isDark = theme === 'dark';
+  const [confirmPaper, setConfirmPaper] = useState(null); // { id, status, title }
 
   const fp = confPapers.filter(p => paperFilter === 'all' || p.status === paperFilter);
   const authorName = (p) => p.users?.user_name || p.users?.user_email || p.author_id?.slice(0, 8) || 'Unknown';
@@ -126,11 +127,11 @@ const PapersSection = ({
                         )}
                         {can('manage_papers') && (paper.status === 'pending' || !paper.status) && (
                           <>
-                            <button onClick={(e) => { e.stopPropagation(); updatePaperStatus(paper.paper_id, 'accepted'); }}
+                            <button onClick={(e) => { e.stopPropagation(); setConfirmPaper({ id: paper.paper_id, status: 'accepted', title: paper.paper_title }); }}
                               className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg transition-all cursor-pointer active:scale-95 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500/20">
                               <CheckCircle size={14} /> Accept
                             </button>
-                            <button onClick={(e) => { e.stopPropagation(); updatePaperStatus(paper.paper_id, 'rejected'); }}
+                            <button onClick={(e) => { e.stopPropagation(); setConfirmPaper({ id: paper.paper_id, status: 'rejected', title: paper.paper_title }); }}
                               className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg transition-all cursor-pointer active:scale-95 bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500/20">
                               <XCircle size={14} /> Reject
                             </button>
@@ -144,6 +145,47 @@ const PapersSection = ({
             </AnimatedSection>
           ))}
         </div>
+      )}
+      {confirmPaper && (
+        <Modal 
+          title="Confirm Decision" 
+          onClose={() => setConfirmPaper(null)}
+          width="max-w-md"
+        >
+          <div className="space-y-6">
+            <div className="flex items-start gap-4 p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10">
+              <div className={`p-3 rounded-xl shrink-0 ${confirmPaper.status === 'accepted' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                {confirmPaper.status === 'accepted' ? <CheckCircle size={24} /> : <XCircle size={24} />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className={`text-sm font-medium mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  Are you sure you want to <span className={`font-bold ${confirmPaper.status === 'accepted' ? 'text-emerald-500' : 'text-rose-500'}`}>{confirmPaper.status === 'accepted' ? 'accept' : 'reject'}</span> this paper?
+                </p>
+                <p className={`text-sm font-bold leading-tight truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{confirmPaper.title || 'Untitled'}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Btn 
+                variant="secondary" 
+                className="flex-1" 
+                onClick={() => setConfirmPaper(null)}
+              >
+                Cancel
+              </Btn>
+              <Btn 
+                variant="primary" 
+                className="flex-[1.5]" 
+                onClick={() => {
+                  updatePaperStatus(confirmPaper.id, confirmPaper.status);
+                  setConfirmPaper(null);
+                }}
+              >
+                Confirm {confirmPaper.status === 'accepted' ? 'Accept' : 'Reject'}
+              </Btn>
+            </div>
+          </div>
+        </Modal>
       )}
     </AnimatedSection>
   );
