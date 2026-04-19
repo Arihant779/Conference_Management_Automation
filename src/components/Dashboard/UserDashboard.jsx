@@ -5,7 +5,7 @@ import {
   MapPin, Bell, ChevronRight, ChevronLeft, Check,
   X, Sparkles, Settings, User, Mail, Shield,
   Award, FileText, Lock, Eye, EyeOff, Compass,
-  Zap, TrendingUp, Star, Globe, Sun
+  Zap, TrendingUp, Star, Globe, Sun, Edit2
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
@@ -69,7 +69,7 @@ const ROLES = [
   { id: 'hospitality_head', name: 'Hospitality Team', emoji: '🏨', color: '#f43f5e', desc: 'Catering, guest relations & VIP arrangements' },
   { id: 'publication_head', name: 'Publications Team', emoji: '📝', color: '#3b82f6', desc: 'Proceedings, journals & editorial coordination' },
   { id: 'finance_head', name: 'Finance Team', emoji: '💰', color: '#eab308', desc: 'Budget tracking, reimbursements & expenses' },
-  { id: 'program_coord', name: 'Program Coordinator', emoji: '🗓️', color: '#ec4899', desc: 'Schedule sessions, speakers & workshops' },
+  { id: 'program_coord', name: 'Reviewing Team', emoji: '🔍', color: '#ec4899', desc: 'Collaborative paper review & quality assessment' },
   { id: 'social_coord', name: 'Social Media Coord.', emoji: '📱', color: '#14b8a6', desc: 'Real-time updates on Twitter, LinkedIn & Instagram' },
   { id: 'volunteer_coord', name: 'Volunteer Coordinator', emoji: '👥', color: '#f97316', desc: 'Onboard, train & manage fellow volunteers' },
   { id: 'design_lead', name: 'Design Lead', emoji: '🎨', color: '#a855f7', desc: 'Branding, banners, posters & visual assets' },
@@ -79,6 +79,85 @@ const ROLES = [
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // VOLUNTEER PREFERENCES MODAL
+// ═══════════════════════════════════════════════════════════════════════════════
+// EDIT NAME MODAL
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const EditNameModal = ({ onClose, onSaved, theme = 'dark' }) => {
+  const { user: authUser, setUser } = useApp();
+  const isDark = theme === 'dark';
+  const [name, setName] = useState(authUser?.user_metadata?.full_name || '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setSaving(true);
+    setError('');
+
+    try {
+      // 1. Update Auth
+      const { data: authData, error: authErr } = await supabase.auth.updateUser({
+        data: { full_name: name.trim() }
+      });
+      if (authErr) throw authErr;
+      if (authData?.user) setUser(authData.user);
+
+      // 2. Update DB
+      const { error: dbErr } = await supabase.from('users')
+        .update({ user_name: name.trim() })
+        .eq('user_id', authUser.id);
+      if (dbErr) throw dbErr;
+
+      onSaved?.(name.trim());
+      onClose();
+    } catch (err) {
+      setError(err.message || 'Failed to update name');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className={`w-full max-w-md border rounded-[2.5rem] overflow-hidden shadow-2xl p-8 transition-all duration-500 ${isDark ? 'bg-[#111113]/95 border-white/[0.06] shadow-black/60' : 'bg-white border-zinc-900/[0.08] shadow-zinc-900/10'}`}>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-colors ${isDark ? 'bg-white text-zinc-900' : 'bg-zinc-900 text-white'}`}><User size={20} /></div>
+            <div>
+              <h2 className={`text-xl font-bold transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>Edit Name</h2>
+              <p className="text-xs text-zinc-500">Update your public identity</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 text-zinc-600 hover:text-white rounded-xl transition-all hover:bg-white/[0.05]"><X size={20} /></button>
+        </div>
+        
+        <form onSubmit={handleSave} className="space-y-6">
+          <div className="relative">
+            <label className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-3 block ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Full Name</label>
+            <input 
+              autoFocus 
+              className={`w-full bg-transparent border-b-2 outline-none py-2 text-lg font-medium transition-all ${isDark ? 'text-white border-white/10 focus:border-amber-400' : 'text-zinc-900 border-zinc-200 focus:border-amber-500'}`} 
+              placeholder="Your full name" 
+              value={name} 
+              onChange={(e) => setName(e.target.value)} 
+            />
+          </div>
+          {error && <p className="text-xs font-semibold text-red-400">{error}</p>}
+          <div className="flex gap-4 pt-2">
+            <button type="button" onClick={onClose} className={`flex-1 py-3.5 rounded-2xl text-sm font-bold transition-all ${isDark ? 'bg-white/[0.05] text-white hover:bg-white/[0.08]' : 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200'}`}>Cancel</button>
+            <button type="submit" disabled={saving || !name.trim()} className={`flex-[1.5] py-3.5 rounded-2xl text-sm font-black transition-all shadow-lg active:scale-95 ${isDark ? 'bg-white text-zinc-900 hover:bg-zinc-100' : 'bg-zinc-900 text-white hover:bg-zinc-800'} disabled:opacity-50`}>
+              {saving ? 'Saving...' : 'Update Name'}
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </motion.div>
+  );
+};
+
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const VolunteerPreferencesModal = ({ userId, onClose, onSaved, theme = 'dark' }) => {
@@ -123,11 +202,6 @@ const VolunteerPreferencesModal = ({ userId, onClose, onSaved, theme = 'dark' })
     const uid = session?.user?.id ?? userId;
     if (!uid) { setSaveError('Not authenticated.'); setSaving(false); return; }
     
-    // Check if user record exists
-    const { data: existing, error: readErr } = await supabase.from('users').select('user_id').eq('user_id', uid).maybeSingle();
-    if (readErr) { setSaveError('Could not read your user record: ' + readErr.message); setSaving(false); return; }
-    if (!existing) { setSaveError('Your user record was not found.'); setSaving(false); return; }
-
     const payload = { volunteer_domains: [...selectedDomains], volunteer_roles: [...selectedRoles] };
     const { data, error } = await supabase.from('users').update(payload).eq('user_id', uid).select('user_id, volunteer_domains, volunteer_roles');
     
@@ -495,7 +569,7 @@ const PasswordUpdateSection = ({ user, theme = 'dark' }) => {
 // PROFILE VIEW
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const ProfileView = ({ user, volunteerPrefs, ROLES, onEditVolunteer, theme = 'dark' }) => {
+const ProfileView = ({ user, volunteerPrefs, ROLES, onEditName, onEditVolunteer, theme = 'dark' }) => {
   const isDark = theme === 'dark';
   const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const avatarLetter = displayName[0]?.toUpperCase();
@@ -513,13 +587,22 @@ const ProfileView = ({ user, volunteerPrefs, ROLES, onEditVolunteer, theme = 'da
             {avatarLetter}
           </div>
           <div className="flex-1 text-center md:text-left mb-2">
-            <h2 className={`text-3xl font-bold mb-1.5 transition-colors duration-300 ${isDark ? 'text-white' : 'text-zinc-900'}`}>{displayName}</h2>
+            <div className="flex items-center justify-center md:justify-start gap-3 mb-1.5 group">
+              <h2 className={`text-3xl font-bold transition-colors duration-300 ${isDark ? 'text-white' : 'text-zinc-900'}`}>{displayName}</h2>
+              <button 
+                onClick={onEditName} 
+                className="p-2 rounded-xl transition-all hover:bg-white/[0.05] text-zinc-500 hover:text-amber-400"
+                title="Change Name"
+              >
+                <Edit2 size={16} />
+              </button>
+            </div>
             <div className="flex flex-wrap justify-center md:justify-start gap-4 text-zinc-400 text-sm">
               <div className="flex items-center gap-1.5"><Mail size={14} className="text-zinc-400" />{user?.email}</div>
               <div className="flex items-center gap-1.5"><Shield size={14} className="text-emerald-400" />Verified Account</div>
             </div>
           </div>
-          <button onClick={onEditVolunteer} className={`px-5 py-2.5 border rounded-xl text-sm font-semibold transition-all mb-2 ${isDark ? 'bg-white/[0.05] hover:bg-white/[0.08] border-white/[0.08] text-zinc-200' : 'bg-zinc-900/[0.04] hover:bg-zinc-900/[0.08] border-zinc-900/[0.08] text-zinc-700'}`}>Edit Profile</button>
+          <button onClick={onEditVolunteer} className={`px-5 py-2.5 border rounded-xl text-sm font-semibold transition-all mb-2 ${isDark ? 'bg-white/[0.05] hover:bg-white/[0.08] border-white/[0.08] text-zinc-200' : 'bg-zinc-900/[0.04] hover:bg-zinc-900/[0.08] border-zinc-900/[0.08] text-zinc-700'}`}>Volunteer Preferences</button>
         </div>
       </div>
 
@@ -531,7 +614,7 @@ const ProfileView = ({ user, volunteerPrefs, ROLES, onEditVolunteer, theme = 'da
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${isDark ? 'bg-zinc-800' : 'bg-zinc-100'}`}><Sparkles size={15} className="text-zinc-400" /></div>
                 <h3 className={`text-base font-semibold transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>Volunteer Roles & Domains</h3>
               </div>
-              <button onClick={onEditVolunteer} className="text-xs font-semibold text-zinc-500 hover:text-zinc-300 transition-colors">Update</button>
+              <button onClick={onEditVolunteer} className="text-xs font-semibold text-zinc-500 hover:text-zinc-300 transition-colors">Preferences</button>
             </div>
             <div className="space-y-6">
               <div>
@@ -880,6 +963,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
   const [loadingRoles, setLoadingRoles] = useState(true);
   const [showVolunteerModal, setShowVolunteerModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showNameModal, setShowNameModal] = useState(false);
   const [volunteerPrefs, setVolunteerPrefs] = useState(null);
   const [searchFocused, setSearchFocused] = useState(false);
   const [notifs, setNotifs] = useState([]);
@@ -1333,7 +1417,6 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
               </AnimatePresence>
 
               {/* Quick actions */}
-              {/* Quick actions */}
               <GlowCard 
                 theme={theme}
                 className={`backdrop-blur-xl border rounded-2xl p-5 transition-all duration-300 ${isDark ? 'bg-[#141416]/60 border-white/[0.05] hover:border-white/[0.08]' : 'bg-white border-zinc-900/[0.08] hover:border-zinc-900/[0.12] shadow-sm'}`}
@@ -1460,9 +1543,27 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
             </button>
             <h1 className={`text-3xl font-bold tracking-tight transition-colors duration-300 ${isDark ? 'text-white' : 'text-zinc-900'}`}>Your Profile</h1>
           </div>
-          <ProfileView user={user} volunteerPrefs={volunteerPrefs} ROLES={ROLES} onEditVolunteer={() => setShowVolunteerModal(true)} theme={theme} />
+          <ProfileView 
+            user={user} 
+            volunteerPrefs={volunteerPrefs} 
+            ROLES={ROLES} 
+            onEditName={() => setShowNameModal(true)}
+            onEditVolunteer={() => setShowVolunteerModal(true)} 
+            theme={theme} 
+          />
         </motion.div>
       )}
+
+      {/* ═══ EDIT NAME MODAL ═══ */}
+      <AnimatePresence>
+        {showNameModal && (
+          <EditNameModal
+            onClose={() => setShowNameModal(false)}
+            onSaved={(newName) => { /* user context handles this */ }}
+            theme={theme}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ═══ VOLUNTEER MODAL ═══ */}
       <AnimatePresence>

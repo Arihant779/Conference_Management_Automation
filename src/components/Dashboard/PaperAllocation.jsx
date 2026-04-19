@@ -14,11 +14,11 @@ const cls = (...c) => c.filter(Boolean).join(' ');
 const Btn = ({ variant = 'primary', children, className, isDark, ...props }) => {
   const base = 'px-4 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 justify-center disabled:opacity-40 disabled:cursor-not-allowed';
   const v = {
-    primary: isDark 
-      ? 'bg-gradient-to-br from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-lg shadow-amber-500/20' 
+    primary: isDark
+      ? 'bg-gradient-to-br from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-lg shadow-amber-500/20'
       : 'bg-gradient-to-br from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-lg shadow-amber-600/20',
-    secondary: isDark 
-      ? 'border border-white/10 text-slate-400 hover:text-white hover:bg-white/5' 
+    secondary: isDark
+      ? 'border border-white/10 text-slate-400 hover:text-white hover:bg-white/5'
       : 'border border-zinc-200 text-zinc-600 hover:bg-zinc-50 hover:border-zinc-300',
     danger: isDark
       ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20'
@@ -66,19 +66,21 @@ const PaperAllocation = ({ conf, onRefresh }) => {
       .eq('conference_id', confId)
       .eq('role', 'reviewer')
       .then(({ data }) => {
-        if (data?.length) {
-          setDbReviewers(data.map(m => ({
-            id: m.id,
-            userId: m.user_id,
-            email: m.email || m.users?.user_email || '',
-            name: m.full_name || m.users?.user_name || m.email || 'Reviewer',
-            expertise: m.expertise || '',
-            capacity: m.max_papers || 3,
-          })));
-        }
+          setDbReviewers(data.map(m => {
+            const rawName = m.full_name || m.users?.user_name;
+            const resolvedEmail = m.email || m.users?.user_email;
+            return {
+              id: m.id,
+              userId: m.user_id,
+              email: resolvedEmail || '',
+              name: rawName || resolvedEmail || (m.user_id ? m.user_id.substring(0, 8) : 'Reviewer'),
+              expertise: m.expertise || '',
+              capacity: m.max_papers || 3,
+            };
+          }));
       });
 
-    // Fetch Papers - Removed title-based deduplication to allow multiple submissions
+
     supabase
       .from('paper')
       .select('paper_id, paper_title, abstract, file_url, keywords, research_area')
@@ -109,17 +111,21 @@ const PaperAllocation = ({ conf, onRefresh }) => {
         if (data && data.length > 0) {
           const mapped = {
             status: 'optimal',
-            assignments: data.map(a => ({
-              paper_id: a.paper_id,
-              paper_name: a.paper?.paper_title || 'Untitled',
-              reviewer_id: a.reviewer_id,
-              reviewer_name: a.reviewer?.full_name || 'Reviewer',
-              similarity_score: a.similarity || 0,
-              dbId: a.id
-            })),
+            assignments: data.map(a => {
+              const rEmail = a.reviewer?.email || a.reviewer?.user_email;
+              const rName = a.reviewer?.full_name || a.reviewer?.user_name || rEmail || (a.reviewer_id ? a.reviewer_id.substring(0, 8) : 'Reviewer');
+              return {
+                paper_id: a.paper_id,
+                paper_name: a.paper?.paper_title || 'Untitled',
+                reviewer_id: a.reviewer_id,
+                reviewer_name: rName,
+                similarity_score: a.similarity || 0,
+                dbId: a.id
+              };
+            }),
             isFromDb: true
           };
-          
+
           const sims = data.map(a => a.similarity || 0);
           mapped.summary = {
             total_assignments: data.length,
@@ -178,7 +184,7 @@ const PaperAllocation = ({ conf, onRefresh }) => {
       const validReviewers = reviewers.filter(r => r.expertise.trim());
       const capacities = validReviewers.map(r => parseInt(r.capacity) || 3);
       const fd = new FormData();
-      
+
       for (const p of papers) {
         if (p.file) {
           fd.append('papers[]', p.file);
@@ -298,27 +304,27 @@ const PaperAllocation = ({ conf, onRefresh }) => {
         if (autos && autos.length > 0) {
           for (const auto of autos) {
             for (const item of toInsert) {
-               // Find paper name and reviewer details
-               const pData = updatedPapers.find(p => p.dbId === item.paper_id);
-               const rData = validReviewers.find(r => r.userId === item.reviewer_id);
+              // Find paper name and reviewer details
+              const pData = updatedPapers.find(p => p.dbId === item.paper_id);
+              const rData = validReviewers.find(r => r.userId === item.reviewer_id);
 
-               if (rData && rData.email) {
-                 const personalizedBody = auto.body
-                   .replace(/{ReviewerName}/g, rData.name)
-                   .replace(/{PaperTitle}/g, pData?.name || 'Untitled Paper');
+              if (rData && rData.email) {
+                const personalizedBody = auto.body
+                  .replace(/{ReviewerName}/g, rData.name)
+                  .replace(/{PaperTitle}/g, pData?.name || 'Untitled Paper');
 
-                 await fetch(`${API_BASE_URL}/api/send-email`, {
-                   method: 'POST',
-                   headers: { 'Content-Type': 'application/json' },
-                   body: JSON.stringify({
-                     to: [rData.email.trim().toLowerCase()],
-                     subject: auto.subject,
-                     body: personalizedBody,
-                     senderRole: 'organizer',
-                     conferenceId: confId
-                   })
-                 }).catch(e => console.error('on_paper_assigned email failed:', e));
-               }
+                await fetch(`${API_BASE_URL}/api/send-email`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    to: [rData.email.trim().toLowerCase()],
+                    subject: auto.subject,
+                    body: personalizedBody,
+                    senderRole: 'organizer',
+                    conferenceId: confId
+                  })
+                }).catch(e => console.error('on_paper_assigned email failed:', e));
+              }
             }
           }
         }
@@ -370,7 +376,7 @@ const PaperAllocation = ({ conf, onRefresh }) => {
             disabled={k === 'results' && !result && !confirmed}
             className={cls(
               'px-5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2',
-              activeTab === k 
+              activeTab === k
                 ? isDark ? 'bg-amber-600 text-white shadow-lg shadow-amber-500/20' : 'bg-white text-amber-600 shadow-sm'
                 : isDark ? 'text-slate-500 hover:text-slate-200' : 'text-zinc-500 hover:text-zinc-800',
               k === 'results' && !result && !confirmed && 'opacity-30 cursor-not-allowed'
@@ -411,10 +417,10 @@ const PaperAllocation = ({ conf, onRefresh }) => {
               </div>
               <div className="flex gap-2">
                 <Btn isDark={isDark} variant="secondary" className="text-[10px] uppercase py-2" onClick={() => setShowPaperDbSelector(!showPaperDbSelector)}>
-                   {showPaperDbSelector ? 'Close repository' : 'Browse database'}
+                  {showPaperDbSelector ? 'Close repository' : 'Browse database'}
                 </Btn>
                 <Btn isDark={isDark} variant="secondary" className="text-[10px] uppercase py-2 font-bold" onClick={() => fileInputRef.current?.click()}>
-                   + Upload PDF
+                  + Upload PDF
                 </Btn>
               </div>
             </div>
@@ -432,17 +438,17 @@ const PaperAllocation = ({ conf, onRefresh }) => {
                       const isSelected = papers.some(x => x.dbId === p.id);
                       return (
                         <div key={p.id} onClick={() => toggleDbPaper(p)} className={cls(
-                            "group flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all active:scale-95",
-                            isSelected 
-                              ? isDark ? "bg-amber-600/20 border-amber-500/50 text-amber-100 shadow-lg" : "bg-white border-amber-500 text-amber-700 shadow-md"
-                              : isDark ? "bg-white/3 border-white/6 text-slate-400 hover:bg-white/5" : "bg-white border-zinc-200 text-zinc-500 hover:border-zinc-300"
-                          )}>
+                          "group flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all active:scale-95",
+                          isSelected
+                            ? isDark ? "bg-amber-600/20 border-amber-500/50 text-amber-100 shadow-lg" : "bg-white border-amber-500 text-amber-700 shadow-md"
+                            : isDark ? "bg-white/3 border-white/6 text-slate-400 hover:bg-white/5" : "bg-white border-zinc-200 text-zinc-500 hover:border-zinc-300"
+                        )}>
                           <div className={cls(
                             "w-5 h-5 rounded-md border flex items-center justify-center transition-all",
                             isSelected ? "bg-amber-500 border-amber-500" : isDark ? "bg-black/20 border-white/10" : "bg-zinc-100 border-zinc-200"
                           )}> {isSelected && <CheckCircle size={10} className="text-white" />} </div>
                           <span className="text-xs font-bold truncate flex-1">{p.name}</span>
-                          <span className={cls("text-[9px] font-black uppercase px-2 py-0.5 rounded", isDark ? "bg-black/30 text-slate-600" : "bg-zinc-50 text-zinc-400")}>ID-{p.id.slice(0,4)}</span>
+                          <span className={cls("text-[9px] font-black uppercase px-2 py-0.5 rounded", isDark ? "bg-black/30 text-slate-600" : "bg-zinc-50 text-zinc-400")}>ID-{p.id.slice(0, 4)}</span>
                         </div>
                       );
                     })
@@ -488,7 +494,7 @@ const PaperAllocation = ({ conf, onRefresh }) => {
               </div>
               <div className="flex gap-2">
                 <Btn isDark={isDark} variant="secondary" className="text-[10px] uppercase py-2" onClick={() => setShowDbSelector(!showDbSelector)}>
-                   {showDbSelector ? 'Hide committee' : 'Import committee'}
+                  {showDbSelector ? 'Hide committee' : 'Import committee'}
                 </Btn>
               </div>
             </div>
@@ -496,67 +502,67 @@ const PaperAllocation = ({ conf, onRefresh }) => {
             {showDbSelector && (
               <div className={cls("mb-8 border rounded-2xl p-6 animate-in slide-in-from-top-4", isDark ? "bg-amber-500/5 border-amber-500/10" : "bg-zinc-50 border-zinc-100")}>
                 <div className={cls("text-[10px] font-bold uppercase tracking-[0.2em] mb-4 flex justify-between", isDark ? "text-amber-400" : "text-amber-600")}>
-                    AVAILABLE MEMBERS
-                    {loadingReviewers && <Loader2 size={12} className="animate-spin" />}
+                  AVAILABLE MEMBERS
+                  {loadingReviewers && <Loader2 size={12} className="animate-spin" />}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {dbReviewers.map(r => {
-                      const isSelected = reviewers.some(x => x.dbId === r.id);
-                      return (
-                        <div key={r.id} onClick={() => toggleDbReviewer(r)} className={cls(
-                            "group flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all active:scale-95",
-                            isSelected 
-                              ? isDark ? "bg-amber-600/20 border-amber-500/50 text-amber-100 shadow-lg" : "bg-white border-amber-500 text-amber-700 shadow-md"
-                              : isDark ? "bg-white/3 border-white/6 text-slate-400 hover:bg-white/5" : "bg-white border-zinc-200 text-zinc-500 hover:border-zinc-300"
-                          )}>
-                          <div className={cls("w-7 h-7 rounded-full flex items-center justify-center font-bold text-[10px] uppercase", isDark ? "bg-black/30" : "bg-zinc-100 text-zinc-900")}>{r.name?.[0]}</div>
-                          <span className="text-xs font-bold truncate flex-1">{r.name}</span>
-                          <CheckCircle size={14} className={cls("transition-opacity", isSelected ? "opacity-100 text-amber-500" : "opacity-0")} />
-                        </div>
-                      );
+                    const isSelected = reviewers.some(x => x.dbId === r.id);
+                    return (
+                      <div key={r.id} onClick={() => toggleDbReviewer(r)} className={cls(
+                        "group flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all active:scale-95",
+                        isSelected
+                          ? isDark ? "bg-amber-600/20 border-amber-500/50 text-amber-100 shadow-lg" : "bg-white border-amber-500 text-amber-700 shadow-md"
+                          : isDark ? "bg-white/3 border-white/6 text-slate-400 hover:bg-white/5" : "bg-white border-zinc-200 text-zinc-500 hover:border-zinc-300"
+                      )}>
+                        <div className={cls("w-7 h-7 rounded-full flex items-center justify-center font-bold text-[10px] uppercase", isDark ? "bg-black/30" : "bg-zinc-100 text-zinc-900")}>{r.name?.[0]}</div>
+                        <span className="text-xs font-bold truncate flex-1">{r.name}</span>
+                        <CheckCircle size={14} className={cls("transition-opacity", isSelected ? "opacity-100 text-amber-500" : "opacity-0")} />
+                      </div>
+                    );
                   })}
                 </div>
               </div>
             )}
 
             {reviewers.length === 0 ? (
-               <div className={cls("py-12 flex flex-col items-center border-2 border-dashed rounded-[2rem]", isDark ? "border-white/5 bg-white/2" : "border-zinc-100 bg-zinc-50/50")}>
-                  <Users size={32} className={isDark ? "text-slate-700" : "text-zinc-300"} />
-                  <p className={cls("text-sm mt-4 italic", isDark ? "text-slate-600" : "text-zinc-400")}>Assign at least {reviewersPerPaper} reviewers to begin</p>
-               </div>
+              <div className={cls("py-12 flex flex-col items-center border-2 border-dashed rounded-[2rem]", isDark ? "border-white/5 bg-white/2" : "border-zinc-100 bg-zinc-50/50")}>
+                <Users size={32} className={isDark ? "text-slate-700" : "text-zinc-300"} />
+                <p className={cls("text-sm mt-4 italic", isDark ? "text-slate-600" : "text-zinc-400")}>Assign at least {reviewersPerPaper} reviewers to begin</p>
+              </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {reviewers.map((r, i) => (
-                    <div key={i} className={cls("relative p-6 rounded-3xl border transition-all animate-in zoom-in-95 group/rev", isDark ? "bg-white/3 border-white/6 hover:bg-white/5" : "bg-zinc-50 border-zinc-200 hover:bg-white shadow-sm")}>
-                      <button onClick={() => removeReviewer(i)} className={cls("absolute top-3 right-3 p-1.5 rounded-lg opacity-0 group-hover/rev:opacity-100 transition-all", isDark ? "hover:bg-red-500/10 text-slate-600 hover:text-red-400" : "hover:bg-red-50 text-zinc-300 hover:text-red-500")}>
-                         <X size={14} />
-                      </button>
-                      <div className="flex items-center gap-4 mb-5">
-                         <div className={cls("w-10 h-10 rounded-2xl flex items-center justify-center font-bold uppercase transition-transform group-hover/rev:scale-110", isDark ? "bg-amber-500/20 text-amber-500" : "bg-white text-amber-600 shadow-sm")}>
-                            {r.name?.[0] || (i + 1)}
-                         </div>
-                         <div className="flex-1 min-w-0">
-                            <input
-                              className={cls("w-full bg-transparent border-b outline-none font-bold text-sm transition-all pb-1", isDark ? "border-white/10 focus:border-amber-500 text-white placeholder-slate-700" : "border-zinc-200 focus:border-amber-500 text-zinc-900 placeholder-zinc-300")}
-                              placeholder="Member name"
-                              value={r.name}
-                              onChange={e => updateReviewer(i, 'name', e.target.value)}
-                            />
-                         </div>
-                         <div className={cls("flex items-center gap-2 px-3 py-1.5 rounded-xl border shrink-0", isDark ? "bg-black/30 border-white/5" : "bg-white border-zinc-100")}>
-                            <span className={cls("text-[9px] font-black uppercase text-slate-500", isDark ? "text-slate-500" : "text-zinc-400")}>CAPACITY:</span>
-                            <input type="number" min="1" max="50" className={cls("w-8 bg-transparent text-xs font-black text-center outline-none", isDark ? "text-amber-400" : "text-amber-600")} value={r.capacity || 3} onChange={e => updateReviewer(i, 'capacity', e.target.value)} />
-                         </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {reviewers.map((r, i) => (
+                  <div key={i} className={cls("relative p-6 rounded-3xl border transition-all animate-in zoom-in-95 group/rev", isDark ? "bg-white/3 border-white/6 hover:bg-white/5" : "bg-zinc-50 border-zinc-200 hover:bg-white shadow-sm")}>
+                    <button onClick={() => removeReviewer(i)} className={cls("absolute top-3 right-3 p-1.5 rounded-lg opacity-0 group-hover/rev:opacity-100 transition-all", isDark ? "hover:bg-red-500/10 text-slate-600 hover:text-red-400" : "hover:bg-red-50 text-zinc-300 hover:text-red-500")}>
+                      <X size={14} />
+                    </button>
+                    <div className="flex items-center gap-4 mb-5">
+                      <div className={cls("w-10 h-10 rounded-2xl flex items-center justify-center font-bold uppercase transition-transform group-hover/rev:scale-110", isDark ? "bg-amber-500/20 text-amber-500" : "bg-white text-amber-600 shadow-sm")}>
+                        {r.name?.[0] || (i + 1)}
                       </div>
-                      <textarea
-                        className={cls("w-full rounded-2xl p-4 text-xs resize-none outline-none transition-all h-[80px] border", isDark ? "bg-black/20 border-white/5 focus:border-amber-500 text-slate-300 placeholder-slate-700" : "bg-white border-zinc-100 focus:border-amber-500 text-zinc-600 placeholder-zinc-300 shadow-inner")}
-                        placeholder="Paste or type expertise tags (AI, ML, Crypto...)"
-                        value={r.expertise}
-                        onChange={e => updateReviewer(i, 'expertise', e.target.value)}
-                      />
+                      <div className="flex-1 min-w-0">
+                        <input
+                          className={cls("w-full bg-transparent border-b outline-none font-bold text-sm transition-all pb-1", isDark ? "border-white/10 focus:border-amber-500 text-white placeholder-slate-700" : "border-zinc-200 focus:border-amber-500 text-zinc-900 placeholder-zinc-300")}
+                          placeholder="Member name"
+                          value={r.name}
+                          onChange={e => updateReviewer(i, 'name', e.target.value)}
+                        />
+                      </div>
+                      <div className={cls("flex items-center gap-2 px-3 py-1.5 rounded-xl border shrink-0", isDark ? "bg-black/30 border-white/5" : "bg-white border-zinc-100")}>
+                        <span className={cls("text-[9px] font-black uppercase text-slate-500", isDark ? "text-slate-500" : "text-zinc-400")}>CAPACITY:</span>
+                        <input type="number" min="1" max="50" className={cls("w-8 bg-transparent text-xs font-black text-center outline-none", isDark ? "text-amber-400" : "text-amber-600")} value={r.capacity || 3} onChange={e => updateReviewer(i, 'capacity', e.target.value)} />
+                      </div>
                     </div>
-                  ))}
-                </div>
+                    <textarea
+                      className={cls("w-full rounded-2xl p-4 text-xs resize-none outline-none transition-all h-[80px] border", isDark ? "bg-black/20 border-white/5 focus:border-amber-500 text-slate-300 placeholder-slate-700" : "bg-white border-zinc-100 focus:border-amber-500 text-zinc-600 placeholder-zinc-300 shadow-inner")}
+                      placeholder="Paste or type expertise tags (AI, ML, Crypto...)"
+                      value={r.expertise}
+                      onChange={e => updateReviewer(i, 'expertise', e.target.value)}
+                    />
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 
@@ -564,34 +570,34 @@ const PaperAllocation = ({ conf, onRefresh }) => {
           <div className="flex flex-col md:flex-row gap-6">
             <div className={cls("flex-1 rounded-[2rem] p-8 border flex items-center justify-between", isDark ? "bg-[#0d1117] border-white/6" : "bg-white border-zinc-200 shadow-lg")}>
               <div className="flex items-center gap-4">
-                 <div className={cls("w-12 h-12 rounded-2xl flex items-center justify-center", isDark ? "bg-amber-500/10" : "bg-amber-50")}>
-                    <Scale size={24} className="text-amber-500" />
-                 </div>
-                 <div>
-                    <div className={cls("text-sm font-black uppercase tracking-widest", isDark ? "text-white" : "text-zinc-900")}>Review Intensity</div>
-                    <div className={cls("text-xs", isDark ? "text-slate-500" : "text-zinc-400")}>Target blind assignments per paper</div>
-                 </div>
+                <div className={cls("w-12 h-12 rounded-2xl flex items-center justify-center", isDark ? "bg-amber-500/10" : "bg-amber-50")}>
+                  <Scale size={24} className="text-amber-500" />
+                </div>
+                <div>
+                  <div className={cls("text-sm font-black uppercase tracking-widest", isDark ? "text-white" : "text-zinc-900")}>Review Intensity</div>
+                  <div className={cls("text-xs", isDark ? "text-slate-500" : "text-zinc-400")}>Target blind assignments per paper</div>
+                </div>
               </div>
               <div className={cls("flex items-center gap-4 p-2 rounded-2xl border", isDark ? "bg-black/20 border-white/5" : "bg-zinc-100 border-zinc-200")}>
-                 <button onClick={() => setReviewersPerPaper(p => Math.max(1, p - 1))} className={cls("w-10 h-10 rounded-xl flex items-center justify-center font-black transition-all active:scale-90", isDark ? "bg-white/5 text-slate-400 hover:text-white" : "bg-white text-zinc-400 hover:text-zinc-900")}>-</button>
-                 <span className={cls("text-xl font-black w-8 text-center tabular-nums", isDark ? "text-white" : "text-zinc-900")}>{reviewersPerPaper}</span>
-                 <button onClick={() => setReviewersPerPaper(p => Math.min(10, p + 1))} className={cls("w-10 h-10 rounded-xl flex items-center justify-center font-black transition-all active:scale-90", isDark ? "bg-white/5 text-slate-400 hover:text-white" : "bg-white text-zinc-400 hover:text-zinc-900")}>+</button>
+                <button onClick={() => setReviewersPerPaper(p => Math.max(1, p - 1))} className={cls("w-10 h-10 rounded-xl flex items-center justify-center font-black transition-all active:scale-90", isDark ? "bg-white/5 text-slate-400 hover:text-white" : "bg-white text-zinc-400 hover:text-zinc-900")}>-</button>
+                <span className={cls("text-xl font-black w-8 text-center tabular-nums", isDark ? "text-white" : "text-zinc-900")}>{reviewersPerPaper}</span>
+                <button onClick={() => setReviewersPerPaper(p => Math.min(10, p + 1))} className={cls("w-10 h-10 rounded-xl flex items-center justify-center font-black transition-all active:scale-90", isDark ? "bg-white/5 text-slate-400 hover:text-white" : "bg-white text-zinc-400 hover:text-zinc-900")}>+</button>
               </div>
             </div>
 
             <Btn onClick={apiRunAllocation} disabled={loading} isDark={isDark} className="h-auto md:w-[350px] py-8 rounded-[2rem] text-lg font-black tracking-tight bg-gradient-to-r from-amber-500 to-orange-600 text-white border-0 shadow-lg shadow-amber-500/20 hover:scale-[1.02] transition-transform" variant="primary">
               {loading ? (
                 <div className="flex flex-col items-center gap-2">
-                   <RefreshCw size={24} className="animate-spin" />
-                   <span className="text-[10px] font-black uppercase tracking-[0.3em]">Processing Matrix</span>
+                  <RefreshCw size={24} className="animate-spin" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em]">Processing Matrix</span>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-1">
-                   <div className="flex items-center gap-3">
-                      <Play size={20} fill="currentColor" />
-                      <span>START AI ALLOCATION</span>
-                   </div>
-                   <span className={cls("text-[10px] font-medium tracking-wide normal-case", isDark ? "text-amber-200/60" : "text-amber-200")}>Semantic engine will match {papers.length} papers</span>
+                  <div className="flex items-center gap-3">
+                    <Play size={20} fill="currentColor" />
+                    <span>START AI ALLOCATION</span>
+                  </div>
+                  <span className={cls("text-[10px] font-medium tracking-wide normal-case", isDark ? "text-amber-200/60" : "text-amber-200")}>Semantic engine will match {papers.length} papers</span>
                 </div>
               )}
             </Btn>
@@ -606,7 +612,7 @@ const PaperAllocation = ({ conf, onRefresh }) => {
           {/* Status banner */}
           <div className={cls(
             "rounded-[2rem] p-8 flex flex-col md:flex-row items-center gap-6 border transition-all",
-            confirmed 
+            confirmed
               ? isDark ? "bg-emerald-950/20 border-emerald-500/20" : "bg-emerald-50 border-emerald-200"
               : isDark ? "bg-amber-950/20 border-amber-500/20" : "bg-amber-50 border-amber-200 shadow-xl shadow-amber-500/10"
           )}>
@@ -622,10 +628,10 @@ const PaperAllocation = ({ conf, onRefresh }) => {
               </p>
             </div>
             <div className="flex gap-3">
-               <Btn isDark={isDark} variant="secondary" onClick={exportCSV} className="rounded-2xl px-6 py-4">
-                  <Download size={16} /> EXPORT CSV
-               </Btn>
-               {!confirmed ? (
+              <Btn isDark={isDark} variant="secondary" onClick={exportCSV} className="rounded-2xl px-6 py-4">
+                <Download size={16} /> EXPORT CSV
+              </Btn>
+              {!confirmed ? (
                 <Btn isDark={isDark} variant="success" onClick={confirmAssignments} disabled={loading} className="rounded-2xl px-6 py-4">
                   {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                   COMMIT TO DB
@@ -641,69 +647,69 @@ const PaperAllocation = ({ conf, onRefresh }) => {
 
           {/* Summary Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                  { label: 'MatcheS', value: result.summary.total_assignments, icon: <Users size={16} />, color: isDark ? 'text-amber-400' : 'text-amber-600' },
-                  { label: 'Avg Affinity', value: result.summary.avg_similarity, icon: <TrendingUp size={16} />, color: isDark ? 'text-emerald-400' : 'text-emerald-700' },
-                  { label: 'Precision', value: result.summary.min_similarity, icon: <Scale size={16} />, color: isDark ? 'text-amber-400' : 'text-amber-500' },
-                  { label: 'Peak Match', value: result.summary.max_similarity, icon: <Zap size={16} />, color: isDark ? 'text-blue-400' : 'text-blue-600' },
-              ].map((s, i) => (
-                  <div key={i} className={cls("p-6 rounded-3xl border transition-all", isDark ? "bg-[#0d1117] border-white/6 hover:bg-white/3" : "bg-white border-zinc-200 shadow-sm")}>
-                      <div className={cls("w-9 h-9 rounded-xl flex items-center justify-center mb-4", isDark ? "bg-white/5" : "bg-zinc-50")}> {s.icon} </div>
-                      <div className={cls("text-2xl font-black tabular-nums", isDark ? "text-white" : "text-zinc-900")}>{s.value}</div>
-                      <div className={cls("text-[10px] font-black uppercase tracking-[0.2em]", isDark ? "text-slate-600" : "text-zinc-400")}>{s.label}</div>
-                  </div>
-              ))}
+            {[
+              { label: 'MatcheS', value: result.summary.total_assignments, icon: <Users size={16} />, color: isDark ? 'text-amber-400' : 'text-amber-600' },
+              { label: 'Avg Affinity', value: result.summary.avg_similarity, icon: <TrendingUp size={16} />, color: isDark ? 'text-emerald-400' : 'text-emerald-700' },
+              { label: 'Precision', value: result.summary.min_similarity, icon: <Scale size={16} />, color: isDark ? 'text-amber-400' : 'text-amber-500' },
+              { label: 'Peak Match', value: result.summary.max_similarity, icon: <Zap size={16} />, color: isDark ? 'text-blue-400' : 'text-blue-600' },
+            ].map((s, i) => (
+              <div key={i} className={cls("p-6 rounded-3xl border transition-all", isDark ? "bg-[#0d1117] border-white/6 hover:bg-white/3" : "bg-white border-zinc-200 shadow-sm")}>
+                <div className={cls("w-9 h-9 rounded-xl flex items-center justify-center mb-4", isDark ? "bg-white/5" : "bg-zinc-50")}> {s.icon} </div>
+                <div className={cls("text-2xl font-black tabular-nums", isDark ? "text-white" : "text-zinc-900")}>{s.value}</div>
+                <div className={cls("text-[10px] font-black uppercase tracking-[0.2em]", isDark ? "text-slate-600" : "text-zinc-400")}>{s.label}</div>
+              </div>
+            ))}
           </div>
 
           {/* Assignment List */}
           <div className={cls("rounded-[2rem] border overflow-hidden transition-all", isDark ? "bg-[#0d1117] border-white/6" : "bg-white border-zinc-200 shadow-2xl shadow-zinc-500/5")}>
-             <div className={cls("px-8 py-6 border-b flex items-center justify-between", isDark ? "border-white/5 bg-white/2" : "border-zinc-100 bg-zinc-50")}>
-                <h3 className={cls("text-sm font-black uppercase tracking-[0.2em]", isDark ? "text-slate-400" : "text-zinc-500")}>DETAILED MAPPING</h3>
-                <span className={cls("text-[10px] font-bold px-3 py-1 rounded-full", isDark ? "bg-black/40 text-slate-600" : "bg-white text-zinc-400 border border-zinc-100")}>{result.assignments.length} ROWs</span>
-             </div>
-             <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className={cls("border-b", isDark ? "border-white/5 text-slate-600" : "border-zinc-100 text-zinc-400")}>
-                      <th className="px-8 py-4 text-left font-black uppercase tracking-widest text-[10px]">Title/Sub-id</th>
-                      <th className="px-8 py-4 text-left font-black uppercase tracking-widest text-[10px]">Reviewer Assignee</th>
-                      <th className="px-8 py-4 text-right font-black uppercase tracking-widest text-[10px]">Semantic Affinity</th>
+            <div className={cls("px-8 py-6 border-b flex items-center justify-between", isDark ? "border-white/5 bg-white/2" : "border-zinc-100 bg-zinc-50")}>
+              <h3 className={cls("text-sm font-black uppercase tracking-[0.2em]", isDark ? "text-slate-400" : "text-zinc-500")}>DETAILED MAPPING</h3>
+              <span className={cls("text-[10px] font-bold px-3 py-1 rounded-full", isDark ? "bg-black/40 text-slate-600" : "bg-white text-zinc-400 border border-zinc-100")}>{result.assignments.length} ROWs</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className={cls("border-b", isDark ? "border-white/5 text-slate-600" : "border-zinc-100 text-zinc-400")}>
+                    <th className="px-8 py-4 text-left font-black uppercase tracking-widest text-[10px]">Title/Sub-id</th>
+                    <th className="px-8 py-4 text-left font-black uppercase tracking-widest text-[10px]">Reviewer Assignee</th>
+                    <th className="px-8 py-4 text-right font-black uppercase tracking-widest text-[10px]">Semantic Affinity</th>
+                  </tr>
+                </thead>
+                <tbody className={cls("divide-y", isDark ? "divide-white/5" : "divide-zinc-100")}>
+                  {result.assignments.map((a, i) => (
+                    <tr key={i} className={cls("transition-colors group", isDark ? "hover:bg-white/2" : "hover:bg-zinc-50")}>
+                      <td className="px-8 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className={cls("w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold border", isDark ? "bg-amber-500/10 border-amber-500/20 text-amber-400" : "bg-amber-50 border-amber-100 text-amber-600")}>
+                            {i + 1}
+                          </div>
+                          <span className={cls("font-bold truncate max-w-[280px]", isDark ? "text-slate-300" : "text-zinc-900")}>{a.paper_name}</span>
+                        </div>
+                      </td>
+                      <td className="px-8 py-4 font-bold">
+                        <div className="flex items-center gap-2">
+                          <div className={cls("w-6 h-6 rounded-lg flex items-center justify-center font-black text-[9px] uppercase", isDark ? "bg-amber-500/20 text-amber-500" : "bg-amber-100 text-amber-700")}>
+                            {a.reviewer_name?.[0]}
+                          </div>
+                          <span className={isDark ? "text-slate-400" : "text-zinc-600"}>{a.reviewer_name}</span>
+                        </div>
+                      </td>
+                      <td className="px-8 py-4 text-right">
+                        <span className={cls(
+                          "inline-block w-[60px] text-center font-black tabular-nums py-1 rounded-lg border text-[10px]",
+                          a.similarity_score >= 0.5 ? (isDark ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-emerald-50 text-emerald-700 border-emerald-100') :
+                            a.similarity_score >= 0.3 ? (isDark ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-amber-50 text-amber-700 border-amber-100') :
+                              (isDark ? 'bg-slate-500/20 text-slate-400 border-white/5' : 'bg-zinc-50 text-zinc-400 border-zinc-100')
+                        )}>
+                          {(a.similarity_score * 100).toFixed(1)}%
+                        </span>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className={cls("divide-y", isDark ? "divide-white/5" : "divide-zinc-100")}>
-                    {result.assignments.map((a, i) => (
-                      <tr key={i} className={cls("transition-colors group", isDark ? "hover:bg-white/2" : "hover:bg-zinc-50")}>
-                        <td className="px-8 py-4">
-                           <div className="flex items-center gap-3">
-                              <div className={cls("w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold border", isDark ? "bg-amber-500/10 border-amber-500/20 text-amber-400" : "bg-amber-50 border-amber-100 text-amber-600")}>
-                                 {i + 1}
-                              </div>
-                              <span className={cls("font-bold truncate max-w-[280px]", isDark ? "text-slate-300" : "text-zinc-900")}>{a.paper_name}</span>
-                           </div>
-                        </td>
-                        <td className="px-8 py-4 font-bold">
-                           <div className="flex items-center gap-2">
-                             <div className={cls("w-6 h-6 rounded-lg flex items-center justify-center font-black text-[9px] uppercase", isDark ? "bg-amber-500/20 text-amber-500" : "bg-amber-100 text-amber-700")}>
-                                {a.reviewer_name?.[0]}
-                             </div>
-                             <span className={isDark ? "text-slate-400" : "text-zinc-600"}>{a.reviewer_name}</span>
-                           </div>
-                        </td>
-                        <td className="px-8 py-4 text-right">
-                           <span className={cls(
-                             "inline-block w-[60px] text-center font-black tabular-nums py-1 rounded-lg border text-[10px]",
-                             a.similarity_score >= 0.5 ? (isDark ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-emerald-50 text-emerald-700 border-emerald-100') :
-                             a.similarity_score >= 0.3 ? (isDark ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-amber-50 text-amber-700 border-amber-100') :
-                             (isDark ? 'bg-slate-500/20 text-slate-400 border-white/5' : 'bg-zinc-50 text-zinc-400 border-zinc-100')
-                           )}>
-                              {(a.similarity_score * 100).toFixed(1)}%
-                           </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-             </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Matrix Heatmap */}
@@ -739,12 +745,12 @@ const PaperAllocation = ({ conf, onRefresh }) => {
                                   'w-12 h-10 rounded-xl flex items-center justify-center text-[10px] font-black transition-all hover:scale-110 cursor-help',
                                   isAssigned && (isDark ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-[#0d1117]' : 'ring-4 ring-amber-500/20 border-2 border-amber-500 shadow-lg')
                                 )}
-                                title={`P${p} × R${r}: ${(val*100).toFixed(1)}% match`}
+                                title={`P${p} × R${r}: ${(val * 100).toFixed(1)}% match`}
                                 style={{
-                                  backgroundColor: isDark 
+                                  backgroundColor: isDark
                                     ? `hsla(${hue}, 70%, ${15 + intensity * 0.4}%, ${0.2 + val * 0.8})`
                                     : `hsla(${hue}, 80%, ${92 - intensity * 0.15}%, 0.9)`,
-                                  color: isDark 
+                                  color: isDark
                                     ? val > 0.4 ? '#fff' : 'rgb(148 163 184)'
                                     : val > 0.4 ? `hsla(${hue}, 80%, 30%, 1)` : '#94a3b8',
                                 }}
@@ -790,8 +796,8 @@ const PaperAllocation = ({ conf, onRefresh }) => {
                           className={cls(
                             'h-full rounded-full transition-all duration-1000 delay-500',
                             rw.utilisation_pct >= 90 ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' :
-                            rw.utilisation_pct >= 60 ? 'bg-orange-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : 
-                            'bg-amber-500 shadow-[0_0_10px_rgba(251,191,36,0.5)]'
+                              rw.utilisation_pct >= 60 ? 'bg-orange-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]' :
+                                'bg-amber-500 shadow-[0_0_10px_rgba(251,191,36,0.5)]'
                           )}
                           style={{ width: `${Math.min(rw.utilisation_pct, 100)}%` }}
                         />

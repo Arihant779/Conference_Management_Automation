@@ -581,13 +581,14 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
       <CinematicBackground />
 
-      <div className="w-full flex relative z-10">
+      <div className="w-full h-screen overflow-hidden flex relative z-10">
 
         {/* ── SIDEBAR ── */}
         <Sidebar nav={nav} section={section} setSection={setSection} isOrganizer={isOrganizer} roleLabel={roleLabel} />
 
         {/* ── MAIN CONTENT ── */}
-        <main className="flex-1 p-8 relative min-h-screen">
+        <main className={`flex-1 p-8 relative custom-scrollbar flex flex-col ${section === 'chat' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+          <div className={`flex-1 min-h-0 flex flex-col w-full ${section !== 'chat' ? 'max-w-[1400px] mx-auto' : ''}`}>
 
           {/* ── TOP LEVEL INVITATIONS ── */}
           {pendingTeams.length > 0 && (
@@ -710,7 +711,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
               activeChatTeamId={activeChatTeamId} setActiveChatTeamId={setActiveChatTeamId}
             />
           )}
-
+          </div>
         </main>
       </div>
 
