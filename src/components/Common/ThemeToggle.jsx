@@ -15,7 +15,7 @@ const ThemeToggle = ({ className = "" }) => {
     <button
       onClick={toggleTheme}
       className={`relative flex items-center h-9 w-16 rounded-full p-1 transition-all duration-500 shadow-inner group overflow-hidden ${
-        isDark ? 'bg-zinc-900 border border-white/5' : 'bg-white border border-zinc-200 shadow-sm'
+        isDark ? 'bg-zinc-900 border border-white/10' : 'bg-white border border-zinc-300 shadow-md shadow-zinc-200/50'
       } ${className}`}
       aria-label="Toggle Theme"
     >
@@ -37,7 +37,7 @@ const ThemeToggle = ({ className = "" }) => {
       {/* Background Icons */}
       <div className="absolute inset-0 flex justify-between items-center px-2 pointer-events-none">
         <Sun size={12} className={`transition-all duration-300 ${isDark ? 'text-zinc-700' : 'opacity-0'}`} />
-        <Moon size={12} className={`transition-all duration-300 ${isDark ? 'opacity-0' : 'text-zinc-300'}`} />
+        <Moon size={12} className={`transition-all duration-300 ${isDark ? 'opacity-0' : 'text-zinc-500'}`} />
       </div>
     </button>
   );

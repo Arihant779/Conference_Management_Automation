@@ -28,31 +28,39 @@ import TaskModal from './Organizer/components/Modals/TaskModal';
 /* ─── helpers ─────────────────────────────────────────────── */
 const cls = (...c) => c.filter(Boolean).join(' ');
 
-const ROLE_STYLE = {
-  organizer: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
-  reviewer: 'bg-amber-500/10  text-amber-300  border-amber-500/25',
-  presenter: 'bg-amber-600/15   text-amber-200   border-amber-600/30',
-  member: 'bg-slate-500/10  text-slate-300  border-slate-500/25',
+const getRoleStyle = (role, isDark) => {
+  const styles = {
+    organizer: isDark ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' : 'bg-amber-100 text-amber-700 border-amber-300 font-bold',
+    reviewer:  isDark ? 'bg-amber-500/10 text-amber-300 border-amber-500/25' : 'bg-amber-50 text-amber-600 border-amber-200 font-bold',
+    presenter: isDark ? 'bg-amber-600/15 text-amber-200 border-amber-600/30' : 'bg-orange-50 text-amber-700 border-orange-200 font-bold',
+    member:    isDark ? 'bg-slate-500/10 text-slate-300 border-slate-500/25' : 'bg-zinc-100 text-zinc-700 border-zinc-300 font-bold',
+  };
+  return styles[role] || styles.member;
 };
 
-const PRIORITY_STYLE = {
-  high: 'bg-red-500/10 text-red-400 border-red-500/20',
-  medium: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  low: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
+const getPriorityStyle = (priority, isDark) => {
+  const styles = {
+    high:   isDark ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-red-50 text-red-700 border-red-200 font-bold',
+    medium: isDark ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-amber-50 text-amber-700 border-amber-200 font-bold',
+    low:    isDark ? 'bg-slate-500/10 text-slate-400 border-slate-500/20' : 'bg-zinc-100 text-zinc-600 border-zinc-200 font-bold',
+  };
+  return styles[priority] || styles.medium;
 };
 
-const LoadingRows = () => (
+const LoadingRows = ({ isDark }) => (
   <div className="space-y-2">
     {[...Array(4)].map((_, i) => (
-      <div key={i} className="h-14 bg-white/5 border border-white/5 rounded-xl animate-pulse" />
+      <div key={i} className={cls('h-14 rounded-xl animate-pulse', 
+        isDark ? 'bg-white/5 border border-white/5' : 'bg-zinc-100 border border-zinc-200'
+      )} />
     ))}
   </div>
 );
 
 const Empty = ({ icon: Icon, msg, isDark }) => (
   <div className={`py-16 text-center border border-dashed rounded-2xl ${isDark ? 'border-white/10' : 'border-zinc-300'}`}>
-    <Icon size={28} className={`${isDark ? 'text-slate-700' : 'text-zinc-300'} mx-auto mb-3`} />
-    <p className={`${isDark ? 'text-slate-500' : 'text-zinc-500'} text-sm`}>{msg}</p>
+    <Icon size={28} className={`${isDark ? 'text-slate-700' : 'text-zinc-400'} mx-auto mb-3`} />
+    <p className={`${isDark ? 'text-slate-500' : 'text-zinc-600 font-medium'} text-sm`}>{msg}</p>
   </div>
 );
 
@@ -371,7 +379,7 @@ const MemberDashboard = ({ conf, onBack }) => {
       const res = await protectedFetch(`${API_BASE_URL}/api/teams/invite/respond`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ team_id: teamId, user_id: user.id, status })
+        body: JSON.stringify({ team_id: teamId, user_id: user?.id, status })
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -400,6 +408,8 @@ const MemberDashboard = ({ conf, onBack }) => {
   const filteredMembers = useMemo(() => {
     return members.filter(m => mName(m).toLowerCase().includes(mSearch.toLowerCase()) || (m.email || '').toLowerCase().includes(mSearch.toLowerCase()));
   }, [members, mSearch]);
+  
+  if (!user) return null;
 
   const renderContent = () => {
     if (section === 'overview') {
@@ -512,7 +522,7 @@ const MemberDashboard = ({ conf, onBack }) => {
             <p className="text-slate-500 text-sm mt-0.5">Teams you are collaborating in</p>
           </div>
 
-          {loadingTeams ? <LoadingRows /> : myTeams.length === 0 ? (
+          {loadingTeams ? <LoadingRows isDark={isDark} /> : myTeams.length === 0 ? (
             <Empty icon={Layers} msg="You are not part of any teams yet." isDark={isDark} />
           ) : (
             <div className="space-y-3">
@@ -522,14 +532,14 @@ const MemberDashboard = ({ conf, onBack }) => {
                 const teamTasks = tasks.filter(t => t.team_id === team.id);
 
                 return (
-                  <div key={team.id} className={`backdrop-blur-md border transition-all duration-300 rounded-xl overflow-hidden ${isDark ? 'bg-[#0d1117]/60 border-white/10' : 'bg-white border-zinc-200 shadow-sm'
+                  <div key={team.id} className={`backdrop-blur-md border transition-all duration-300 rounded-xl overflow-hidden ${isDark ? 'bg-[#0d1117]/60 border-white/10' : 'bg-white border-zinc-300 shadow-md shadow-zinc-200/50'
                     }`}>
                     <div className={`flex items-center gap-3 px-5 py-4 cursor-pointer transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-zinc-50'
                       }`} onClick={() => setExpandedTeam(isOpen ? null : team.id)}>
                       <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: team.color }} />
                       <div className="flex-1">
-                        <div className={`font-semibold text-sm transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>{team.name}</div>
-                        {team.description && <div className="text-xs text-slate-500 mt-0.5">{team.description}</div>}
+                        <div className={`font-bold text-sm transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>{team.name}</div>
+                        {team.description && <div className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-zinc-600 font-medium'}`}>{team.description}</div>}
                       </div>
                       <div className="flex items-center gap-3">
                         {team.head_id === user?.id && (
@@ -550,13 +560,13 @@ const MemberDashboard = ({ conf, onBack }) => {
                         <div>
                           <p className={`text-[10px] font-black uppercase tracking-widest mb-3 ${isDark ? 'text-slate-600' : 'text-zinc-400'}`}>Team Members</p>
                           <div className="flex flex-wrap gap-2">
-                            {teamMembers.map(m => (
-                              <div key={m.id} className={`flex items-center gap-2 border rounded-lg px-2.5 py-1.5 transition-all ${isDark ? 'bg-white/5 border-white/10 hover:border-amber-500/30' : 'bg-white border-zinc-200 hover:border-amber-500/30'}`}>
-                                <span className={`text-xs font-medium ${isDark ? 'text-slate-300' : 'text-zinc-700'}`}>{mName(m)}</span>
-                                <span className={cls('text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase', ROLE_STYLE[m.role] || ROLE_STYLE.member)}>{m.role}</span>
-                                {globalRatings[m.user_id] && <RatingBadge avg={globalRatings[m.user_id].avg} count={globalRatings[m.user_id].count} size={9} />}
-                              </div>
-                            ))}
+                             {teamMembers.map(m => (
+                               <div key={m.id} className={`flex items-center gap-2 border rounded-lg px-2.5 py-1.5 transition-all ${isDark ? 'bg-white/5 border-white/10 hover:border-amber-500/30' : 'bg-white border-zinc-300 hover:border-amber-500/30 shadow-sm'}`}>
+                                 <span className={`text-xs font-bold ${isDark ? 'text-slate-300' : 'text-zinc-800'}`}>{mName(m)}</span>
+                                 <span className={cls('text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase', getRoleStyle(m.role, isDark))}>{m.role}</span>
+                                 {globalRatings[m.user_id] && <RatingBadge avg={globalRatings[m.user_id].avg} count={globalRatings[m.user_id].count} size={9} />}
+                               </div>
+                             ))}
                           </div>
                         </div>
 
@@ -570,7 +580,7 @@ const MemberDashboard = ({ conf, onBack }) => {
                                   <div onClick={() => toggleTask(t)} className={cls('w-4 h-4 rounded-full border-2 flex items-center justify-center cursor-pointer transition-all', t.status === 'done' ? 'bg-emerald-500 border-emerald-500' : 'border-slate-700 hover:border-amber-500')}>
                                     {t.status === 'done' && <CheckCircle size={10} className="text-white" />}
                                   </div>
-                                  <span className={cls('text-xs flex-1', t.status === 'done' ? 'text-slate-600 line-through' : (isDark ? 'text-slate-300' : 'text-zinc-800'))}>{t.title}</span>
+                                   <span className={cls('text-xs flex-1 font-medium', t.status === 'done' ? 'text-slate-600 line-through' : (isDark ? 'text-slate-300' : 'text-zinc-800'))}>{t.title}</span>
                                 </div>
                               ))}
                             </div>
@@ -605,10 +615,10 @@ const MemberDashboard = ({ conf, onBack }) => {
               </button>
             )}
           </div>
-          {loadingTasks ? <LoadingRows /> : myTasks.length === 0 ? <Empty icon={CheckSquare} msg="All caught up!" isDark={isDark} /> : (
+          {loadingTasks ? <LoadingRows isDark={isDark} /> : myTasks.length === 0 ? <Empty icon={CheckSquare} msg="All caught up!" isDark={isDark} /> : (
             <div className="space-y-3">
               {myTasks.map(task => (
-                <div key={task.id} className={`backdrop-blur-md border rounded-xl px-5 py-4 flex items-center gap-4 transition-all group ${isDark ? 'bg-[#0d1117]/60 border-white/10 hover:border-amber-500/30' : 'bg-white border-zinc-200 hover:border-amber-500/30 shadow-sm'
+                <div key={task.id} className={`backdrop-blur-md border rounded-xl px-5 py-4 flex items-center gap-4 transition-all group ${isDark ? 'bg-[#0d1117]/60 border-white/10 hover:border-amber-500/30' : 'bg-white border-zinc-300 hover:border-amber-500/30 shadow-md shadow-zinc-200/50'
                   }`}>
                   <div onClick={() => toggleTask(task)} className={cls('w-5 h-5 rounded-full border-2 flex items-center justify-center cursor-pointer shrink-0 transition-all', task.status === 'done' ? 'bg-emerald-500 border-emerald-500' : 'border-slate-700 hover:border-amber-500')}>
                     {task.status === 'done' && <CheckCircle size={12} className="text-white" />}
@@ -620,7 +630,7 @@ const MemberDashboard = ({ conf, onBack }) => {
                       {task.due_date && <span className="text-[10px] text-zinc-500 flex items-center gap-1 font-bold uppercase tracking-wider"><Clock size={10} />{new Date(task.due_date).toLocaleDateString()}</span>}
                     </div>
                   </div>
-                  <span className={cls('text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded border transition-colors', PRIORITY_STYLE[task.priority || 'medium'])}>{task.priority}</span>
+                   <span className={cls('text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded border transition-colors shadow-sm', getPriorityStyle(task.priority || 'medium', isDark))}>{task.priority}</span>
                 </div>
               ))}
             </div>
@@ -705,7 +715,7 @@ const MemberDashboard = ({ conf, onBack }) => {
         <TaskModal
           mode={modal} tkForm={tkForm} setTkForm={setTkForm}
           teams={teams.filter(t => myHeadedTeamIds.includes(t.id))} // Only show teams they lead
-          members={members} isOrganizer={false} userId={user.id} saving={saving}
+          members={members} isOrganizer={false} userId={user?.id} saving={saving}
           onClose={() => setModal(null)} onCreate={createTask} onSave={saveTask}
         />
       )}
