@@ -17,49 +17,18 @@ const GlowCard = ({
   const theme = propTheme || globalTheme;
   const isDark = theme === 'dark';
   
-  const ref = useRef(null);
-  const mouseX = useMotionValue(0.5);
-  const mouseY = useMotionValue(0.5);
-
-  const handleMouseMove = useCallback((e) => {
-    if (!ref.current) return;
-    const { left, top, width, height } = ref.current.getBoundingClientRect();
-    mouseX.set((e.clientX - left) / width);
-    mouseY.set((e.clientY - top) / height);
-  }, [mouseX, mouseY]);
-
-  const handleMouseLeave = useCallback(() => {
-    mouseX.set(0.5);
-    mouseY.set(0.5);
-  }, [mouseX, mouseY]);
-
-  const rotateX = useSpring(useTransform(mouseY, [0, 1], [3, -3]), { stiffness: 200, damping: 20 });
-  const rotateY = useSpring(useTransform(mouseX, [0, 1], [-3, 3]), { stiffness: 200, damping: 20 });
-
-  const glowBackground = useMotionTemplate`
-    radial-gradient(
-      600px circle at ${useTransform(mouseX, v => v * 100)}% ${useTransform(mouseY, v => v * 100)}%,
-      ${glowColor},
-      transparent 70%
-    )
-  `;
-
   return (
-    <motion.div
-      ref={ref}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      style={{ rotateX, rotateY, transformPerspective: 1000, transformStyle: 'preserve-3d' }}
-      className={`group relative ${className}`}
+    <div
+      className={`group relative overflow-hidden ${className}`}
       {...props}
     >
-      {/* Border glow on hover */}
-      <motion.div
-        className={`pointer-events-none absolute -inset-px rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-0 ${isDark ? '' : 'mix-blend-multiply'}`}
-        style={{ background: glowBackground }}
+      {/* Static subtle glow on hover */}
+      <div 
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-0"
+        style={{ background: `radial-gradient(circle at center, ${glowColor}, transparent 80%)` }} 
       />
-      {children}
-    </motion.div>
+      <div className="relative z-10">{children}</div>
+    </div>
   );
 };
 

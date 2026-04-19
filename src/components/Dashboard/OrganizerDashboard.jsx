@@ -59,15 +59,15 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     if (section === 'site_preview') { onSwitchView('home'); setSection('overview'); }
   }, [section, onSwitchView, setSection]);
 
-  const myMember = members.find(m => m.user_id === user.id);
+  const myMember = members.find(m => m.user_id === user?.id);
   const myMemberId = myMember?.id;
-  const isGlobalHead = conf.conference_head_id === user.id;
+  const isGlobalHead = conf.conference_head_id === user?.id;
   const isOrganizer = isGlobalHead || (userRoles && userRoles.includes('organizer'));
-  const myHeadedTeamIds = teams.filter(t => t.head_id === user.id).map(t => t.id);
+  const myHeadedTeamIds = teams.filter(t => t.head_id === user?.id).map(t => t.id);
 
   const pendingTeams = teams.filter(t => t.memberList?.some(m => (m.user_id === user?.id || (myMemberId && m.conference_user_id === myMemberId)) && m.status === 'pending'));
   const isTeamHead = !isOrganizer && myHeadedTeamIds.length > 0;
-  const myTeamIds = teams.filter(t => t.memberList?.some(m => m.user_id === user.id)).map(t => t.id);
+  const myTeamIds = teams.filter(t => t.memberList?.some(m => m.user_id === user?.id)).map(t => t.id);
 
   const FALLBACK_PERMS = {
     organizer: ['view_dashboard', 'view_emails', 'send_emails', 'manage_emails', 'view_papers', 'manage_papers', 'allocate_papers', 'view_members', 'manage_members', 'view_teams', 'manage_teams', 'view_tasks', 'manage_tasks', 'view_notifications', 'send_notifications', 'find_speakers', 'view_feedback', 'manage_feedback', 'view_attendees'],
@@ -245,6 +245,8 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     fetchMembers(); fetchAllUsers(); fetchTeams(); fetchTasks(); fetchNotifs(); fetchPapers(); fetchGlobalRatings();
   }, [fetchMembers, fetchAllUsers, fetchTeams, fetchTasks, fetchNotifs, fetchPapers, fetchGlobalRatings]);
 
+  if (!user) return null;
+
   /* ── member CRUD ── */
   const updateRole = async (id, role) => {
     const { error } = await supabase.from('conference_user').update({ role }).eq('id', id);
@@ -294,7 +296,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
       const res = await protectedFetch(`${API_BASE_URL}/api/teams/invite/respond`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ team_id: teamId, user_id: user.id, status })
+        body: JSON.stringify({ team_id: teamId, user_id: user?.id, status })
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -644,9 +646,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
             {/* ── PUBLISH STATUS BANNER ── */}
             {console.log('[Banner Render] isGlobalHead:', isGlobalHead, 'localPublished:', localPublished, 'conf.is_published:', conf.is_published)}
             {isGlobalHead && !localPublished && (
-              <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
+              <div 
                 className={`mb-10 p-8 rounded-[3rem] border bg-amber-500/5 border-amber-500/20 shadow-[0_0_50px_rgba(245,158,11,0.05)]`}
               >
                 <div className="flex flex-col md:flex-row items-center justify-between gap-8">
@@ -667,7 +667,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
                     {saving ? 'Publishing...' : 'Publish Now'}
                   </button>
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {/* ── TOP LEVEL INVITATIONS ── */}
@@ -815,7 +815,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
         <TeamModal
           mode={modal} modalData={modalData} tmForm={tmForm} setTmForm={setTmForm}
           isOrganizer={isOrganizer} saving={saving} members={members}
-          allUsers={allUsers} confId={confId} globalRatings={globalRatings}
+          allUsers={allUsers} confId={confId} globalRatings={globalRatings} userId={user?.id}
           onClose={() => setModal(null)} onCreate={createTeam} onSave={saveTeam}
           onAddToTeam={addToTeam} onRemoveFromTeam={removeFromTeam}
           onAddVolunteer={handleAddVolunteerToConference}

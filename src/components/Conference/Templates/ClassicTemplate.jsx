@@ -97,20 +97,7 @@ const sessionTypeStyle = {
    ───────────────────────────────────────────── */
 const DEFAULT_AVATAR = 'https://i.pinimg.com/736x/8b/16/7a/8b167afad976f5947fb84260a1280dd9.jpg';
 
-const ClassicTemplate = ({
-  conf: initialConf,
-  isOrganizer = false,
-  onSave,
-  canEditSchedule = false,
-  currentUserId = null,
-  members = [],
-  onScheduleSave,
-  onDelete,
-  isGuest = false,
-  onRequireAuthForRegister = null,
-  showReg = false,
-  setShowReg = null,
-}) => {
+const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEditSchedule = false, currentUser = null, members = [], onScheduleSave, onDelete, onRequireAuthForRegister, isGuest, autoOpenRegister }) => {
   const [conf, setConf] = useState(initialConf);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -119,18 +106,21 @@ const ClassicTemplate = ({
   const [activeNav, setActiveNav] = useState('about');
   const [scheduleTab, setScheduleTab] = useState(0);
   const [showScheduleEditor, setShowScheduleEditor] = useState(false);
+  const [showReg, setShowReg] = useState(false);
 
-  const getInitialPageData = (c) => ({
-    title: c.title || 'Untitled Conference',
-    tagline: c.tagline || 'Advancing Knowledge, Forging Connections',
-    banner_url: c.banner_url || '',
-    contact_email: c.contact_email || 'contact@conference.org',
-    contact_phone: c.contact_phone || '+1 (555) 000-0000',
-    website: c.website || 'https://yourconference.org',
-    twitter: c.twitter || '',
-    linkedin: c.linkedin || '',
-    schedule: c.schedule || [],
-    speakers: c.speakers || [
+  useEffect(() => { if (autoOpenRegister && !isGuest) setShowReg(true); }, [autoOpenRegister, isGuest]);
+
+  const [pageData, setPageData] = useState({
+    title: initialConf.title || 'Untitled Conference',
+    tagline: initialConf.tagline || 'Advancing Knowledge, Forging Connections',
+    banner_url: initialConf.banner_url || '',
+    contact_email: initialConf.contact_email || 'contact@conference.org',
+    contact_phone: initialConf.contact_phone || '+1 (555) 000-0000',
+    website: initialConf.website || 'https://yourconference.org',
+    twitter: initialConf.twitter || '',
+    linkedin: initialConf.linkedin || '',
+    schedule: initialConf.schedule || [],
+    speakers: initialConf.speakers || [
       { name: 'Prof. Eleanor Hartley', role: 'Keynote Speaker', org: 'University of Oxford', img: 'https://i.pravatar.cc/150?img=47', bio: 'Distinguished scholar whose work bridges computational theory and humanistic inquiry.' },
       { name: 'Dr. Marcus Chen', role: 'Invited Lecturer', org: 'Harvard University', img: 'https://i.pravatar.cc/150?img=68', bio: 'Award-winning researcher with over 200 published works in leading journals.' },
       { name: 'Prof. Amara Osei', role: 'Panel Moderator', org: 'ETH Zürich', img: 'https://i.pravatar.cc/150?img=41', bio: 'Pioneer in interdisciplinary methodology and cross-cultural academic collaboration.' },
@@ -151,15 +141,16 @@ const ClassicTemplate = ({
       { label: 'Full Paper Submission', date: 'June 1, 2025' },
       { label: 'Conference Dates', date: `${c.start_date || 'TBD'} – ${c.end_date || 'TBD'}` },
     ],
-    venue_name: c.venue_name || 'Grand Academic Hall',
-    venue_address: c.venue_address || c.location || 'City, Country',
-    venue_description: c.venue_description || 'A storied venue of intellectual heritage, hosting generations of scholarly exchange. Equipped with a grand lecture theatre, seminar rooms, and distinguished dining facilities.',
-    capacity: c.capacity || '400+',
-    registration_fee_general: c.registration_fee_general || '$350',
-    registration_fee_student: c.registration_fee_student || '$150',
-    registration_fee_early: c.registration_fee_early || '$250',
-    about_extra: c.about_extra || 'Scholars, researchers, and practitioners from across the globe convene to present original research, debate emerging paradigms, and forge collaborations that shape the trajectory of the field.',
-    organizing_committee: c.organizing_committee || [
+    venue_name: initialConf.venue_name || 'Grand Academic Hall',
+    venue_address: initialConf.venue_address || initialConf.location || 'City, Country',
+    venue_description: initialConf.venue_description || 'A storied venue of intellectual heritage, hosting generations of scholarly exchange. Equipped with a grand lecture theatre, seminar rooms, and distinguished dining facilities.',
+    capacity: initialConf.capacity || '400+',
+    map_url: initialConf.map_url || '',
+    registration_fee_general: initialConf.registration_fee_general || '$350',
+    registration_fee_student: initialConf.registration_fee_student || '$150',
+    registration_fee_early: initialConf.registration_fee_early || '$250',
+    about_extra: initialConf.about_extra || 'Scholars, researchers, and practitioners from across the globe convene to present original research, debate emerging paradigms, and forge collaborations that shape the trajectory of the field.',
+    organizing_committee: initialConf.organizing_committee || [
       { name: 'Prof. William Sterling', role: 'General Chair' },
       { name: 'Dr. Nadia Karim', role: 'Programme Chair' },
       { name: 'Prof. James Okafor', role: 'Organizing Chair' },
@@ -267,10 +258,6 @@ const ClassicTemplate = ({
       {/* ── STYLE INJECTION ── */}
       <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet" />
       <style>{`
-        @keyframes subtlePan {
-          from { transform: scale(1.05) translate(0, 0); }
-          to { transform: scale(1.1) translate(-1%, -1%); }
-        }
         .herald-serif { font-family: 'Playfair Display', serif; }
         .herald-sans { font-family: 'Plus Jakarta Sans', sans-serif; }
         .drop-cap::first-letter {
@@ -368,7 +355,6 @@ const ClassicTemplate = ({
           {/* Animated Background Image */}
           <div style={{ 
             position: 'absolute', inset: 0, 
-            animation: 'subtlePan 40s infinite linear alternate',
             transformOrigin: 'center center'
           }}>
             <img
@@ -414,7 +400,9 @@ const ClassicTemplate = ({
               </div>
 
               <div style={{ display: 'flex', gap: 20 }}>
-                <button className="herald-sans" style={{ 
+                <button 
+                  onClick={() => setShowReg(true)}
+                  className="herald-sans" style={{ 
                   background: C.accent, color: C.ink, border: 'none', padding: '16px 36px', 
                   fontSize: 12, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em', 
                   cursor: 'pointer', transition: 'all 0.3s', boxShadow: `0 10px 30px -10px ${C.accent}40`
@@ -473,24 +461,38 @@ const ClassicTemplate = ({
           background: C.paper, borderBottom: `1px solid ${C.rule}`,
           boxShadow: '0 4px 20px rgba(0,0,0,0.03)'
         }}>
-          <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 40px', display: 'flex', overflowX: 'auto', gap: 0 }}>
-            {navItems.map(item => (
-              <button
-                key={item.id}
-                onClick={() => scrollTo(item.id)}
-                className="herald-sans"
-                style={{
-                  background: 'transparent', border: 'none', cursor: 'pointer',
-                  padding: '16px 24px', fontSize: 11, fontWeight: 800, letterSpacing: '0.15em',
-                  textTransform: 'uppercase', whiteSpace: 'nowrap',
-                  color: activeNav === item.id ? C.accent : C.inkMuted,
-                  borderBottom: activeNav === item.id ? `3px solid ${C.accent}` : '3px solid transparent',
-                  transition: 'all 0.3s',
-                }}
-              >
-                {item.label}
-              </button>
-            ))}
+          <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', overflowX: 'auto', gap: 0, noFallback: true }} className="no-scrollbar">
+              {navItems.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => scrollTo(item.id)}
+                  className="herald-sans"
+                  style={{
+                    background: 'transparent', border: 'none', cursor: 'pointer',
+                    padding: '16px 24px', fontSize: 11, fontWeight: 800, letterSpacing: '0.15em',
+                    textTransform: 'uppercase', whiteSpace: 'nowrap',
+                    color: activeNav === item.id ? C.accent : C.inkMuted,
+                    borderBottom: activeNav === item.id ? `3px solid ${C.accent}` : '3px solid transparent',
+                    transition: 'all 0.3s',
+                  }}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            
+            <button
+               onClick={() => setShowReg(true)}
+               className="herald-sans"
+               style={{
+                 background: C.ink, color: C.bg, border: 'none', padding: '10px 24px',
+                 fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em',
+                 cursor: 'pointer', transition: 'all 0.3s'
+               }}
+            >
+               Register Now
+            </button>
           </div>
         </nav>
 
@@ -552,7 +554,9 @@ const ClassicTemplate = ({
                    ))}
                 </div>
 
-                <button className="herald-sans" style={{ 
+                <button 
+                  onClick={() => setShowReg(true)}
+                  className="herald-sans" style={{ 
                   width: '100%', background: C.ink, color: C.bg, border: 'none', padding: '18px', 
                   fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.25em', 
                   cursor: 'pointer', transition: 'all 0.3s' 
@@ -716,12 +720,31 @@ const ClassicTemplate = ({
                     }}>
                       <img 
                         src={sp.img || DEFAULT_AVATAR} 
-                        alt={sp.name} 
                         style={{ 
                           width: '100%', height: '100%', objectFit: 'cover', 
-                          filter: 'sepia(30%) contrast(1.05) brightness(0.95)' 
+                          filter: 'sepia(30%) contrast(1.05) brightness(0.95)',
+                          opacity: isEditing ? 0.4 : 1
                         }} 
+                        alt="" 
                       />
+                      
+                      {isEditing && (
+                        <div style={{ 
+                          position: 'absolute', inset: 0, zIndex: 10,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          padding: '20px', background: 'rgba(253,252,251,0.6)', backdropFilter: 'blur(4px)'
+                        }}>
+                          <div style={{ width: '100%' }}>
+                            <div className="herald-sans" style={{ fontSize: 9, fontWeight: 900, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.2em', textAlign: 'center', marginBottom: 10 }}>Update Asset URL</div>
+                            <EditableField 
+                              value={sp.img} 
+                              onChange={v => updateNested('speakers', i, 'img', v)} 
+                              isEditing={isEditing} 
+                              placeholder="Image link..."
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div style={{ textAlign: 'center' }}>
@@ -828,12 +851,48 @@ const ClassicTemplate = ({
                   <p className="herald-sans" style={{ fontSize: 11, color: C.accent, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 25 }}>
                     {isEditing ? <EditableField value={pageData.venue_address} onChange={v => update('venue_address', v)} isEditing={isEditing} /> : pageData.venue_address}
                   </p>
-                  <p className="herald-serif" style={{ fontSize: '1.1rem', color: C.inkLight, lineHeight: 1.7, fontStyle: 'italic' }}>
+                  <p className="herald-serif" style={{ fontSize: '1.1rem', color: C.inkLight, lineHeight: 1.7, fontStyle: 'italic', marginBottom: 25 }}>
                     {isEditing ? <EditableField value={pageData.venue_description} onChange={v => update('venue_description', v)} multiline isEditing={isEditing} /> : pageData.venue_description}
                   </p>
+                  
+                  {isEditing && (
+                    <div style={{ padding: '20px 0', borderTop: `1px solid ${C.rule}`, marginBottom: 25 }}>
+                       <div className="herald-sans" style={{ fontSize: 9, fontWeight: 900, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 10 }}>Mapping Asset URL</div>
+                       <EditableField 
+                         value={pageData.map_url} 
+                         onChange={v => update('map_url', v)} 
+                         isEditing={isEditing} 
+                         placeholder="Paste Google Maps URL..."
+                       />
+                    </div>
+                  )}
+
+                  <button 
+                    className="herald-sans" 
+                    onClick={() => window.open(pageData.map_url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pageData.venue_address)}`, '_blank')}
+                    style={{ background: 'none', border: `1px solid ${C.ink}`, color: C.ink, padding: '12px 24px', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em', cursor: 'pointer' }}
+                  >
+                    {pageData.map_url ? 'Navigate to Grounds' : 'View on Map'}
+                  </button>
                 </div>
-                <div style={{ height: 450, background: C.rule, overflow: 'hidden', border: `1px solid ${C.rule}`, padding: 10 }}>
-                   <div style={{ width: '100%', height: '100%', background: `url(https://images.unsplash.com/photo-1541339907198-e08756ebafe3?w=800) center/cover`, filter: 'sepia(40%) brightness(0.9) contrast(1.1)' }} />
+                <div style={{ height: 450, background: C.rule, overflow: 'hidden', border: `1px solid ${C.rule}`, padding: 10, position: 'relative' }}>
+                   {/* Real Google Map with Classic Styling */}
+                   <iframe
+                      title="Herald Venue Map"
+                      width="100%"
+                      height="100%"
+                      frameBorder="0"
+                      style={{ 
+                        border: 0, 
+                        filter: 'sepia(0.4) contrast(1.1) brightness(0.9)',
+                        opacity: 0.8
+                      }}
+                      src={pageData.map_url && pageData.map_url.includes('google.com/maps/embed') 
+                        ? pageData.map_url 
+                        : `https://maps.google.com/maps?q=${encodeURIComponent(pageData.venue_address)}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
+                      allowFullScreen
+                    />
+                    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', boxShadow: 'inset 0 0 100px rgba(26,23,20,0.1)' }} />
                 </div>
               </div>
             </motion.div>
