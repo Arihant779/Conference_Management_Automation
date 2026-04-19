@@ -14,7 +14,7 @@ const T = {
   glass: 'rgba(8, 16, 31, 0.7)',
   white: '#f8fafc', // Platinum
   slate: '#94a3b8', // Silver Slate
-  accent: '#3b82f6', // Royal Executive Blue
+  accent: '#fbbf24', // Amber Platinum
   platinum: '#f8fafc',
   border: 'rgba(248, 250, 252, 0.1)',
 };
@@ -237,7 +237,7 @@ const BusinessTemplate = ({
       </AnimatePresence>
 
       {/* ── SCROLL PROGRESS ── */}
-      <motion.div className="fixed top-0 left-0 right-0 h-[2px] z-[120] origin-left bg-e-accent shadow-[0_0_15px_rgba(59,130,246,0.5)]" style={{ scaleX }} />
+      <motion.div className="fixed top-0 left-0 right-0 h-[2px] z-[120] origin-left bg-e-accent shadow-[0_0_15px_rgba(251,191,36,0.5)]" style={{ scaleX }} />
 
       <div ref={containerRef} className="h-screen overflow-y-auto overflow-x-hidden relative no-scrollbar" id="scroll-area">
         
@@ -356,7 +356,7 @@ const BusinessTemplate = ({
                     className={`text-[10px] font-black tracking-widest uppercase transition-all whitespace-nowrap relative ${activeNav === id ? 'text-white' : 'text-white/30 hover:text-e-accent'}`}
                   >
                     {id}
-                    {activeNav === id && <motion.div layoutId="navline" className="absolute -bottom-2 left-0 right-0 h-0.5 bg-e-accent shadow-[0_0_12px_rgba(59,130,246,0.6)]" />}
+                    {activeNav === id && <motion.div layoutId="navline" className="absolute -bottom-2 left-0 right-0 h-0.5 bg-e-accent shadow-[0_0_12px_rgba(251,191,36,0.6)]" />}
                   </button>
                 ))}
               </div>

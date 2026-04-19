@@ -204,7 +204,7 @@ const TeamModal = ({
                         {mName(potentialHead || members.find(m => m.user_id === tmForm.head_id))}
                       </div>
                       <div className="text-[10px] text-amber-500 font-bold uppercase tracking-widest leading-none mt-1">
-                        {potentialHead ? "Potential Head (Invite on Save)" : "Active Team Head"}
+                        {potentialHead ? "Potential Lead (Invite on Save)" : "Active Team Lead"}
                       </div>
                     </div>
                     <button onClick={() => { setTmForm({ ...tmForm, head_id: '' }); setPotentialHead(null); }}
@@ -351,7 +351,7 @@ const TeamModal = ({
           <button onClick={() => setSelectionMode('head')} className={cls('flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2')}
             style={selectionMode === 'head' ? { background: '#f5c518', color: '#000', boxShadow: '0 4px 12px rgba(245,197,24,0.2)' } : { color: isDark ? '#6b7280' : '#4b5563' }}>
             <Star size={12} fill={selectionMode === 'head' ? 'currentColor' : 'none'} />
-            SET TEAM HEAD
+            SET TEAM LEAD
           </button>
           <button onClick={() => setSelectionMode('members')} className={cls('flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2')}
             style={selectionMode === 'members' ? { background: isDark ? '#fff' : '#000', color: isDark ? '#000' : '#fff', boxShadow: isDark ? '0 4px 12px rgba(255,255,255,0.1)' : '0 4px 12px rgba(0,0,0,0.1)' } : { color: isDark ? '#6b7280' : '#4b5563' }}>

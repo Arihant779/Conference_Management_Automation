@@ -16,8 +16,8 @@ const ROLE_LABELS = {
   logistics_head: 'Logistics Team Lead',
   outreach_head: 'Outreach Team Lead',
   technical_head: 'Technical Team Lead',
-  registration_head: 'Registration Team Head',
-  sponsorship_head: 'Sponsorship Team Head',
+  registration_head: 'Registration Team',
+  sponsorship_head: 'Sponsorship Team',
   hospitality_head: 'Hospitality Team Lead',
   publication_head: 'Publications Team Lead',
   finance_head: 'Finance Team Lead',
@@ -272,8 +272,9 @@ const ConferenceView = ({
           <div className="flex items-center gap-3">
             <span className="font-bold text-white truncate max-w-xs tracking-wide">{displayTitle}</span>
             {(isOrganizer || isTeamLeader) && (
-              <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${isOrganizer ? 'text-violet-300 bg-violet-500/10 border-violet-500/20' : 'text-indigo-300 bg-indigo-500/10 border-indigo-500/20'
-                }`}>
+              <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                 isOrganizer ? 'text-amber-400 bg-amber-400/10 border-amber-400/20' : 'text-orange-400 bg-orange-400/10 border-orange-400/20'
+              }`}>
                 <Star size={11} className="fill-current" />
                 {editorPosition}
               </div>

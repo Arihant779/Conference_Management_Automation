@@ -27,7 +27,7 @@ const REGISTRATION_TYPES = [
     fallback: '$149',
     icon: GraduationCap,
     description: 'Discounted rate for enrolled students. Valid student ID required.',
-    accent: 'purple',
+    accent: 'orange',
   },
   {
     id: 'early',
@@ -36,7 +36,7 @@ const REGISTRATION_TYPES = [
     fallback: '$199',
     icon: Sparkles,
     description: 'Limited-time discounted rate. Available while slots last.',
-    accent: 'emerald',
+    accent: 'amber',
   },
 ];
 
@@ -79,7 +79,7 @@ const Select = ({ icon: Icon, children, error, ...props }) => (
     <select
       {...props}
       className={cls(
-        'w-full bg-[#0d1117] border rounded-xl px-4 py-3 text-sm text-white',
+        'w-full bg-[#04070D] border rounded-xl px-4 py-3 text-sm text-white',
         'outline-none transition-all appearance-none cursor-pointer',
         Icon && 'pl-9',
         error ? 'border-red-500/50' : 'border-white/10 focus:border-amber-500/70',
@@ -117,7 +117,7 @@ const StepBar = ({ current }) => (
             <div className={cls(
               'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all',
               done ? 'bg-amber-600 border-amber-600 text-white'
-                : active ? 'bg-transparent border-amber-500 text-amber-500'
+                : active ? 'bg-transparent border-amber-500 text-amber-400'
                   : 'bg-transparent border-white/10 text-slate-600',
             )}>
               {done ? <Check size={13} /> : i + 1}
@@ -299,8 +299,8 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
   /* ── success screen ─────────────────────────────────── */
   if (submitted) {
     return (
-      <div className="min-h-screen bg-[#080b11] flex items-center justify-center px-4" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+      <div className="min-h-screen bg-[#04070D] flex items-center justify-center px-4" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <div className="text-center max-w-md">
           <div className="w-20 h-20 bg-emerald-500/15 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto mb-6">
             <Check size={36} className="text-emerald-400" />
@@ -323,7 +323,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
             </div>
           </div>
           {onBack && (
-            <button onClick={onBack} className="mt-8 text-sm text-amber-500 hover:text-amber-400 font-semibold transition-colors">
+            <button onClick={onBack} className="mt-8 text-sm text-amber-400 hover:text-amber-300 font-semibold transition-colors">
               ← Back to conference
             </button>
           )}
@@ -335,16 +335,16 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
   /* ── already registered ─────────────────────────────── */
   if (alreadyRegistered) {
     return (
-      <div className="min-h-screen bg-[#080b11] flex items-center justify-center px-4" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+      <div className="min-h-screen bg-[#04070D] flex items-center justify-center px-4" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <div className="text-center max-w-sm">
-          <div className="w-16 h-16 bg-indigo-500/15 border border-indigo-500/30 rounded-full flex items-center justify-center mx-auto mb-5">
-            <Check size={28} className="text-indigo-400" />
+          <div className="w-16 h-16 bg-amber-500/15 border border-amber-500/30 rounded-full flex items-center justify-center mx-auto mb-5">
+            <Check size={28} className="text-amber-400" />
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">Already Registered</h2>
           <p className="text-slate-400 text-sm">You're already registered for this conference.</p>
           {onBack && (
-            <button onClick={onBack} className="mt-6 text-sm text-amber-500 hover:text-amber-400 font-semibold">
+            <button onClick={onBack} className="mt-6 text-sm text-amber-400 hover:text-amber-300 font-semibold">
               ← Back to conference
             </button>
           )}
@@ -359,11 +359,11 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
     : 'Date TBD';
 
   return (
-    <div className="min-h-screen bg-[#080b11] text-slate-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <div className="min-h-screen bg-[#04070D] text-slate-200" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
       {/* ── Top bar ── */}
-      <header className="sticky top-0 z-40 bg-[#080b11]/95 backdrop-blur-xl border-b border-white/10 px-6 py-3">
+      <header className="sticky top-0 z-40 bg-[#04070D]/95 backdrop-blur-xl border-b border-white/10 px-6 py-3">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             {onBack && (
@@ -382,7 +382,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
               </div>
             </div>
           </div>
-          <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-md uppercase tracking-wider">
+          <span className="text-xs font-bold text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-md uppercase tracking-wider">
             Registration
           </span>
         </div>
@@ -392,7 +392,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
           {/* ── Left: form ── */}
-          <div className="lg:col-span-2 bg-[#0d1117] border border-white/10 rounded-2xl p-7">
+          <div className="lg:col-span-2 bg-[#04070D] border border-white/10 rounded-2xl p-7">
             <StepBar current={step} />
 
             {/* ══ STEP 0: Registration type + personal ══ */}
@@ -411,7 +411,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
                     const isSelected = regType === t.id;
                     const accent = {
                       amber: { border: 'border-amber-500/60', bg: 'bg-amber-500/10', text: 'text-amber-400', check: 'bg-amber-600' },
-                      purple: { border: 'border-purple-500/60', bg: 'bg-purple-500/10', text: 'text-purple-400', check: 'bg-purple-600' },
+                      orange: { border: 'border-orange-500/60', bg: 'bg-orange-500/10', text: 'text-orange-400', check: 'bg-orange-600' },
                       emerald: { border: 'border-emerald-500/60', bg: 'bg-emerald-500/10', text: 'text-emerald-400', check: 'bg-emerald-600' },
                     }[t.accent];
 
@@ -456,7 +456,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
                         <Label>Title</Label>
                         <Select value={form.salutation} onChange={e => set('salutation', e.target.value)}>
                           {['Dr.', 'Prof.', 'Mr.', 'Ms.', 'Mrs.', 'Mx.'].map(s => (
-                            <option key={s} value={s} className="bg-[#0d1117]">{s}</option>
+                            <option key={s} value={s} className="bg-[#04070D]">{s}</option>
                           ))}
                         </Select>
                       </div>
@@ -585,13 +585,13 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
                   <div>
                     <Label>Dietary Requirements</Label>
                     <Select value={form.dietary} onChange={e => set('dietary', e.target.value)}>
-                      {DIETARY.map(d => <option key={d} value={d} className="bg-[#0d1117]">{d}</option>)}
+                      {DIETARY.map(d => <option key={d} value={d} className="bg-[#04070D]">{d}</option>)}
                     </Select>
                   </div>
                   <div>
                     <Label>T-Shirt Size</Label>
                     <Select value={form.tshirt} onChange={e => set('tshirt', e.target.value)}>
-                      {TSHIRT.map(s => <option key={s} value={s} className="bg-[#0d1117]">{s}</option>)}
+                      {TSHIRT.map(s => <option key={s} value={s} className="bg-[#04070D]">{s}</option>)}
                     </Select>
                   </div>
                 </div>
@@ -681,12 +681,12 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
                   const price = conf?.[selectedType.feeKey] || selectedType.fallback;
                   return (
                     <div className="flex items-center gap-3 bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
-                      <Icon size={18} className="text-amber-500 shrink-0" />
+                      <Icon size={18} className="text-amber-400 shrink-0" />
                       <div className="flex-1">
                         <div className="text-sm font-semibold text-white">{selectedType.label}</div>
                         <div className="text-xs text-slate-500 mt-0.5">{selectedType.description}</div>
                       </div>
-                      <div className="text-xl font-black text-amber-500">{price}</div>
+                      <div className="text-xl font-black text-amber-400">{price}</div>
                     </div>
                   );
                 })()}
@@ -763,7 +763,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
               {step < STEPS.length - 1 ? (
                 <button
                   onClick={next}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold bg-amber-600 hover:bg-amber-500 text-white transition-all shadow-lg shadow-amber-500/20"
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold bg-amber-600 hover:bg-amber-500 text-black transition-all shadow-lg shadow-amber-500/20"
                 >
                   Continue <ChevronRight size={15} />
                 </button>
@@ -771,7 +771,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
                 <button
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold bg-amber-600 hover:bg-amber-500 text-white transition-all shadow-lg shadow-amber-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold bg-amber-600 hover:bg-amber-500 text-black transition-all shadow-lg shadow-amber-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {submitting
                     ? <><Loader2 size={15} className="animate-spin" />Registering…</>
@@ -785,7 +785,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
           {/* ── Right: conference card ── */}
           <aside className="lg:col-span-1 space-y-4 lg:sticky lg:top-20">
             {/* Conference info */}
-            <div className="bg-[#0d1117] border border-white/10 rounded-2xl overflow-hidden">
+            <div className="bg-[#04070D] border border-white/10 rounded-2xl overflow-hidden">
               {conf?.banner_url && (
                 <div
                   className="h-28 bg-cover bg-center relative"
@@ -796,22 +796,22 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
               )}
               <div className="p-5 space-y-3">
                 {conf?.theme && (
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full">
                     {conf.theme}
                   </span>
                 )}
                 <h3 className="font-bold text-white text-base leading-snug">{conf?.title}</h3>
                 <div className="space-y-1.5 text-xs text-slate-500">
-                  <div className="flex items-center gap-2"><Calendar size={12} className="text-indigo-400" />{displayDate}</div>
-                  {conf?.location && <div className="flex items-center gap-2"><MapPin size={12} className="text-indigo-400" />{conf.location}</div>}
-                  {conf?.contact_email && <div className="flex items-center gap-2"><Mail size={12} className="text-indigo-400" />{conf.contact_email}</div>}
+                  <div className="flex items-center gap-2"><Calendar size={12} className="text-amber-400" />{displayDate}</div>
+                  {conf?.location && <div className="flex items-center gap-2"><MapPin size={12} className="text-amber-400" />{conf.location}</div>}
+                  {conf?.contact_email && <div className="flex items-center gap-2"><Mail size={12} className="text-amber-400" />{conf.contact_email}</div>}
                 </div>
               </div>
             </div>
 
             {/* Price summary */}
             {selectedType && (
-              <div className="bg-[#0d1117] border border-white/10 rounded-2xl p-5">
+              <div className="bg-[#04070D] border border-white/10 rounded-2xl p-5">
                 <div className="text-[11px] text-slate-600 uppercase tracking-widest font-bold mb-3">Order Summary</div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-slate-400">{selectedType.label}</span>
@@ -819,7 +819,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
                 </div>
                 <div className="border-t border-white/10 mt-3 pt-3 flex justify-between items-center">
                   <span className="text-xs text-slate-600">Total (incl. taxes)</span>
-                  <span className="text-lg font-black text-indigo-400">{conf?.[selectedType.feeKey] || selectedType.fallback}</span>
+                  <span className="text-lg font-black text-amber-400">{conf?.[selectedType.feeKey] || selectedType.fallback}</span>
                 </div>
                 <p className="text-[10px] text-slate-600 mt-3 leading-relaxed">
                   Payment is collected at the venue or via the link sent to your email after registration.
@@ -828,7 +828,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
             )}
 
             {/* What's included */}
-            <div className="bg-[#0d1117] border border-white/10 rounded-2xl p-5">
+            <div className="bg-[#04070D] border border-white/10 rounded-2xl p-5">
               <div className="text-[11px] text-slate-600 uppercase tracking-widest font-bold mb-3">What's included</div>
               <ul className="space-y-2">
                 {[
@@ -839,7 +839,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
                   'Certificate of attendance',
                 ].map(item => (
                   <li key={item} className="flex items-start gap-2 text-xs text-slate-400">
-                    <Check size={12} className="text-indigo-400 shrink-0 mt-0.5" />
+                    <Check size={12} className="text-amber-400 shrink-0 mt-0.5" />
                     {item}
                   </li>
                 ))}

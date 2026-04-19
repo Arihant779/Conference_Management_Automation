@@ -10,9 +10,9 @@ import ScheduleEditor from '../ScheduleEditor';
 import ConferenceRegistration from './../ConferenceRegistration';
 
 const T = {
-  primary: '#8b5cf6', // Violet
-  secondary: '#ec4899', // Pink
-  accent: '#06b6d4', // Cyan
+  primary: '#f5c518', // Amber
+  secondary: '#fbbf24', // Gold
+  accent: '#fcd34d', // Light Amber
   bg: '#ffffff',
   text: '#0f172a',
   textMuted: '#64748b',
@@ -35,7 +35,7 @@ const MeshGradient = () => (
       }}
       transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
       className="absolute top-[-20%] left-[-10%] w-[80vw] h-[80vw] rounded-full"
-      style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.3) 0%, transparent 70%)', filter: 'blur(80px)' }}
+      style={{ background: 'radial-gradient(circle, rgba(245,197,24,0.3) 0%, transparent 70%)', filter: 'blur(80px)' }}
     />
     <motion.div
       animate={{
@@ -46,7 +46,7 @@ const MeshGradient = () => (
       }}
       transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
       className="absolute bottom-[-10%] right-[-5%] w-[70vw] h-[70vw] rounded-full"
-      style={{ background: 'radial-gradient(circle, rgba(236,72,153,0.2) 0%, transparent 70%)', filter: 'blur(100px)' }}
+      style={{ background: 'radial-gradient(circle, rgba(251,191,36,0.2) 0%, transparent 70%)', filter: 'blur(100px)' }}
     />
     <motion.div
       animate={{
@@ -56,7 +56,7 @@ const MeshGradient = () => (
       }}
       transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
       className="absolute top-[20%] right-[10%] w-[50vw] h-[50vw] rounded-full"
-      style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.2) 0%, transparent 70%)', filter: 'blur(120px)' }}
+      style={{ background: 'radial-gradient(circle, rgba(252,211,77,0.2) 0%, transparent 70%)', filter: 'blur(120px)' }}
     />
   </div>
 );
@@ -86,7 +86,7 @@ const PrismButton = ({ children, onClick, variant = 'primary', className = '' })
         background: isPrimary ? `linear-gradient(135deg, ${T.primary}, ${T.secondary})` : 'rgba(255, 255, 255, 0.8)',
         color: isPrimary ? '#ffffff' : T.text,
         border: isPrimary ? 'none' : '1px solid rgba(255, 255, 255, 0.5)',
-        boxShadow: isPrimary ? '0 20px 40px -10px rgba(139, 92, 246, 0.3)' : '0 10px 20px -5px rgba(0,0,0,0.05)',
+        boxShadow: isPrimary ? '0 20px 40px -10px rgba(245, 197, 24, 0.3)' : '0 10px 20px -5px rgba(0,0,0,0.05)',
       }}
     >
       <div className="relative z-10 flex items-center gap-2">
@@ -234,7 +234,7 @@ const CreativeTemplate = ({
           }}
           transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
           className="absolute -top-[20%] -left-[10%] w-[80vw] h-[80vw] rounded-full opacity-[0.08]"
-          style={{ background: 'radial-gradient(circle, #8b5cf6 0%, #ec4899 50%, transparent 70%)', filter: 'blur(100px)' }}
+          style={{ background: 'radial-gradient(circle, #f5c518 0%, #fbbf24 50%, transparent 70%)', filter: 'blur(100px)' }}
         />
         <motion.div 
           animate={{ 
@@ -245,7 +245,7 @@ const CreativeTemplate = ({
           }}
           transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
           className="absolute -bottom-[20%] -right-[10%] w-[70vw] h-[70vw] rounded-full opacity-[0.06]"
-          style={{ background: 'radial-gradient(circle, #06b6d4 0%, #8b5cf6 50%, transparent 70%)', filter: 'blur(120px)' }}
+          style={{ background: 'radial-gradient(circle, #fcd34d 0%, #f5c518 50%, transparent 70%)', filter: 'blur(120px)' }}
         />
         {/* Subtle Mesh Grid */}
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(#0f172a 1px, transparent 1px), linear-gradient(90deg, #0f172a 1px, transparent 1px)', backgroundSize: '60px 60px' }} />

@@ -13,10 +13,10 @@ const T = {
   bg: '#020408',
   surface: 'rgba(13, 17, 23, 0.7)',
   surfaceSolid: '#0d1117',
-  accent: '#00ff88', // Neon Emerald
-  primary: '#00e5ff', // Cyber Blue
+  accent: '#f5c518', // Premium Amber
+  primary: '#fbbf24', // Tech Gold
   secondary: '#ff0055', // Digital Rose
-  border: 'rgba(0, 255, 136, 0.2)',
+  border: 'rgba(245, 197, 24, 0.2)',
   text: '#e6edf3',
   textMuted: '#7d8590',
   gold: '#ffd700',
@@ -45,7 +45,7 @@ const HUDCard = ({ children, title, className = '', style = {}, spotlight = true
     mouseY.set(e.clientY - rect.top);
   };
 
-  const background = useMotionTemplate`radial-gradient(400px circle at ${mouseX}px ${mouseY}px, rgba(0, 255, 136, 0.08), transparent 80%)`;
+  const background = useMotionTemplate`radial-gradient(400px circle at ${mouseX}px ${mouseY}px, rgba(245, 197, 24, 0.08), transparent 80%)`;
 
   return (
     <motion.div
@@ -123,7 +123,7 @@ const DigitalRain = () => {
   return (
     <div className="fixed inset-0 pointer-events-none opacity-[0.05] z-0 overflow-hidden">
       <div className="absolute inset-0" style={{
-        background: 'linear-gradient(rgba(0, 255, 136, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 255, 136, 0.1) 1px, transparent 1px)',
+        background: 'linear-gradient(rgba(245, 197, 24, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(245, 197, 24, 0.1) 1px, transparent 1px)',
         backgroundSize: '40px 40px',
         transform: 'perspective(500px) rotateX(60deg) translateY(-100px)',
         height: '200%',
@@ -162,7 +162,7 @@ const EditableField = ({ value, onChange, isEditing, multiline = false, placehol
   if (!isEditing) return <span>{value || placeholder}</span>;
 
   const style = {
-    background: 'rgba(0, 255, 136, 0.05)',
+    background: 'rgba(245, 197, 24, 0.05)',
     border: `1px solid ${T.accent}40`,
     borderRadius: 4,
     padding: '4px 8px',
@@ -281,7 +281,7 @@ const TechTemplate = ({
   const displayDate = conf.start_date ? `${conf.start_date}${conf.end_date ? ` – ${conf.end_date}` : ''}` : 'Dates to be announced';
 
   return (
-    <div className="min-h-screen text-[#e6edf3] selection:bg-[#00ff8840]" 
+    <div className="min-h-screen text-[#e6edf3] selection:bg-[#f5c51840]" 
          style={{ background: T.bg, fontFamily: "'JetBrains Mono', monospace", overflow: 'hidden' }}>
       
       <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Space+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet" />

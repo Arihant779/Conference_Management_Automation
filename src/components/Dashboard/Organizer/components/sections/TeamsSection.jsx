@@ -68,7 +68,7 @@ const TeamsSection = ({
                           <div className={`rounded-xl px-4 py-3 border shadow-inner transition-all duration-500 ${
                             isDark ? 'bg-amber-500/10 border-amber-500/20' : 'bg-amber-50 border-amber-200'
                           }`}>
-                            <div className={`text-[10px] uppercase font-black tracking-widest mb-2 transition-colors ${isDark ? 'text-amber-500/70' : 'text-amber-600'}`}>Team Head</div>
+                            <div className={`text-[10px] uppercase font-black tracking-widest mb-2 transition-colors ${isDark ? 'text-amber-500/70' : 'text-amber-600'}`}>Team Lead</div>
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black text-black bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.3)]">{mName(head)[0]?.toUpperCase()}</div>
                               <span className={`text-sm font-bold truncate transition-colors ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>{mName(head)}</span>

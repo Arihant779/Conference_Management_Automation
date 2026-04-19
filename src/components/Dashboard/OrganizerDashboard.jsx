@@ -305,14 +305,39 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     }
   };
 
-  const handleAddMember = async (user, role) => {
-    const already = members.find(m => m.user_id === user.user_id);
-    if (already) { alert('Already a member.'); return; }
+  const handleAddMembers = async (users, role) => {
+    if (!users || users.length === 0) { setModal(null); return; }
     setSaving(true);
-    const { error } = await supabase.from('conference_user').insert([{ conference_id: confId, user_id: user.user_id, email: user.user_email || '', full_name: user.user_name || '', role, joined_at: new Date().toISOString() }]);
+    const existingUserIds = new Set(members.map(m => m.user_id));
+    const newMembers = users
+      .filter(u => !existingUserIds.has(u.user_id))
+      .map(u => ({
+        conference_id: confId,
+        user_id: u.user_id,
+        email: u.user_email || '',
+        full_name: u.user_name || '',
+        role,
+        joined_at: new Date().toISOString()
+      }));
+
+    if (newMembers.length === 0) {
+      setSaving(false);
+      setModal(null);
+      return;
+    }
+
+    const { error } = await supabase.from('conference_user').insert(newMembers);
     setSaving(false);
-    if (error) { alert(error.message); return; }
-    setModal(null); setMForm({ email: '', role: 'reviewer' }); fetchMembers(); fetchAllUsers();
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    setModal(null);
+    setMForm({ email: '', role: 'reviewer' });
+    fetchMembers();
+    fetchAllUsers();
   };
 
   /* ── team CRUD ── */
@@ -774,7 +799,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
       {modal === 'addMember' && (
         <AddMemberModal
           mForm={mForm} setMForm={setMForm} members={members} confId={confId} saving={saving}
-          onClose={() => setModal(null)} onAddMember={handleAddMember}
+          onClose={() => setModal(null)} onAddMembers={handleAddMembers}
         />
       )}
 
