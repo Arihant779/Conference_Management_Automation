@@ -126,20 +126,20 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEd
       { name: 'Prof. Amara Osei', role: 'Panel Moderator', org: 'ETH Zürich', img: 'https://i.pravatar.cc/150?img=41', bio: 'Pioneer in interdisciplinary methodology and cross-cultural academic collaboration.' },
       { name: 'Dr. Isabelle Moreau', role: 'Workshop Lead', org: 'Sciences Po Paris', img: 'https://i.pravatar.cc/150?img=44', bio: 'Specialist in policy analysis and evidence-based decision making frameworks.' },
     ],
-    sponsors: c.sponsors || [
+    sponsors: initialConf.sponsors || [
       { name: 'Royal Academy of Sciences', tier: 'platinum' },
       { name: 'National Research Foundation', tier: 'gold' },
       { name: 'Meridian Trust', tier: 'gold' },
       { name: 'University Press', tier: 'silver' },
       { name: 'Scholar Fund', tier: 'silver' },
     ],
-    important_dates: c.important_dates || [
+    important_dates: initialConf.important_dates || [
       { label: 'Abstract Submission Opens', date: 'January 10, 2025' },
       { label: 'Abstract Submission Deadline', date: 'March 15, 2025' },
       { label: 'Notification of Acceptance', date: 'April 30, 2025' },
       { label: 'Early Bird Registration Closes', date: 'May 15, 2025' },
       { label: 'Full Paper Submission', date: 'June 1, 2025' },
-      { label: 'Conference Dates', date: `${c.start_date || 'TBD'} – ${c.end_date || 'TBD'}` },
+      { label: 'Conference Dates', date: `${initialConf.start_date || 'TBD'} – ${initialConf.end_date || 'TBD'}` },
     ],
     venue_name: initialConf.venue_name || 'Grand Academic Hall',
     venue_address: initialConf.venue_address || initialConf.location || 'City, Country',
@@ -187,21 +187,6 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEd
         }
       }
     }));
-  };
-
-  const [pageData, setPageData] = useState(() => getInitialPageData(initialConf));
-
-  // Sync state if initialConf changes from parent
-  useEffect(() => {
-    setConf(initialConf);
-    setPageData(getInitialPageData(initialConf));
-  }, [initialConf]);
-
-  const handleCancel = () => {
-    setPageData(getInitialPageData(initialConf));
-    setConf(initialConf);
-    setIsEditing(false);
-    setSaveError(null);
   };
 
   const update = (key, value) => setPageData(p => ({ ...p, [key]: value }));
@@ -304,7 +289,7 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEd
                 >
                   <Trash2 size={12} /> Delete Conference
                 </button>
-                <button onClick={handleCancel} style={{
+                <button onClick={() => setIsEditing(false)} style={{
                   background: 'transparent', border: '1px solid #4a3f35', color: '#8c7e72',
                   padding: '6px 14px', borderRadius: 4, fontSize: 12, cursor: 'pointer', ...sansS,
                   display: 'flex', alignItems: 'center', gap: 6,
@@ -992,7 +977,6 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEd
 };
 
 export default ClassicTemplate;
-
 
 
 

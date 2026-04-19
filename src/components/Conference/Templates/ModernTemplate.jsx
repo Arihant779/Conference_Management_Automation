@@ -6,6 +6,7 @@ import {
   ArrowRight, Sparkles, Navigation, MonitorPlay, ChevronRight, Award, Zap, Target
 } from 'lucide-react';
 import ScheduleEditor from '../ScheduleEditor';
+import ConferenceRegistration from './../ConferenceRegistration';
 
 /* =========================================================
    AWWWARDS-LEVEL INTERACTIVE EFFECTS
@@ -285,8 +286,6 @@ const ModernTemplate = ({
   autoOpenRegister = false,
   onSwitchToTab = null,
   onDelete = null,
-  showReg = false,
-  setShowReg = null,
 }) => {
   const [conf, setConf] = useState(initialConf);
   const [isEditing, setIsEditing] = useState(false);
@@ -295,6 +294,7 @@ const ModernTemplate = ({
   const [saveError, setSaveError] = useState(null);
   const [showScheduleEditor, setShowScheduleEditor] = useState(false);
   const [activeNav, setActiveNav] = useState('about');
+  const [showReg, setShowReg] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   const scrollRef = useRef(null);
@@ -314,60 +314,45 @@ const ModernTemplate = ({
     return () => el.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const getInitialPageData = (c) => ({
-    title: c.title || 'Untitled Conference',
-    tagline: c.tagline || 'Where Innovation Meets Excellence',
-    banner_url: c.banner_url || '',
-    contact_email: c.contact_email || 'contact@conference.org',
-    contact_phone: c.contact_phone || '+1 (555) 000-0000',
-    website: c.website || 'https://yourconference.org',
-    twitter: c.twitter || '',
-    linkedin: c.linkedin || '',
-    schedule: c.schedule || [],
-    speakers: c.speakers || [
+  const [pageData, setPageData] = useState({
+    title: initialConf.title || 'Untitled Conference',
+    tagline: initialConf.tagline || 'Where Innovation Meets Excellence',
+    banner_url: initialConf.banner_url || '',
+    contact_email: initialConf.contact_email || 'contact@conference.org',
+    contact_phone: initialConf.contact_phone || '+1 (555) 000-0000',
+    website: initialConf.website || 'https://yourconference.org',
+    twitter: initialConf.twitter || '',
+    linkedin: initialConf.linkedin || '',
+    schedule: initialConf.schedule || [],
+    speakers: initialConf.speakers || [
       { name: 'Dr. Alex Rivera', role: 'Lead Researcher', org: 'MIT', img: 'https://i.pravatar.cc/150?img=21', bio: 'Pioneering researcher in AI ethics and policy.' },
       { name: 'Prof. Sarah Chen', role: 'Director', org: 'Stanford AI Lab', img: 'https://i.pravatar.cc/150?img=47', bio: 'Expert in machine learning and computer vision.' },
       { name: 'James Okafor', role: 'CEO', org: 'Nexus Technologies', img: 'https://i.pravatar.cc/150?img=33', bio: 'Industry leader building ethical AI systems at scale.' },
       { name: 'Dr. Priya Patel', role: 'Senior Scientist', org: 'DeepMind', img: 'https://i.pravatar.cc/150?img=41', bio: 'Specializes in reinforcement learning and robotics.' },
     ],
-    sponsors: c.sponsors || [
+    sponsors: initialConf.sponsors || [
       { name: 'NovaTech', tier: 'platinum' },
       { name: 'FutureCorp', tier: 'gold' },
       { name: 'DataStream', tier: 'gold' },
       { name: 'InnovateCo', tier: 'silver' },
       { name: 'TechBridge', tier: 'silver' },
     ],
-    important_dates: c.important_dates || [
+    important_dates: initialConf.important_dates || [
       { label: 'Abstract Submission Deadline', date: 'March 15, 2025' },
       { label: 'Notification of Acceptance', date: 'April 30, 2025' },
       { label: 'Early Bird Registration', date: 'May 15, 2025' },
       { label: 'Full Paper Submission', date: 'June 1, 2025' },
       { label: 'Conference Dates', date: `${initialConf.start_date || 'TBD'} - ${initialConf.end_date || 'TBD'}` },
     ],
-    venue_name: c.venue_name || 'Grand Convention Center',
-    venue_address: c.venue_address || c.location || 'City, Country',
-    venue_description: c.venue_description || 'A world-class venue equipped with state-of-the-art facilities, multiple breakout rooms, and excellent transport links.',
-    capacity: c.capacity || '500+',
-    registration_fee_general: c.registration_fee_general || '$299',
-    registration_fee_student: c.registration_fee_student || '$149',
-    registration_fee_early: c.registration_fee_early || '$199',
-    about_extra: c.about_extra || 'Join us for groundbreaking presentations, hands-on workshops, and unparalleled networking opportunities with leading researchers and practitioners from around the globe.',
+    venue_name: initialConf.venue_name || 'Grand Convention Center',
+    venue_address: initialConf.venue_address || initialConf.location || 'City, Country',
+    venue_description: initialConf.venue_description || 'A world-class venue equipped with state-of-the-art facilities, multiple breakout rooms, and excellent transport links.',
+    capacity: initialConf.capacity || '500+',
+    registration_fee_general: initialConf.registration_fee_general || '$299',
+    registration_fee_student: initialConf.registration_fee_student || '$149',
+    registration_fee_early: initialConf.registration_fee_early || '$199',
+    about_extra: initialConf.about_extra || 'Join us for groundbreaking presentations, hands-on workshops, and unparalleled networking opportunities with leading researchers and practitioners from around the globe.',
   });
-
-  const [pageData, setPageData] = useState(() => getInitialPageData(initialConf));
-
-  // Sync state if initialConf changes from parent
-  useEffect(() => {
-    setConf(initialConf);
-    setPageData(getInitialPageData(initialConf));
-  }, [initialConf]);
-
-  const handleCancel = () => {
-    setPageData(getInitialPageData(initialConf));
-    setConf(initialConf);
-    setIsEditing(false);
-    setSaveError(null);
-  };
 
   const update = (key, value) => setPageData(p => ({ ...p, [key]: value }));
   const updateNested = (key, index, field, value) => {
@@ -477,7 +462,7 @@ const ModernTemplate = ({
                 >
                   <Trash2 size={14} /> Delete Conference
                 </button>
-                <button onClick={handleCancel} className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white border border-white/5 hover:bg-white/5 transition-all">
+                <button onClick={() => setIsEditing(false)} className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white border border-white/5 hover:bg-white/5 transition-all">
                   <X size={14} /> Cancel
                 </button>
                 <button onClick={handleSave} disabled={saving}
