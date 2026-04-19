@@ -59,45 +59,45 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     if (section === 'site_preview') { onSwitchView('home'); setSection('overview'); }
   }, [section, onSwitchView, setSection]);
 
-  const myMember        = members.find(m => m.user_id === user.id);
-  const myMemberId      = myMember?.id;
-  const isGlobalHead    = conf.conference_head_id === user.id;
-  const isOrganizer     = isGlobalHead || (userRoles && userRoles.includes('organizer'));
+  const myMember = members.find(m => m.user_id === user.id);
+  const myMemberId = myMember?.id;
+  const isGlobalHead = conf.conference_head_id === user.id;
+  const isOrganizer = isGlobalHead || (userRoles && userRoles.includes('organizer'));
   const myHeadedTeamIds = teams.filter(t => t.head_id === user.id).map(t => t.id);
 
   const pendingTeams = teams.filter(t => t.memberList?.some(m => (m.user_id === user?.id || (myMemberId && m.conference_user_id === myMemberId)) && m.status === 'pending'));
-  const isTeamHead      = !isOrganizer && myHeadedTeamIds.length > 0;
-  const myTeamIds       = teams.filter(t => t.memberList?.some(m => m.user_id === user.id)).map(t => t.id);
+  const isTeamHead = !isOrganizer && myHeadedTeamIds.length > 0;
+  const myTeamIds = teams.filter(t => t.memberList?.some(m => m.user_id === user.id)).map(t => t.id);
 
   const FALLBACK_PERMS = {
-    organizer: ['view_dashboard','view_emails','send_emails','manage_emails','view_papers','manage_papers','allocate_papers','view_members','manage_members','view_teams','manage_teams','view_tasks','manage_tasks','view_notifications','send_notifications','find_speakers','view_feedback','manage_feedback','view_attendees'],
-    organizer_head: ['view_dashboard','view_emails','send_emails','manage_emails','view_papers','manage_papers','allocate_papers','view_members','manage_members','view_teams','manage_teams','view_tasks','manage_tasks','view_notifications','send_notifications','find_speakers','view_feedback','manage_feedback','view_attendees'],
-    programming_head: ['view_dashboard','view_papers','manage_papers','allocate_papers','view_members','view_notifications'],
-    logistics_head: ['view_dashboard','view_teams','manage_teams','view_tasks','manage_tasks','view_notifications','view_attendees','manage_members'],
-    outreach_head: ['view_dashboard','view_emails','send_emails','find_speakers','view_members','view_notifications','send_notifications'],
-    feedback_head: ['view_dashboard','view_feedback','manage_feedback','view_notifications'],
-    event_head: ['view_dashboard','view_teams','view_tasks','manage_tasks','view_members','view_notifications'],
-    technical_head: ['view_dashboard','view_teams','view_tasks','manage_tasks','view_notifications','view_papers','manage_papers','allocate_papers'],
-    registration_head: ['view_dashboard','view_members','manage_members','view_teams','view_notifications'],
-    sponsorship_head: ['view_dashboard','view_emails','send_emails','view_notifications'],
-    member: ['view_dashboard','view_teams','view_tasks','view_notifications'],
+    organizer: ['view_dashboard', 'view_emails', 'send_emails', 'manage_emails', 'view_papers', 'manage_papers', 'allocate_papers', 'view_members', 'manage_members', 'view_teams', 'manage_teams', 'view_tasks', 'manage_tasks', 'view_notifications', 'send_notifications', 'find_speakers', 'view_feedback', 'manage_feedback', 'view_attendees'],
+    organizer_head: ['view_dashboard', 'view_emails', 'send_emails', 'manage_emails', 'view_papers', 'manage_papers', 'allocate_papers', 'view_members', 'manage_members', 'view_teams', 'manage_teams', 'view_tasks', 'manage_tasks', 'view_notifications', 'send_notifications', 'find_speakers', 'view_feedback', 'manage_feedback', 'view_attendees'],
+    programming_head: ['view_dashboard', 'view_papers', 'manage_papers', 'allocate_papers', 'view_members', 'view_notifications'],
+    logistics_head: ['view_dashboard', 'view_teams', 'manage_teams', 'view_tasks', 'manage_tasks', 'view_notifications', 'view_attendees', 'manage_members'],
+    outreach_head: ['view_dashboard', 'view_emails', 'send_emails', 'find_speakers', 'view_members', 'view_notifications', 'send_notifications'],
+    feedback_head: ['view_dashboard', 'view_feedback', 'manage_feedback', 'view_notifications'],
+    event_head: ['view_dashboard', 'view_teams', 'view_tasks', 'manage_tasks', 'view_members', 'view_notifications'],
+    technical_head: ['view_dashboard', 'view_teams', 'view_tasks', 'manage_tasks', 'view_notifications', 'view_papers', 'manage_papers', 'allocate_papers'],
+    registration_head: ['view_dashboard', 'view_members', 'manage_members', 'view_teams', 'view_notifications'],
+    sponsorship_head: ['view_dashboard', 'view_emails', 'send_emails', 'view_notifications'],
+    member: ['view_dashboard', 'view_teams', 'view_tasks', 'view_notifications'],
   };
 
   const getRolePermissions = (role) => {
     if (FALLBACK_PERMS[role]) return FALLBACK_PERMS[role];
-    if (role.endsWith('_head') || role.endsWith('_coord') || role.endsWith('_lead')) return ['view_dashboard','view_teams','view_tasks','manage_tasks','view_notifications','view_members'];
+    if (role.endsWith('_head') || role.endsWith('_coord') || role.endsWith('_lead')) return ['view_dashboard', 'view_teams', 'view_tasks', 'manage_tasks', 'view_notifications', 'view_members'];
     return [];
   };
 
   const effectivePermissions = Array.from(new Set([...(permissions || []), ...(userRoles ? userRoles.flatMap(getRolePermissions) : [])]));
   const can = (p) => effectivePermissions.includes(p);
 
-  const roleLabel = isOrganizer ? 'Organizer' : ((userRoles || []).find(r => r !== 'team_head' && (r.endsWith('_head') || r.endsWith('_coord') || r.endsWith('_lead')))?.replace(/technical_head/g, 'Reviewing Team Head')?.replace(/outreach_head/g, 'Outreach Team Head')?.replace(/logistics_head/g, 'Logistics Team Head')?.replace(/event_head/g, 'Event Management Team Head')?.replace(/organizer_head/g, 'Organizing Team Head')?.replace(/_/g, ' ')?.replace(/\b\w/g, l => l.toUpperCase()) || (userRoles?.includes('team_head') || isTeamHead ? 'Team Lead' : (userRoles?.includes('reviewer') ? 'Reviewer' : 'Team Member')));
+  const roleLabel = isOrganizer ? 'Organizer' : ((userRoles || []).find(r => r !== 'team_head' && (r.endsWith('_head') || r.endsWith('_coord') || r.endsWith('_lead')))?.replace(/technical_head/g, 'Reviewing Team')?.replace(/outreach_head/g, 'Outreach Team')?.replace(/logistics_head/g, 'Logistics Team')?.replace(/event_head/g, 'Event Management Team')?.replace(/organizer_head/g, 'Organizing Team')?.replace(/_/g, ' ')?.replace(/\b\w/g, l => l.toUpperCase()) || (userRoles?.includes('team_head') || isTeamHead ? 'Team Lead' : (userRoles?.includes('reviewer') ? 'Reviewer' : 'Team Member')));
 
-  const [notifs, setNotifs]           = useState([]);
-  const [modal, setModal]             = useState(null);
-  const [modalData, setModalData]     = useState(null);
-  const [saving, setSaving]           = useState(false);
+  const [notifs, setNotifs] = useState([]);
+  const [modal, setModal] = useState(null);
+  const [modalData, setModalData] = useState(null);
+  const [saving, setSaving] = useState(false);
   const [localPublished, setLocalPublished] = useState(conf.is_published);
 
   // Sync local state if prop changes from outside
@@ -111,18 +111,18 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   const [selectedAttendees, setSelectedAttendees] = useState(new Set());
   const [updatingBulk, setUpdatingBulk] = useState(false);
 
-  const [myRatings, setMyRatings]       = useState({});
+  const [myRatings, setMyRatings] = useState({});
   const [globalRatings, setGlobalRatings] = useState({});
   const [ratingMember, setRatingMember] = useState(null);
 
-  const [mForm, setMForm]   = useState({ email: '', role: 'reviewer' });
+  const [mForm, setMForm] = useState({ email: '', role: 'reviewer' });
   const [tmForm, setTmForm] = useState({ name: '', type: '', description: '', color: '#f5c518', head_id: '' });
   const [tkForm, setTkForm] = useState({ title: '', description: '', team_id: '', assignee_id: '', priority: 'medium', due_date: '' });
   const [nForm, setNForm] = useState({ title: '', message: '', target_role: 'all', target_team_id: '' });
 
-  const [spTopic, setSpTopic]     = useState('');
-  const [spLimit, setSpLimit]     = useState(10);
-  const [spSource, setSpSource]   = useState(5);
+  const [spTopic, setSpTopic] = useState('');
+  const [spLimit, setSpLimit] = useState(10);
+  const [spSource, setSpSource] = useState(5);
   const [spLoading, setSpLoading] = useState(false);
   const [spResults, setSpResults] = useState([]);
   const [spError, setSpError] = useState('');
@@ -258,7 +258,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
 
     try {
       setSaving(true);
-      
+
       // 2. Remove from team memberships
       await supabase.from('team_members').delete().eq('conference_user_id', id);
 
@@ -272,7 +272,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
 
       // 5. Finally, remove from the conference member list
       const { error } = await supabase.from('conference_user').delete().eq('id', id);
-      
+
       if (error) {
         alert('Failed to remove member: ' + error.message);
       } else {
@@ -319,7 +319,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   const createTeam = async (finalAdds = [], _, explicitHeadId = null) => {
     if (!tmForm.name.trim()) return; setSaving(true);
     const headId = explicitHeadId || tmForm.head_id;
-    
+
     const membersToInvite = finalAdds; // Now receiving user_ids directly
 
     try {
@@ -338,7 +338,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      
+
       setModal(null); setTmForm({ name: '', type: '', description: '', color: '#f5c518', head_id: '' });
       fetchTeams();
     } catch (err) {
@@ -351,7 +351,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   const saveTeam = async (finalAdds = [], pendingRemoves = [], _, explicitHeadId = null) => {
     if (!tmForm.name.trim()) return; setSaving(true);
     const headId = explicitHeadId || tmForm.head_id;
-    
+
     try {
       // 1. Update Meta
       const metaRes = await protectedFetch(`${API_BASE_URL}/api/teams/${modalData.id}`, {
@@ -389,12 +389,12 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     }
   };
 
-  const deleteTeam = async (id) => { 
+  const deleteTeam = async (id) => {
     try {
       const res = await protectedFetch(`${API_BASE_URL}/api/teams/${id}`, { method: 'DELETE' });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      fetchTeams(); fetchTasks(); 
+      fetchTeams(); fetchTasks();
     } catch (err) {
       alert(`Delete error: ${err.message}`);
     }
@@ -545,7 +545,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
       .from('conference')
       .update({ is_published: true })
       .eq('conference_id', confId);
-    
+
     if (error) {
       console.error('[handlePublish] Error:', error);
       alert(`Publishing failed: ${error.message}`);
@@ -558,14 +558,14 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   };
 
   /* ── ui helpers ── */
-  const teamName     = (id) => teams.find(t => t.id === id)?.name || '—';
+  const teamName = (id) => teams.find(t => t.id === id)?.name || '—';
   const assigneeName = (id) => { const m = members.find(m => m.id === id || m.user_id === id); return m ? mName(m) : '—'; };
 
   const filteredMembers = members.filter(m => m.role !== 'attendee' && (!memberSearch || mName(m).toLowerCase().includes(memberSearch.toLowerCase()) || m.email?.toLowerCase().includes(memberSearch.toLowerCase())));
-  const attendees         = members.filter(m => m.role === 'attendee');
+  const attendees = members.filter(m => m.role === 'attendee');
   const filteredAttendees = attendees.filter(m => !memberSearch || mName(m).toLowerCase().includes(memberSearch.toLowerCase()) || m.email?.toLowerCase().includes(memberSearch.toLowerCase()));
 
-  const volunteerMap    = Object.fromEntries(allUsers.map(u => [u.user_id, { volunteer_roles: u.volunteer_roles || [], volunteer_domains: u.volunteer_domains || [] }]));
+  const volunteerMap = Object.fromEntries(allUsers.map(u => [u.user_id, { volunteer_roles: u.volunteer_roles || [], volunteer_domains: u.volunteer_domains || [] }]));
   const volunteersCount = allUsers.length;
 
   const openEditTeam = (t) => {
@@ -581,22 +581,22 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   };
 
   const nav = [
-    { id: 'overview',      label: 'Overview',        icon: BarChart2,   badge: null,                                      permission: 'view_dashboard' },
-    { id: 'papers',        label: 'Papers',           icon: FileText,    badge: pendingCount || null,                      permission: 'view_papers' },
-    { id: 'members',       label: 'Members',          icon: Users,       badge: null,                                      permission: 'view_members' },
-    { id: 'attendees',     label: 'Attendees',        icon: Users,       badge: null,                                      permission: 'view_attendees' },
-    { id: 'teams',         label: 'Teams',            icon: Layers,      badge: pendingTeams.length || null,                                      permission: 'view_teams' },
-    { id: 'tasks',         label: 'Tasks',            icon: CheckSquare, badge: tasks.filter(t => t.status !== 'done').length || null, permission: 'view_tasks' },
-    { id: 'notifications', label: 'Notifications',    icon: Bell,        badge: null,                                      permission: 'view_notifications' },
-    { id: 'emails',        label: 'Emails',           icon: Send,        badge: null,                                      permission: 'view_emails' },
-    { id: 'email_automations', label: 'Email Automations', icon: Zap,      badge: null,                                      permission: 'manage_emails' },
-    { id: 'speakers',      label: 'Find Speakers',    icon: Users,       badge: null,                                      permission: 'find_speakers' },
-    { id: 'invitations',   label: 'Invitation Tracker', icon: Clock,      badge: null,                                      permission: 'find_speakers' },
-    { id: 'chat',          label: 'Team Chat',        icon: MessageSquare, badge: null,                                    permission: 'view_teams' },
-    { id: 'allocation',    label: 'Paper Allocation', icon: FileText,    badge: null,                                      permission: 'allocate_papers' },
-    { id: 'submission_rules', label: 'Submission Rules', icon: Settings2,   badge: null,                                      permission: 'manage_papers' },
-    { id: 'feedback',      label: 'Feedback',         icon: Star,        badge: null,                                      permission: 'view_feedback' },
-    { id: 'site_preview',  label: 'Site Preview',     icon: Sparkles,    badge: null },
+    { id: 'overview', label: 'Overview', icon: BarChart2, badge: null, permission: 'view_dashboard' },
+    { id: 'papers', label: 'Papers', icon: FileText, badge: pendingCount || null, permission: 'view_papers' },
+    { id: 'members', label: 'Members', icon: Users, badge: null, permission: 'view_members' },
+    { id: 'attendees', label: 'Attendees', icon: Users, badge: null, permission: 'view_attendees' },
+    { id: 'teams', label: 'Teams', icon: Layers, badge: pendingTeams.length || null, permission: 'view_teams' },
+    { id: 'tasks', label: 'Tasks', icon: CheckSquare, badge: tasks.filter(t => t.status !== 'done').length || null, permission: 'view_tasks' },
+    { id: 'notifications', label: 'Notifications', icon: Bell, badge: null, permission: 'view_notifications' },
+    { id: 'emails', label: 'Emails', icon: Send, badge: null, permission: 'view_emails' },
+    { id: 'email_automations', label: 'Email Automations', icon: Zap, badge: null, permission: 'manage_emails' },
+    { id: 'speakers', label: 'Find Speakers', icon: Users, badge: null, permission: 'find_speakers' },
+    { id: 'invitations', label: 'Invitation Tracker', icon: Clock, badge: null, permission: 'find_speakers' },
+    { id: 'chat', label: 'Team Chat', icon: MessageSquare, badge: null, permission: 'view_teams' },
+    { id: 'allocation', label: 'Paper Allocation', icon: FileText, badge: null, permission: 'allocate_papers' },
+    { id: 'submission_rules', label: 'Submission Rules', icon: Settings2, badge: null, permission: 'manage_papers' },
+    { id: 'feedback', label: 'Feedback', icon: Star, badge: null, permission: 'view_feedback' },
+    { id: 'site_preview', label: 'Site Preview', icon: Sparkles, badge: null },
   ].filter(item => !item.permission || can(item.permission));
 
   /* ══════════════════════════════════════════════════════════
@@ -616,155 +616,155 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
         <main className={`flex-1 p-8 relative custom-scrollbar flex flex-col ${section === 'chat' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
           <div className={`flex-1 min-h-0 flex flex-col w-full ${section !== 'chat' ? 'max-w-[1400px] mx-auto' : ''}`}>
 
-          {/* ── PUBLISH STATUS BANNER ── */}
-          {console.log('[Banner Render] isGlobalHead:', isGlobalHead, 'localPublished:', localPublished, 'conf.is_published:', conf.is_published)}
-          {isGlobalHead && !localPublished && (
-            <motion.div 
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`mb-10 p-8 rounded-[3rem] border bg-amber-500/5 border-amber-500/20 shadow-[0_0_50px_rgba(245,158,11,0.05)]`}
-            >
-              <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-                <div className="flex items-center gap-6">
-                  <div className="w-16 h-16 rounded-3xl bg-amber-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
-                    <Zap size={28} className="text-black" />
+            {/* ── PUBLISH STATUS BANNER ── */}
+            {console.log('[Banner Render] isGlobalHead:', isGlobalHead, 'localPublished:', localPublished, 'conf.is_published:', conf.is_published)}
+            {isGlobalHead && !localPublished && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`mb-10 p-8 rounded-[3rem] border bg-amber-500/5 border-amber-500/20 shadow-[0_0_50px_rgba(245,158,11,0.05)]`}
+              >
+                <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+                  <div className="flex items-center gap-6">
+                    <div className="w-16 h-16 rounded-3xl bg-amber-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                      <Zap size={28} className="text-black" />
+                    </div>
+                    <div>
+                      <h2 className={`text-2xl font-black tracking-tight mb-1 text-white`}>Conference is Hidden</h2>
+                      <p className={`text-sm font-medium text-zinc-400`}>Your event is currently in draft mode. Only users with direct links can view it.</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handlePublish}
+                    disabled={saving}
+                    className="px-8 py-3 bg-amber-500 hover:bg-amber-400 text-black text-xs font-black uppercase rounded-xl transition-all shadow-lg shadow-amber-500/25 active:scale-95 disabled:opacity-50"
+                  >
+                    {saving ? 'Publishing...' : 'Publish Now'}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── TOP LEVEL INVITATIONS ── */}
+            {pendingTeams.length > 0 && (
+              <div className={`mb-10 p-6 rounded-[2.5rem] border animate-in slide-in-from-top-4 duration-700 bg-amber-500/5 border-amber-500/10 shadow-[0_0_40px_rgba(245,158,11,0.03)]`}>
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center border border-amber-500/20 shadow-inner">
+                    <label className="text-2xl">⚡</label>
                   </div>
                   <div>
-                    <h2 className={`text-2xl font-black tracking-tight mb-1 text-white`}>Conference is Hidden</h2>
-                    <p className={`text-sm font-medium text-zinc-400`}>Your event is currently in draft mode. Only users with direct links can view it.</p>
+                    <h3 className={`text-xl font-black tracking-tight text-amber-500`}>Collaboration Pending</h3>
+                    <p className="text-xs font-bold text-amber-500/60 uppercase tracking-widest leading-none mt-1">Accept invitations to access team resources</p>
                   </div>
                 </div>
-                <button 
-                  onClick={handlePublish}
-                  disabled={saving}
-                  className="px-8 py-3 bg-amber-500 hover:bg-amber-400 text-black text-xs font-black uppercase rounded-xl transition-all shadow-lg shadow-amber-500/25 active:scale-95 disabled:opacity-50"
-                >
-                  {saving ? 'Publishing...' : 'Publish Now'}
-                </button>
-              </div>
-            </motion.div>
-          )}
-
-          {/* ── TOP LEVEL INVITATIONS ── */}
-          {pendingTeams.length > 0 && (
-            <div className={`mb-10 p-6 rounded-[2.5rem] border animate-in slide-in-from-top-4 duration-700 bg-amber-500/5 border-amber-500/10 shadow-[0_0_40px_rgba(245,158,11,0.03)]`}>
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center border border-amber-500/20 shadow-inner">
-                   <label className="text-2xl">⚡</label>
-                </div>
-                <div>
-                  <h3 className={`text-xl font-black tracking-tight text-amber-500`}>Collaboration Pending</h3>
-                  <p className="text-xs font-bold text-amber-500/60 uppercase tracking-widest leading-none mt-1">Accept invitations to access team resources</p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                {pendingTeams.map(team => (
-                  <div key={team.id} className={`flex items-center justify-between p-6 rounded-[1.5rem] border transition-all ${isDark ? 'bg-black/40 border-white/5 hover:border-white/10' : 'bg-white border-amber-100 shadow-sm'}`}>
-                    <div className="flex items-center gap-4">
-                      <div className="w-1.5 h-10 rounded-full" style={{ backgroundColor: team.color || '#f59e0b' }} />
-                      <div>
-                        <div className={`font-black text-lg ${isDark ? 'text-white' : 'text-zinc-900'}`}>{team.name}</div>
-                        <div className="text-[10px] text-amber-500 uppercase font-bold tracking-widest mt-0.5">Invite Received</div>
+                <div className="space-y-3">
+                  {pendingTeams.map(team => (
+                    <div key={team.id} className={`flex items-center justify-between p-6 rounded-[1.5rem] border transition-all ${isDark ? 'bg-black/40 border-white/5 hover:border-white/10' : 'bg-white border-amber-100 shadow-sm'}`}>
+                      <div className="flex items-center gap-4">
+                        <div className="w-1.5 h-10 rounded-full" style={{ backgroundColor: team.color || '#f59e0b' }} />
+                        <div>
+                          <div className={`font-black text-lg ${isDark ? 'text-white' : 'text-zinc-900'}`}>{team.name}</div>
+                          <div className="text-[10px] text-amber-500 uppercase font-bold tracking-widest mt-0.5">Invite Received</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => handleInviteResponse(team.id, 'accepted')} className="px-8 py-2.5 bg-amber-500 hover:bg-amber-400 text-black text-[11px] font-black uppercase rounded-2xl transition-all shadow-lg shadow-amber-500/25 active:scale-95">Accept</button>
+                        <button onClick={() => handleInviteResponse(team.id, 'rejected')} className={`px-6 py-2.5 text-[11px] font-black uppercase rounded-2xl border transition-all ${isDark ? 'border-white/10 text-slate-400 hover:text-white hover:bg-white/5' : 'border-zinc-200 text-zinc-500 hover:bg-zinc-50'} active:scale-95`}>Decline</button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <button onClick={() => handleInviteResponse(team.id, 'accepted')} className="px-8 py-2.5 bg-amber-500 hover:bg-amber-400 text-black text-[11px] font-black uppercase rounded-2xl transition-all shadow-lg shadow-amber-500/25 active:scale-95">Accept</button>
-                      <button onClick={() => handleInviteResponse(team.id, 'rejected')} className={`px-6 py-2.5 text-[11px] font-black uppercase rounded-2xl border transition-all ${isDark ? 'border-white/10 text-slate-400 hover:text-white hover:bg-white/5' : 'border-zinc-200 text-zinc-500 hover:bg-zinc-50'} active:scale-95`}>Decline</button>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-          {section === 'overview' && (
-            <OverviewSection
-              members={members} teams={teams} tasks={tasks} confPapers={confPapers}
-              pendingCount={pendingCount} accepted={accepted} rejected={rejected}
-              volunteersCount={volunteersCount} volunteerMap={volunteerMap}
-              isGlobalHead={isGlobalHead} can={can} setSection={setSection} setModal={setModal}
-              pendingTeams={teams.filter(t => t.memberList?.some(m => (m.user_id === user?.id || (myMemberId && m.conference_user_id === myMemberId)) && m.status === 'pending'))}
-              onInviteResponse={handleInviteResponse}
-            />
-          )}
+            )}
+            {section === 'overview' && (
+              <OverviewSection
+                members={members} teams={teams} tasks={tasks} confPapers={confPapers}
+                pendingCount={pendingCount} accepted={accepted} rejected={rejected}
+                volunteersCount={volunteersCount} volunteerMap={volunteerMap}
+                isGlobalHead={isGlobalHead} can={can} setSection={setSection} setModal={setModal}
+                pendingTeams={teams.filter(t => t.memberList?.some(m => (m.user_id === user?.id || (myMemberId && m.conference_user_id === myMemberId)) && m.status === 'pending'))}
+                onInviteResponse={handleInviteResponse}
+              />
+            )}
 
-          {section === 'papers' && (
-            <PapersSection
-              confPapers={confPapers} paperFilter={paperFilter} setPaperFilter={setPaperFilter}
-              pendingCount={pendingCount} accepted={accepted} rejected={rejected}
-              loadingPapers={loadingPapers} can={can} updatePaperStatus={updatePaperStatus}
-            />
-          )}
+            {section === 'papers' && (
+              <PapersSection
+                confPapers={confPapers} paperFilter={paperFilter} setPaperFilter={setPaperFilter}
+                pendingCount={pendingCount} accepted={accepted} rejected={rejected}
+                loadingPapers={loadingPapers} can={can} updatePaperStatus={updatePaperStatus}
+              />
+            )}
 
-          {section === 'members' && (
-            <MembersSection
-              filteredMembers={filteredMembers} memberSearch={memberSearch} setMemberSearch={setMemberSearch}
-              members={members} volunteersCount={volunteersCount} volunteerMap={volunteerMap}
-              isOrganizer={isOrganizer} can={can} loadingMembers={loadingMembers}
-              setModal={setModal} setModalData={setModalData} setRatingMember={setRatingMember}
-              myRatings={myRatings} globalRatings={globalRatings} updateRole={updateRole}
-            />
-          )}
+            {section === 'members' && (
+              <MembersSection
+                filteredMembers={filteredMembers} memberSearch={memberSearch} setMemberSearch={setMemberSearch}
+                members={members} volunteersCount={volunteersCount} volunteerMap={volunteerMap}
+                isOrganizer={isOrganizer} can={can} loadingMembers={loadingMembers}
+                setModal={setModal} setModalData={setModalData} setRatingMember={setRatingMember}
+                myRatings={myRatings} globalRatings={globalRatings} updateRole={updateRole}
+              />
+            )}
 
-          {section === 'attendees' && (
-            <AttendeesSection
-              attendees={attendees} filteredAttendees={filteredAttendees}
-              memberSearch={memberSearch} setMemberSearch={setMemberSearch}
-              selectedAttendees={selectedAttendees} setSelectedAttendees={setSelectedAttendees}
-              updatingBulk={updatingBulk}
-              handleBulkRoomUpdate={handleBulkRoomUpdate} handleSingleRoomUpdate={handleSingleRoomUpdate}
-              roleLabel={roleLabel} isOrganizer={isOrganizer} loadingMembers={loadingMembers}
-              setModal={setModal} setModalData={setModalData} confId={confId}
-            />
-          )}
+            {section === 'attendees' && (
+              <AttendeesSection
+                attendees={attendees} filteredAttendees={filteredAttendees}
+                memberSearch={memberSearch} setMemberSearch={setMemberSearch}
+                selectedAttendees={selectedAttendees} setSelectedAttendees={setSelectedAttendees}
+                updatingBulk={updatingBulk}
+                handleBulkRoomUpdate={handleBulkRoomUpdate} handleSingleRoomUpdate={handleSingleRoomUpdate}
+                roleLabel={roleLabel} isOrganizer={isOrganizer} loadingMembers={loadingMembers}
+                setModal={setModal} setModalData={setModalData} confId={confId}
+              />
+            )}
 
-          {section === 'teams' && (
-            <TeamsSection
-              teams={teams} members={members} isOrganizer={isOrganizer} myMemberId={myMemberId} myTeamIds={myTeamIds}
-              loadingTeams={loadingTeams} setModal={setModal} setTmForm={setTmForm}
-              openEditTeam={openEditTeam} deleteTeam={deleteTeam} setSection={setSection} can={can}
-              setActiveChatTeamId={setActiveChatTeamId}
-            />
-          )}
+            {section === 'teams' && (
+              <TeamsSection
+                teams={teams} members={members} isOrganizer={isOrganizer} myMemberId={myMemberId} myTeamIds={myTeamIds}
+                loadingTeams={loadingTeams} setModal={setModal} setTmForm={setTmForm}
+                openEditTeam={openEditTeam} deleteTeam={deleteTeam} setSection={setSection} can={can}
+                setActiveChatTeamId={setActiveChatTeamId}
+              />
+            )}
 
-          {section === 'tasks' && (
-            <TasksSection
-              tasks={tasks} isOrganizer={isOrganizer} myHeadedTeamIds={myHeadedTeamIds}
-              loadingTasks={loadingTasks} setModal={setModal} setTkForm={setTkForm}
-              toggleTask={toggleTask} openEditTask={openEditTask} deleteTask={deleteTask}
-              teamName={teamName} assigneeName={assigneeName}
-            />
-          )}
+            {section === 'tasks' && (
+              <TasksSection
+                tasks={tasks} isOrganizer={isOrganizer} myHeadedTeamIds={myHeadedTeamIds}
+                loadingTasks={loadingTasks} setModal={setModal} setTkForm={setTkForm}
+                toggleTask={toggleTask} openEditTask={openEditTask} deleteTask={deleteTask}
+                teamName={teamName} assigneeName={assigneeName}
+              />
+            )}
 
-          {section === 'notifications' && (
-            <NotificationsSection notifs={notifs} teamName={teamName} setModal={setModal} />
-          )}
+            {section === 'notifications' && (
+              <NotificationsSection notifs={notifs} teamName={teamName} setModal={setModal} />
+            )}
 
-          {section === 'speakers' && (
-            <SpeakersSection
-              conf={conf}
-              spTopic={spTopic} setSpTopic={setSpTopic} spLimit={spLimit} setSpLimit={setSpLimit}
-              spSource={spSource} setSpSource={setSpSource} spLoading={spLoading}
-              spResults={spResults} spError={spError} findSpeakers={findSpeakers}
-            />
-          )}
+            {section === 'speakers' && (
+              <SpeakersSection
+                conf={conf}
+                spTopic={spTopic} setSpTopic={setSpTopic} spLimit={spLimit} setSpLimit={setSpLimit}
+                spSource={spSource} setSpSource={setSpSource} spLoading={spLoading}
+                spResults={spResults} spError={spError} findSpeakers={findSpeakers}
+              />
+            )}
 
-          {section === 'invitations' && (
-            <InvitationTrackerSection conference={conf} isDark={isDark} />
-          )}
+            {section === 'invitations' && (
+              <InvitationTrackerSection conference={conf} isDark={isDark} />
+            )}
 
-          {section === 'feedback' && <FeedbackManager conf={conf} />}
-          {section === 'emails' && <EmailComposer conf={conf} senderRole="organizer" onOpenEmailSettings={() => setSection('emailSettings')} />}
-          {section === 'email_automations' && <EmailAutomationsManager conf={conf} />}
-          {section === 'emailSettings' && <EmailSettings conf={conf} />}
-          {section === 'allocation' && <PaperAllocation conf={conf} />}
-          {section === 'submission_rules' && <SubmissionSettingsSection conf={conf} />}
-          
-          {section === 'chat' && (
-            <ChatSection
-              confId={confId} teams={teams} isOrganizer={isOrganizer} myTeamIds={myTeamIds}
-              activeChatTeamId={activeChatTeamId} setActiveChatTeamId={setActiveChatTeamId}
-            />
-          )}
+            {section === 'feedback' && <FeedbackManager conf={conf} />}
+            {section === 'emails' && <EmailComposer conf={conf} senderRole="organizer" onOpenEmailSettings={() => setSection('emailSettings')} />}
+            {section === 'email_automations' && <EmailAutomationsManager conf={conf} />}
+            {section === 'emailSettings' && <EmailSettings conf={conf} />}
+            {section === 'allocation' && <PaperAllocation conf={conf} />}
+            {section === 'submission_rules' && <SubmissionSettingsSection conf={conf} />}
+
+            {section === 'chat' && (
+              <ChatSection
+                confId={confId} teams={teams} isOrganizer={isOrganizer} myTeamIds={myTeamIds}
+                activeChatTeamId={activeChatTeamId} setActiveChatTeamId={setActiveChatTeamId}
+              />
+            )}
           </div>
         </main>
       </div>

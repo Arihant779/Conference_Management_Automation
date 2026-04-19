@@ -49,7 +49,7 @@ const ROLES = [
   { id: 'hospitality_head', name: 'Hospitality Head', emoji: '🏨', color: '#f43f5e', desc: 'Catering, guest relations & VIP arrangements' },
   { id: 'publication_head', name: 'Publications Head', emoji: '📝', color: '#3b82f6', desc: 'Proceedings, journals & editorial coordination' },
   { id: 'finance_head', name: 'Finance Head', emoji: '💰', color: '#eab308', desc: 'Budget tracking, reimbursements & expenses' },
-  { id: 'program_coord', name: 'Program Coordinator', emoji: '🗓️', color: '#ec4899', desc: 'Schedule sessions, speakers & workshops' },
+  { id: 'program_coord', name: 'Reviewing Team', emoji: '🔍', color: '#ec4899', desc: 'Collaborative paper review & quality assessment' },
   { id: 'social_coord', name: 'Social Media Coord.', emoji: '📱', color: '#14b8a6', desc: 'Real-time updates on Twitter, LinkedIn & Instagram' },
   { id: 'volunteer_coord', name: 'Volunteer Coordinator', emoji: '👥', color: '#f97316', desc: 'Onboard, train & manage fellow volunteers' },
   { id: 'design_lead', name: 'Design Lead', emoji: '🎨', color: '#a855f7', desc: 'Branding, banners, posters & visual assets' },

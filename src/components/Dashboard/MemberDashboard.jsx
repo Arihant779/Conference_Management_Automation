@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   BarChart2, FileText, Users, CheckSquare, Bell, Plus, Mail, Search,
   ChevronDown, CheckCircle, MapPin, Layers, Clock, Star, MessageSquare
@@ -396,6 +396,10 @@ const MemberDashboard = ({ conf, onBack }) => {
     setModal('rating');
     setModalData(member);
   };
+
+  const filteredMembers = useMemo(() => {
+    return members.filter(m => mName(m).toLowerCase().includes(mSearch.toLowerCase()) || (m.email || '').toLowerCase().includes(mSearch.toLowerCase()));
+  }, [members, mSearch]);
 
   const renderContent = () => {
     if (section === 'overview') {
