@@ -42,7 +42,7 @@ const TIME_SLOTS = [
 /* ═══════════════════════════════════════════════════════════════════════════
    SLIDE UPLOAD PANEL — per paper
 ═══════════════════════════════════════════════════════════════════════════ */
-const SlideUploadPanel = ({ paper, onSlideUploaded }) => {
+const SlideUploadPanel = ({ paper, onSlideUploaded, isDark }) => {
   const { user } = useApp();
   const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState('');
@@ -69,33 +69,38 @@ const SlideUploadPanel = ({ paper, onSlideUploaded }) => {
 
     try {
       const ext = selectedFile.name.split('.').pop();
-      const newPath = `${paper.conference_id}/${user?.id || 'unknown'}_${paper.paper_id}.${ext}`;
-      const newFullUrl = supabase.storage.from('slides').getPublicUrl(newPath).data.publicUrl;
-
-      // 1. Delete old file ONLY if the path has changed (e.g. extension changed)
-      if (paper.slide_url && paper.slide_url !== newFullUrl) {
+      // Use timestamp to ensure a unique URL every time, preventing browser caching issues
+      const timestamp = Date.now();
+      const newPath = `${paper.conference_id}/${user?.id || 'unknown'}_${paper.paper_id}_${timestamp}.${ext}`;
+      
+      // 1. Delete old file from storage if it exists
+      if (paper.slide_url) {
         try {
+          // Extract the path from the public URL
+          // Format expected: .../storage/v1/object/public/slides/PATH
           const urlParts = paper.slide_url.split('/storage/v1/object/public/slides/');
           if (urlParts.length === 2) {
             const oldPath = decodeURI(urlParts[1]);
             await supabase.storage.from('slides').remove([oldPath]);
           }
         } catch (delErr) {
-          console.error('Failed to delete old slide:', delErr);
+          console.error('[SlideUpload] Cleanup failed:', delErr);
+          // Continue anyway, orphaned files are better than blocked uploads
         }
       }
 
-      // 2. Upload new file (using upsert: true with fixed path)
+      // 2. Upload new file
       const { error: upErr } = await supabase.storage
         .from('slides')
         .upload(newPath, selectedFile, {
-          cacheControl: '0', // disable cache so changes show immediately
+          cacheControl: '0', 
           upsert: true
         });
 
       if (upErr) throw new Error(upErr.message);
 
-      const slideUrl = newFullUrl;
+      // 3. Get the new public URL
+      const { data: { publicUrl: slideUrl } } = supabase.storage.from('slides').getPublicUrl(newPath);
 
       // 3. Update DB
       const { error: dbErr } = await supabase
@@ -132,7 +137,7 @@ const SlideUploadPanel = ({ paper, onSlideUploaded }) => {
         </div>
         <button
           onClick={() => { setLocalUrl(''); inputRef.current?.click(); }}
-          className="text-[10px] font-semibold text-slate-500 hover:text-slate-300 transition-colors shrink-0"
+          className={cls("text-[10px] font-semibold transition-colors shrink-0", isDark ? "text-slate-500 hover:text-slate-300" : "text-zinc-500 hover:text-zinc-900")}
         >
           Replace
         </button>
@@ -146,15 +151,16 @@ const SlideUploadPanel = ({ paper, onSlideUploaded }) => {
       {!selectedFile ? (
         <label
           className={cls(
-            'flex items-center gap-3 border border-dashed border-white/10 rounded-xl px-4 py-3 cursor-pointer hover:border-indigo-500/40 hover:bg-indigo-500/5 transition-all'
+            'flex items-center gap-3 border border-dashed rounded-xl px-4 py-3 cursor-pointer transition-all',
+            isDark ? 'border-white/10 hover:border-indigo-500/40 hover:bg-indigo-500/5' : 'border-zinc-200 hover:border-indigo-500/40 hover:bg-indigo-500/5'
           )}
         >
           <div className="w-8 h-8 bg-indigo-500/10 border border-indigo-500/20 rounded-lg flex items-center justify-center shrink-0">
             <Upload size={14} className="text-indigo-400" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-300">Select presentation slides</p>
-            <p className="text-[10px] text-slate-600 mt-0.5">PDF, PPT, PPTX or Keynote</p>
+            <p className={cls("text-xs font-semibold", isDark ? "text-slate-300" : "text-zinc-700")}>Select presentation slides</p>
+            <p className={cls("text-[10px] mt-0.5", isDark ? "text-slate-600" : "text-zinc-400")}>PDF, PPT, PPTX or Keynote</p>
           </div>
           <input
             ref={inputRef}
@@ -171,12 +177,12 @@ const SlideUploadPanel = ({ paper, onSlideUploaded }) => {
               <FileText size={14} className="text-indigo-400" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-slate-200 truncate">{selectedFile.name}</p>
-              <p className="text-[10px] text-slate-500">{(selectedFile.size / 1024).toFixed(0)} KB · Ready to upload</p>
+              <p className={cls("text-xs font-semibold truncate", isDark ? "text-slate-200" : "text-zinc-800")}>{selectedFile.name}</p>
+              <p className={cls("text-[10px]", isDark ? "text-slate-500" : "text-zinc-400")}>{(selectedFile.size / 1024).toFixed(0)} KB · Ready to upload</p>
             </div>
             <button
               onClick={() => setSelectedFile(null)}
-              className="p-1 rounded-lg hover:bg-white/5 text-slate-500 hover:text-white transition-all"
+              className={cls("p-1 rounded-lg transition-all", isDark ? "hover:bg-white/5 text-slate-500 hover:text-white" : "hover:bg-zinc-100 text-zinc-400 hover:text-zinc-900")}
             >
               <X size={14} />
             </button>
@@ -206,7 +212,7 @@ const SlideUploadPanel = ({ paper, onSlideUploaded }) => {
 ═══════════════════════════════════════════════════════════════════════════ */
 const MIN_SLOTS = 3;
 
-const TimePreferencePanel = ({ paper, onSaved }) => {
+const TimePreferencePanel = ({ paper, onSaved, isDark }) => {
   // Initialise: if already saved use those, else all slots selected
   const initSlots = () => {
     if (Array.isArray(paper.preferred_slots) && paper.preferred_slots.length > 0)
@@ -282,7 +288,7 @@ const TimePreferencePanel = ({ paper, onSaved }) => {
               ))}
             </div>
           </div>
-          <button onClick={() => setSaved(false)} className="text-[10px] text-slate-500 hover:text-slate-300 transition-colors font-semibold shrink-0">
+          <button onClick={() => setSaved(false)} className={cls("text-[10px] transition-colors font-semibold shrink-0", isDark ? "text-slate-500 hover:text-slate-300" : "text-zinc-500 hover:text-zinc-900")}>
             Edit
           </button>
         </div>
@@ -292,10 +298,10 @@ const TimePreferencePanel = ({ paper, onSaved }) => {
       {!saved && (
         <>
           {/* Instruction */}
-          <div className="flex items-start gap-2 bg-[#0d1117] border border-white/6 rounded-xl px-4 py-3">
+          <div className={cls("flex items-start gap-2 border rounded-xl px-4 py-3", isDark ? "bg-[#0d1117] border-white/6" : "bg-zinc-50 border-zinc-200")}>
             <Info size={12} className="text-slate-500 shrink-0 mt-0.5" />
             <p className="text-[11px] text-slate-500 leading-relaxed">
-              All time slots are selected. <span className="text-slate-400">Deselect slots you <strong>cannot</strong> attend.</span> A minimum of <span className="text-purple-400 font-bold">{MIN_SLOTS}</span> slots must remain selected.
+              All time slots are selected. <span className={isDark ? "text-slate-400" : "text-zinc-600"}>Deselect slots you <strong>cannot</strong> attend.</span> A minimum of <span className="text-purple-400 font-bold">{MIN_SLOTS}</span> slots must remain selected.
               <span className="ml-1 text-slate-600">({selected.size} / {TIME_SLOTS.length} selected)</span>
             </p>
           </div>
@@ -313,8 +319,8 @@ const TimePreferencePanel = ({ paper, onSaved }) => {
                   className={cls(
                     'px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all select-none',
                     isOn
-                      ? 'bg-purple-500/15 border-purple-500/40 text-purple-200 hover:bg-purple-500/10'
-                      : 'bg-white/3 border-white/8 text-slate-500 hover:border-white/16 hover:text-slate-400',
+                      ? (isDark ? 'bg-purple-500/15 border-purple-500/40 text-purple-200 hover:bg-purple-500/10' : 'bg-purple-500/10 border-purple-500/30 text-purple-600 hover:bg-purple-500/20')
+                      : (isDark ? 'bg-white/3 border-white/8 text-slate-500 hover:border-white/16 hover:text-slate-400' : 'bg-zinc-100 border-zinc-200 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-700'),
                     wouldHitMin && 'opacity-60 cursor-not-allowed'
                   )}
                 >
@@ -335,7 +341,10 @@ const TimePreferencePanel = ({ paper, onSaved }) => {
               onChange={e => setNote(e.target.value)}
               rows={2}
               placeholder="e.g. I am unavailable on the first day morning…"
-              className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500 text-white placeholder-slate-600 resize-none transition-colors"
+              className={cls(
+                "w-full border rounded-xl px-3 py-2 text-sm outline-none transition-colors resize-none",
+                isDark ? "bg-white/5 border-white/8 text-white placeholder-slate-600 focus:border-purple-500" : "bg-white border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:border-purple-500 shadow-sm"
+              )}
             />
           </div>
 
@@ -360,16 +369,75 @@ const TimePreferencePanel = ({ paper, onSaved }) => {
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   PAPER CHECKLIST — individual status tracker
+═══════════════════════════════════════════════════════════════════════════ */
+const PaperChecklist = ({ paper, isDark }) => {
+  const isAccepted = paper.status === 'accepted';
+  const hasSlides = !!paper.slide_url;
+  const hasTimePref = Array.isArray(paper.preferred_slots) && paper.preferred_slots.length >= 3;
+
+  const items = [
+    { 
+      done: true, 
+      label: 'Submit your research paper', 
+      sub: 'Paper received by the conference' 
+    },
+    { 
+      done: isAccepted, 
+      label: 'Receive acceptance from reviewers', 
+      sub: isAccepted ? 'Paper has been accepted' : 'Awaiting review decision' 
+    },
+    { 
+      done: hasSlides, 
+      label: 'Upload presentation slides', 
+      sub: 'Upload PDF, PPTX or Keynote file' 
+    },
+    { 
+      done: hasTimePref, 
+      label: 'Submit your time preference', 
+      sub: 'Help the organiser build the schedule',
+      hidden: !isAccepted && !hasTimePref
+    }
+  ];
+
+  return (
+    <div className={cls(
+      'border rounded-2xl p-5 transition-all duration-300',
+      isDark ? 'bg-[#0d1117] border-white/6' : 'bg-white border-zinc-200 shadow-sm'
+    )}>
+      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Paper Checklist</h4>
+      <div className="space-y-2.5">
+        {items.filter(i => !i.hidden).map(({ done, label, sub }) => (
+          <div key={label} className="flex items-start gap-3">
+            <div className={cls(
+              'w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5',
+              done ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'border-white/10 text-slate-600'
+            )}>
+              {done && <CheckCircle size={12} />}
+            </div>
+            <div>
+              <p className={cls('text-sm font-semibold transition-colors', done ? (isDark ? 'text-slate-200' : 'text-zinc-800') : 'text-slate-500')}>{label}</p>
+              <p className="text-[11px] text-slate-600">{sub}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
    PAPER CARD
 ═══════════════════════════════════════════════════════════════════════════ */
-const PaperCard = ({ paper, onSlideUploaded, onTimeSaved }) => {
+const PaperCard = ({ paper, onSlideUploaded, onTimeSaved, isDark }) => {
   const [expanded, setExpanded] = useState(paper.status === 'accepted');
   const isAccepted = paper.status === 'accepted';
 
   return (
     <div className={cls(
-      'bg-[#0d1117] border rounded-2xl overflow-hidden transition-all',
-      isAccepted ? 'border-emerald-500/20' : 'border-white/6'
+      'border rounded-2xl overflow-hidden transition-all',
+      isDark ? 'bg-[#0d1117]' : 'bg-white shadow-sm',
+      isAccepted ? (isDark ? 'border-emerald-500/20' : 'border-emerald-500/30') : (isDark ? 'border-white/6' : 'border-zinc-200')
     )}>
       {/* ── Card header ── */}
       <div className="p-5 flex items-start justify-between gap-4">
@@ -383,7 +451,7 @@ const PaperCard = ({ paper, onSlideUploaded, onTimeSaved }) => {
             <FileText size={18} />
           </div>
           <div>
-            <h3 className="font-bold text-white text-base leading-snug">{paper.paper_title}</h3>
+            <h3 className={cls("font-bold text-base leading-snug", isDark ? "text-white" : "text-zinc-900")}>{paper.paper_title}</h3>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
               {paper.research_area && (
                 <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
@@ -416,7 +484,10 @@ const PaperCard = ({ paper, onSlideUploaded, onTimeSaved }) => {
           )}
           <button
             onClick={() => setExpanded(v => !v)}
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/8 text-slate-500 hover:text-white hover:border-white/20 transition-all"
+            className={cls(
+              "w-8 h-8 flex items-center justify-center rounded-lg border transition-all",
+              isDark ? "border-white/8 text-slate-500 hover:text-white hover:border-white/20" : "border-zinc-200 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-50"
+            )}
           >
             <ChevronRight size={14} className={cls('transition-transform', expanded && 'rotate-90')} />
           </button>
@@ -425,22 +496,27 @@ const PaperCard = ({ paper, onSlideUploaded, onTimeSaved }) => {
 
       {/* ── Abstract strip ── */}
       {paper.abstract && (
-        <p className="px-5 pb-4 text-sm text-slate-500 leading-relaxed line-clamp-2 border-t border-white/4 pt-3">
+        <p className={cls("px-5 pb-4 text-sm leading-relaxed line-clamp-2 border-t pt-3", isDark ? "text-slate-500 border-white/4" : "text-zinc-500 border-zinc-100")}>
           {paper.abstract}
         </p>
       )}
 
       {/* ── Expanded actions ── */}
       {expanded && (
-        <div className="border-t border-white/6 bg-[#080b11]/60 px-5 py-5 space-y-5">
+        <div className={cls("border-t px-5 py-5 space-y-6", isDark ? "border-white/6 bg-[#080b11]/60" : "border-zinc-100 bg-zinc-50/50")}>
+          
+          {/* Checklist at the top of expanded view */}
+          <PaperChecklist paper={paper} isDark={isDark} />
+
+          <div className={cls("h-px", isDark ? "bg-white/5" : "bg-zinc-200/50")} />
 
           {/* Upload slides */}
           <div>
             <div className="flex items-center gap-2 mb-2.5">
               <Presentation size={14} className="text-blue-400" />
-              <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">Presentation Slides</span>
+              <span className={cls("text-xs font-bold uppercase tracking-wider", isDark ? "text-slate-300" : "text-zinc-600")}>Presentation Slides</span>
             </div>
-            <SlideUploadPanel paper={paper} onSlideUploaded={onSlideUploaded} />
+            <SlideUploadPanel paper={paper} onSlideUploaded={onSlideUploaded} isDark={isDark} />
           </div>
 
           {/* Time preference — only for accepted papers */}
@@ -448,7 +524,7 @@ const PaperCard = ({ paper, onSlideUploaded, onTimeSaved }) => {
             <div>
               <div className="flex items-center gap-2 mb-2.5">
                 <Clock size={14} className="text-purple-400" />
-                <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">Presentation Time Preference</span>
+                <span className={cls("text-xs font-bold uppercase tracking-wider", isDark ? "text-slate-300" : "text-zinc-600")}>Presentation Time Preference</span>
               </div>
               <div className="bg-purple-500/5 border border-purple-500/15 rounded-xl px-4 py-3 mb-3">
                 <div className="flex items-start gap-2">
@@ -459,7 +535,7 @@ const PaperCard = ({ paper, onSlideUploaded, onTimeSaved }) => {
                   </p>
                 </div>
               </div>
-              <TimePreferencePanel paper={paper} onSaved={onTimeSaved} />
+              <TimePreferencePanel paper={paper} onSaved={onTimeSaved} isDark={isDark} />
             </div>
           )}
 
@@ -694,40 +770,13 @@ const PresenterDashboard = ({ conf, onBack }) => {
                         paper={paper}
                         onSlideUploaded={handleSlideUploaded}
                         onTimeSaved={handleTimeSaved}
+                        isDark={isDark}
                       />
                     ))}
                   </div>
                 )}
 
-                {/* ── Guide section ── */}
-                {!loading && papers.length > 0 && (
-                  <div className={`border rounded-2xl p-5 transition-all duration-300 ${
-                    isDark ? 'bg-[#0d1117] border-white/6' : 'bg-white border-zinc-200 shadow-sm'
-                  }`}>
-                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Presenter Checklist</h4>
-                    <div className="space-y-2.5">
-                      {[
-                        { done: papers.length > 0,                label: 'Submit your research paper',           sub: 'Paper received by the conference' },
-                        { done: accepted > 0,                      label: 'Receive acceptance from reviewers',    sub: 'At least one paper accepted' },
-                        { done: withSlides > 0,                    label: 'Upload presentation slides',           sub: 'Upload PDF, PPTX or Keynote file' },
-                        { done: papers.some(p => Array.isArray(p.preferred_slots) && p.preferred_slots.length >= 3), label: 'Submit your time preference', sub: 'Help the organiser build the schedule' },
-                      ].map(({ done, label, sub }) => (
-                        <div key={label} className="flex items-start gap-3">
-                          <div className={cls(
-                            'w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5',
-                            done ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'border-white/10 text-slate-600'
-                          )}>
-                            {done && <CheckCircle size={12} />}
-                          </div>
-                          <div>
-                            <p className={cls('text-sm font-semibold', done ? 'text-slate-200' : 'text-slate-500')}>{label}</p>
-                            <p className="text-[11px] text-slate-600">{sub}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                {/* ── Guide section — removed (now per-paper) ── */}
               </>
             )}
 
