@@ -135,8 +135,6 @@ const SlideUploadPanel = ({ paper, onSlideUploaded, isDark }) => {
     }
   };
 
-  const { theme } = useApp();
-  const isDark = theme === 'dark';
 
   if (localUrl) {
     return (
@@ -547,7 +545,9 @@ const PaperCard = ({ paper, onSlideUploaded, onTimeSaved, isDark }) => {
         <div className={cls("border-t px-5 py-5 space-y-6", isDark ? "border-white/6 bg-[#080b11]/60" : "border-zinc-100 bg-zinc-50/50")}>
 
           {/* Checklist at the top of expanded view */}
-          <PaperChecklist paper={paper} isDark={isDark} />
+          <PaperChecklist paper={paper
+
+          } isDark={isDark} />
 
           <div className={cls("h-px", isDark ? "bg-white/5" : "bg-zinc-200/50")} />
 
