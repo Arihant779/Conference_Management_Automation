@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   BarChart2, FileText, Users, CheckSquare, Bell, Send,
   Layers, Clock, Sparkles, Star, Check, Settings2, MessageSquare, Zap
@@ -42,7 +43,7 @@ import DeleteConferenceModal from './Organizer/components/Modals/DeleteConferenc
    MAIN ORGANIZER DASHBOARD — State Orchestrator
 ═══════════════════════════════════════════════════════════════════════════ */
 const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
-  const { user, permissions, userRoles, theme } = useApp();
+  const { user, permissions, userRoles, fetchConferences, theme } = useApp();
   const isDark = theme === 'dark';
   const confId = conf.conference_id || conf.id;
 
@@ -97,6 +98,13 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   const [modal, setModal]             = useState(null);
   const [modalData, setModalData]     = useState(null);
   const [saving, setSaving]           = useState(false);
+  const [localPublished, setLocalPublished] = useState(conf.is_published);
+
+  // Sync local state if prop changes from outside
+  useEffect(() => {
+    setLocalPublished(conf.is_published);
+  }, [conf.is_published]);
+
   const [memberSearch, setMemberSearch] = useState('');
   const [paperFilter, setPaperFilter] = useState('all');
   const [allUsers, setAllUsers] = useState([]);
@@ -531,6 +539,24 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
     onBack();
   };
 
+  const handlePublish = async () => {
+    setSaving(true);
+    const { error } = await supabase
+      .from('conference')
+      .update({ is_published: true })
+      .eq('conference_id', confId);
+    
+    if (error) {
+      console.error('[handlePublish] Error:', error);
+      alert(`Publishing failed: ${error.message}`);
+    } else {
+      console.log('[handlePublish] Success! Setting localPublished to true');
+      setLocalPublished(true);
+      await fetchConferences(); // Refresh app state
+    }
+    setSaving(false);
+  };
+
   /* ── ui helpers ── */
   const teamName     = (id) => teams.find(t => t.id === id)?.name || '—';
   const assigneeName = (id) => { const m = members.find(m => m.id === id || m.user_id === id); return m ? mName(m) : '—'; };
@@ -581,13 +607,43 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
       <CinematicBackground />
 
-      <div className="w-full flex relative z-10">
+      <div className="w-full h-screen overflow-hidden flex relative z-10">
 
         {/* ── SIDEBAR ── */}
         <Sidebar nav={nav} section={section} setSection={setSection} isOrganizer={isOrganizer} roleLabel={roleLabel} />
 
         {/* ── MAIN CONTENT ── */}
-        <main className="flex-1 p-8 relative min-h-screen">
+        <main className={`flex-1 p-8 relative custom-scrollbar flex flex-col ${section === 'chat' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+          <div className={`flex-1 min-h-0 flex flex-col w-full ${section !== 'chat' ? 'max-w-[1400px] mx-auto' : ''}`}>
+
+          {/* ── PUBLISH STATUS BANNER ── */}
+          {console.log('[Banner Render] isGlobalHead:', isGlobalHead, 'localPublished:', localPublished, 'conf.is_published:', conf.is_published)}
+          {isGlobalHead && !localPublished && (
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`mb-10 p-8 rounded-[3rem] border bg-amber-500/5 border-amber-500/20 shadow-[0_0_50px_rgba(245,158,11,0.05)]`}
+            >
+              <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+                <div className="flex items-center gap-6">
+                  <div className="w-16 h-16 rounded-3xl bg-amber-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                    <Zap size={28} className="text-black" />
+                  </div>
+                  <div>
+                    <h2 className={`text-2xl font-black tracking-tight mb-1 text-white`}>Conference is Hidden</h2>
+                    <p className={`text-sm font-medium text-zinc-400`}>Your event is currently in draft mode. Only users with direct links can view it.</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={handlePublish}
+                  disabled={saving}
+                  className="px-8 py-3 bg-amber-500 hover:bg-amber-400 text-black text-xs font-black uppercase rounded-xl transition-all shadow-lg shadow-amber-500/25 active:scale-95 disabled:opacity-50"
+                >
+                  {saving ? 'Publishing...' : 'Publish Now'}
+                </button>
+              </div>
+            </motion.div>
+          )}
 
           {/* ── TOP LEVEL INVITATIONS ── */}
           {pendingTeams.length > 0 && (
@@ -620,7 +676,6 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
               </div>
             </div>
           )}
-
           {section === 'overview' && (
             <OverviewSection
               members={members} teams={teams} tasks={tasks} confPapers={confPapers}
@@ -710,7 +765,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
               activeChatTeamId={activeChatTeamId} setActiveChatTeamId={setActiveChatTeamId}
             />
           )}
-
+          </div>
         </main>
       </div>
 

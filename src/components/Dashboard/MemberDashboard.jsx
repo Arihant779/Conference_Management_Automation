@@ -85,9 +85,9 @@ const MemberDashboard = ({ conf, onBack }) => {
   const [attendees, setAttendees] = useState([]);
   const [loadingAttendees, setLA] = useState(false);
 
-  const [spTopic, setSpTopic]     = useState('');
-  const [spLimit, setSpLimit]     = useState(10);
-  const [spSource, setSpSource]   = useState(5);
+  const [spTopic, setSpTopic] = useState('');
+  const [spLimit, setSpLimit] = useState(10);
+  const [spSource, setSpSource] = useState(5);
   const [spLoading, setSpLoading] = useState(false);
   const [spResults, setSpResults] = useState([]);
   const [spError, setSpError] = useState('');
@@ -109,15 +109,16 @@ const MemberDashboard = ({ conf, onBack }) => {
     setSpLoading(false);
   };
 
-  const [modal, setModal]             = useState(null);
-  const [modalData, setModalData]     = useState(null);
-  const [tmForm, setTmForm]           = useState({ name: '', type: '', description: '', color: '#f5c518', head_id: '' });
-  const [tkForm, setTkForm]           = useState({ title: '', description: '', team_id: '', assignee_id: '', priority: 'medium', due_date: '' });
-  const [saving, setSaving]           = useState(false);
-  const [allUsers, setAllUsers]       = useState([]);
+  const [modal, setModal] = useState(null);
+  const [modalData, setModalData] = useState(null);
+  const [tmForm, setTmForm] = useState({ name: '', type: '', description: '', color: '#f5c518', head_id: '' });
+  const [tkForm, setTkForm] = useState({ title: '', description: '', team_id: '', assignee_id: '', priority: 'medium', due_date: '' });
+  const [saving, setSaving] = useState(false);
+  const [allUsers, setAllUsers] = useState([]);
 
   const [confPapers, setConfPapers] = useState([]);
   const [loadingPapers, setLP] = useState(false);
+  const [paperFilter, setPaperFilter] = useState('all');
 
   /* ── fetch ─────────────────────────────────────────────── */
   const fetchAllUsers = useCallback(async () => {
@@ -200,13 +201,21 @@ const MemberDashboard = ({ conf, onBack }) => {
     setLP(false);
   }, [confId]);
 
+  const updatePaperStatus = async (paperId, newStatus) => {
+    setSaving(true);
+    const { error } = await supabase.from('paper').upsert({ paper_id: paperId, status: newStatus, conference_id: confId }, { onConflict: 'paper_id' });
+    setSaving(false);
+    if (error) { alert(`Failed to update status: ${error.message}`); return; }
+    setConfPapers(prev => prev.map(p => p.paper_id === paperId ? { ...p, status: newStatus } : p));
+  };
+
   /* ── permissions & logic ── */
   const myMember = members.find(m => m.user_id === user?.id);
   const myMemberId = myMember?.id;
 
   const myHeadedTeamIds = teams.filter(t => t.head_id === user?.id).map(t => t.id);
-  const isTeamHead      = myHeadedTeamIds.length > 0;
-  
+  const isTeamHead = myHeadedTeamIds.length > 0;
+
   const myTeams = teams.filter(t => t.memberList.some(m => (m.conference_user_id === myMemberId || m.user_id === user?.id) && m.status === 'accepted'));
   const pendingTeams = teams.filter(t => t.memberList.some(m => (m.conference_user_id === myMemberId || m.user_id === user?.id) && m.status === 'pending'));
   const myTeamIds = myTeams.map(t => t.id);
@@ -215,7 +224,7 @@ const MemberDashboard = ({ conf, onBack }) => {
   const can = (feature) => {
     // 1. Explicit Role Check
     if (userRoles.includes('organizer')) return true;
-    
+
     // 2. Head Specific Permissions
     if (feature === 'manage_tasks') return isTeamHead || userRoles.some(r => r.endsWith('_head'));
     if (feature === 'manage_teams') return isTeamHead || userRoles.some(r => r.includes('logistics') || r.includes('registration') || r.includes('organizer'));
@@ -227,12 +236,13 @@ const MemberDashboard = ({ conf, onBack }) => {
     const hasProgram = userRoles.some(r => r.includes('programming') || r.includes('technical') || r.includes('program')) || myTeamNames.some(n => n.includes('reviewing') || n.includes('technical') || n.includes('program'));
 
     if (feature === 'view_papers') return hasProgram;
+    if (feature === 'manage_papers') return hasProgram && (isTeamHead || userRoles.some(r => r.endsWith('_head')));
     if (feature === 'view_attendees') return hasLogistics;
     if (feature === 'view_members') return hasLogistics;
     if (feature === 'view_emails') return hasOutreach;
     if (feature === 'send_emails') return hasOutreach;
     if (feature === 'find_speakers') return hasOutreach;
-    
+
     return permissions.includes(feature);
   };
 
@@ -371,8 +381,8 @@ const MemberDashboard = ({ conf, onBack }) => {
     }
   };
 
-  const filteredAttendees = attendees.filter(a => 
-    mName(a).toLowerCase().includes(memberSearch.toLowerCase()) || 
+  const filteredAttendees = attendees.filter(a =>
+    mName(a).toLowerCase().includes(memberSearch.toLowerCase()) ||
     (a.email || '').toLowerCase().includes(memberSearch.toLowerCase())
   );
 
@@ -391,9 +401,9 @@ const MemberDashboard = ({ conf, onBack }) => {
     if (section === 'overview') {
       return (
         <OverviewSection
-          members={members} 
-          teams={myTeams} 
-          tasks={tasks.filter(t => myTeamIds.includes(t.team_id) || t.assignee_id === myMemberId)} 
+          members={members}
+          teams={myTeams}
+          tasks={tasks.filter(t => myTeamIds.includes(t.team_id) || t.assignee_id === myMemberId)}
           confPapers={can('view_papers') ? confPapers : []}
           pendingCount={can('view_papers') ? confPapers.filter(p => p.status === 'pending').length : 0}
           accepted={can('view_papers') ? confPapers.filter(p => p.status === 'accepted').length : 0}
@@ -407,11 +417,30 @@ const MemberDashboard = ({ conf, onBack }) => {
         />
       );
     }
-    if (section === 'papers') return <PapersSection confId={confId} confPapers={confPapers} loading={loadingPapers} isOrganizer={false} />;
+    if (section === 'papers') {
+      const pendingCount = confPapers.filter(p => p.status === 'pending').length;
+      const accepted = confPapers.filter(p => p.status === 'accepted').length;
+      const rejected = confPapers.filter(p => p.status === 'rejected').length;
+
+      return (
+        <PapersSection
+          confPapers={confPapers}
+          paperFilter={paperFilter}
+          setPaperFilter={setPaperFilter}
+          pendingCount={pendingCount}
+          accepted={accepted}
+          rejected={rejected}
+          loadingPapers={loadingPapers}
+          can={can}
+          updatePaperStatus={updatePaperStatus}
+          isOrganizer={false}
+        />
+      );
+    }
     if (section === 'attendees') return (
-      <AttendeesSection 
-        confId={confId} 
-        attendees={attendees} 
+      <AttendeesSection
+        confId={confId}
+        attendees={attendees}
         filteredAttendees={filteredAttendees}
         memberSearch={memberSearch}
         setMemberSearch={setMemberSearch}
@@ -421,14 +450,14 @@ const MemberDashboard = ({ conf, onBack }) => {
         handleBulkRoomUpdate={handleBulkRoomUpdate}
         handleSingleRoomUpdate={handleSingleRoomUpdate}
         roleLabel={roleLabel}
-        loadingMembers={loadingAttendees} 
+        loadingMembers={loadingAttendees}
         isOrganizer={false}
         setModal={setModal}
         setModalData={setModalData}
       />
     );
     if (section === 'speakers') return (
-      <SpeakersSection 
+      <SpeakersSection
         spTopic={spTopic} setSpTopic={setSpTopic}
         spLimit={spLimit} setSpLimit={setSpLimit}
         spSource={spSource} setSpSource={setSpSource}
@@ -438,7 +467,7 @@ const MemberDashboard = ({ conf, onBack }) => {
     );
     if (section === 'emails') return <EmailComposer conf={conf} isOrganizer={false} onOpenEmailSettings={null} />;
     if (section === 'members') return (
-      <MembersSection 
+      <MembersSection
         filteredMembers={members.filter(m => mName(m).toLowerCase().includes(mSearch.toLowerCase()) || (m.email || '').toLowerCase().includes(mSearch.toLowerCase()))}
         memberSearch={mSearch}
         setMemberSearch={setMSearch}
@@ -453,7 +482,7 @@ const MemberDashboard = ({ conf, onBack }) => {
         setRatingMember={setRatingMember}
         myRatings={myRatings || {}}
         globalRatings={globalRatings || {}}
-        updateRole={() => {}} // Members can't update roles
+        updateRole={() => { }} // Members can't update roles
       />
     );
     if (section === 'notifications') return <MemberNotifications conf={conf} />;
@@ -500,11 +529,10 @@ const MemberDashboard = ({ conf, onBack }) => {
                       </div>
                       <div className="flex items-center gap-3">
                         {team.head_id === user?.id && (
-                          <button 
+                          <button
                             onClick={(e) => { e.stopPropagation(); openEditTeam(team); }}
-                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all shadow-sm ${
-                              isDark ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20 hover:bg-amber-500/20' : 'bg-amber-50 text-amber-600 border border-amber-100 hover:bg-amber-100'
-                            }`}
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all shadow-sm ${isDark ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20 hover:bg-amber-500/20' : 'bg-amber-50 text-amber-600 border border-amber-100 hover:bg-amber-100'
+                              }`}
                           >
                             Manage
                           </button>
@@ -564,11 +592,10 @@ const MemberDashboard = ({ conf, onBack }) => {
               <p className="text-slate-500 text-sm mt-0.5">Tasks assigned to you across all teams</p>
             </div>
             {isTeamHead && (
-              <button 
+              <button
                 onClick={() => { setTkForm({ title: '', description: '', team_id: myHeadedTeamIds[0] || '', assignee_id: '', priority: 'medium', due_date: '' }); setModal('addTask'); }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-lg ${
-                  isDark ? 'bg-amber-500 text-black hover:bg-amber-400' : 'bg-zinc-900 text-white hover:bg-zinc-800'
-                }`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-lg ${isDark ? 'bg-amber-500 text-black hover:bg-amber-400' : 'bg-zinc-900 text-white hover:bg-zinc-800'
+                  }`}
               >
                 <Plus size={14} /> Add Task
               </button>
@@ -606,15 +633,15 @@ const MemberDashboard = ({ conf, onBack }) => {
       <div className="w-full h-screen flex relative z-10 overflow-hidden">
         <Sidebar nav={nav} section={section} setSection={setSection} isOrganizer={false} roleLabel={myMember?.role || 'Member'} onBack={onBack} />
 
-                <main className={cls('flex-1 p-8 custom-scrollbar', section === 'chat' ? 'overflow-hidden' : 'overflow-y-auto')}>
-          <div className={cls('mx-auto', section === 'chat' ? 'w-full h-full' : 'max-w-6xl')}>
-            
+        <main className={cls('flex-1 p-8 custom-scrollbar flex flex-col', section === 'chat' ? 'overflow-hidden' : 'overflow-y-auto')}>
+          <div className={cls('flex-1 min-h-0 flex flex-col w-full', section !== 'chat' ? 'max-w-6xl mx-auto' : '')}>
+
             {/* ── TOP LEVEL INVITATIONS ── */}
             {pendingTeams.length > 0 && (
               <div className={`mb-10 p-6 rounded-[2.5rem] border animate-in slide-in-from-top-4 duration-700 bg-amber-500/5 border-amber-500/10 shadow-[0_0_40px_rgba(245,158,11,0.03)]`}>
                 <div className="flex items-center gap-4 mb-6">
                   <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center border border-amber-500/20 shadow-inner">
-                     <label className="text-2xl">⚡</label>
+                    <label className="text-2xl">⚡</label>
                   </div>
                   <div>
                     <h3 className={`text-xl font-black tracking-tight text-amber-500`}>Collaboration Pending</h3>
@@ -648,7 +675,7 @@ const MemberDashboard = ({ conf, onBack }) => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                className={cls('h-full', section !== 'chat' && 'pb-20')}
+                className={cls('flex-1 min-h-0 flex flex-col', section !== 'chat' && 'pb-20')}
               >
                 {renderContent()}
               </motion.div>

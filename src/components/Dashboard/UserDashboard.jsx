@@ -1028,7 +1028,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
 
   // ── Derived ─────────────────────────────────────────────────────────
   const myConfs = conferences.filter((c) => roleMap[c.conference_id]);
-  const otherConfs = conferences.filter((c) => !roleMap[c.conference_id]);
+  const otherConfs = conferences.filter((c) => !roleMap[c.conference_id] && c.is_published);
 
   const filterConfs = (list) => list.filter((c) => !search || c.title?.toLowerCase().includes(search.toLowerCase()) || c.location?.toLowerCase().includes(search.toLowerCase()) || c.theme?.toLowerCase().includes(search.toLowerCase()));
   const visibleConfs = filterConfs(activeTab === 'my' ? myConfs : otherConfs);
