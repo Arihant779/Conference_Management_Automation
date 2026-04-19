@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, ArrowRight, CheckCircle, Clock, MapPin, AlignLeft, Calendar } from 'lucide-react';
+import { Sparkles, ArrowRight, CheckCircle, Clock, MapPin, AlignLeft, Calendar, Terminal, Briefcase, Palette } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
@@ -9,6 +9,45 @@ const CreateConference = ({ onCancel, onSuccess }) => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [hoveredTemplate, setHoveredTemplate] = useState(null);
+
+  const templateData = {
+    modern: {
+      title: "Vanguard",
+      tag: "Best for Modern Tech Events",
+      desc: "Clean, minimalist aesthetic with fluid motion and high-end typography.",
+      features: ["Glassmorphism", "Soft Gradients", "Adaptive Layout"],
+      accent: "from-amber-400 to-amber-600"
+    },
+    classic: {
+      title: "Nexus",
+      tag: "Best for Academic & Research",
+      desc: "A timeless, reliable structure that prioritizes content and readability.",
+      features: ["Print-Focus", "Elegant Serif", "Structured Sched."],
+      accent: "from-slate-400 to-slate-200"
+    },
+    tech: {
+      title: "Terminal",
+      tag: "Best for Hackathons & IT",
+      desc: "Ultra-dark HUD style with terminal vibes and aggressive neon accents.",
+      features: ["Cyber Gradient", "Animated Grid", "Code Aesthetics"],
+      accent: "from-[#00ff88] to-emerald-600"
+    },
+    business: {
+      title: "Elite",
+      tag: "Best for Corporate Summits",
+      desc: "Premium, formal design with deep navy tones and structured sections.",
+      features: ["Navy Professional", "Card Accents", "Formal Type"],
+      accent: "from-slate-800 to-slate-900"
+    },
+    creative: {
+      title: "Prism",
+      tag: "Best for Arts & Festivals",
+      desc: "Vibrant, fluid layouts with animated aurora backgrounds and bold colors.",
+      features: ["Aurora FX", "Mesh Gradients", "Fluid Shapes"],
+      accent: "from-[#8b5cf6] via-[#ec4899] to-[#06b6d4]"
+    }
+  };
 
   const [data, setData] = useState({
     title: '',
@@ -294,12 +333,49 @@ const CreateConference = ({ onCancel, onSuccess }) => {
                       <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">
                         Select Template
                       </label>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                        {['modern', 'classic', 'minimal'].map((t) => (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 relative">
+                        {/* Preview Overlay */}
+                        <AnimatePresence>
+                          {hoveredTemplate && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.95 }}
+                              className="absolute -top-48 left-0 right-0 z-50 pointer-events-none md:block hidden"
+                            >
+                              <div className="mx-auto max-w-sm bg-[#0a0f1a] border border-white/10 rounded-3xl p-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-3xl">
+                                <div className={`h-1.5 w-12 rounded-full bg-gradient-to-r ${templateData[hoveredTemplate].accent} mb-4`} />
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500">
+                                    {templateData[hoveredTemplate].title} Template
+                                  </span>
+                                  <span className="text-[8px] font-bold text-white/30 uppercase">Preview</span>
+                                </div>
+                                <h4 className="text-lg font-black text-white mb-2 leading-tight uppercase tabular-nums tracking-tighter">
+                                  {templateData[hoveredTemplate].tag}
+                                </h4>
+                                <p className="text-[10px] leading-relaxed text-white/50 mb-4 font-medium italic">
+                                  "{templateData[hoveredTemplate].desc}"
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                  {templateData[hoveredTemplate].features.map(f => (
+                                    <span key={f} className="text-[7px] font-black uppercase border border-white/5 bg-white/5 px-2 py-1 rounded-md text-white/40">
+                                      {f}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        {['modern', 'classic', 'tech', 'business', 'creative'].map((t) => (
                           <motion.div
                             key={t}
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
+                            onMouseEnter={() => setHoveredTemplate(t)}
+                            onMouseLeave={() => setHoveredTemplate(null)}
                             onClick={() => setData((prev) => ({ ...prev, template: t }))}
                             className={`cursor-pointer group flex flex-col p-4 border rounded-2xl transition-all duration-300 relative
                               ${data.template === t 
@@ -307,12 +383,19 @@ const CreateConference = ({ onCancel, onSuccess }) => {
                                 : 'bg-white/[0.04] border-white/5 hover:border-white/10 hover:bg-white/[0.06]'
                               }`}
                           >
-                            <div className={`h-24 rounded-xl mb-4 transition-all duration-500 
+                            <div className={`h-24 rounded-xl mb-4 transition-all duration-500 flex items-center justify-center
                               ${t === 'modern' ? 'bg-gradient-to-br from-amber-500 to-amber-700' 
                                 : t === 'classic' ? 'bg-[#e2e2e2]' 
+                                : t === 'tech' ? 'bg-[#080c10] border border-[#00ff8840]'
+                                : t === 'business' ? 'bg-[#01050e] border border-white/10'
+                                : t === 'creative' ? 'bg-gradient-to-tr from-[#8b5cf6] via-[#ec4899] to-[#06b6d4] opacity-80'
                                 : 'bg-black/40 border border-white/5'
-                            }`} />
-                            <span className={`font-black uppercase tracking-widest text-[10px] ${data.template === t ? 'text-amber-500' : 'text-white/40 group-hover:text-white/60'}`}>
+                            }`} >
+                              {t === 'tech' && <Terminal size={24} className="text-[#00ff88]" />}
+                              {t === 'business' && <Briefcase size={24} className="text-white" />}
+                              {t === 'creative' && <Palette size={24} className="text-white" />}
+                            </div>
+                            <span className={`font-black uppercase tracking-widest text-[9px] ${data.template === t ? 'text-amber-500' : 'text-white/40 group-hover:text-white/60'}`}>
                               {t}
                             </span>
                             <div className={`absolute top-2 right-2 w-4 h-4 rounded-full border flex items-center justify-center transition-all duration-300

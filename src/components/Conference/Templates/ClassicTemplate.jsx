@@ -1,29 +1,32 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   MapPin, Calendar, Users, Mail, Phone, Globe,
-  Twitter, Linkedin, Edit3, Check, X, Plus, Trash2, Save, AlertCircle, Clock
+  Twitter, Linkedin, Edit3, Check, X, Plus, Trash2, Save, AlertCircle, Clock,
+  ArrowRight, BookOpen, Quote, Award, Map, ChevronRight, Zap
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import ScheduleEditor from '../ScheduleEditor';
 
 /* ─────────────────────────────────────────────
    PALETTE & TOKENS
    ───────────────────────────────────────────── */
 const C = {
-  bg: '#fdfaf4',
-  paper: '#fdfbf7',
-  ink: '#1a1410',
-  inkLight: '#4a3f35',
-  inkMuted: '#8c7e72',
-  rule: '#d8cfc0',
-  accent: '#1a1410',
-  accentWarm: '#8b3a1a',
-  gold: '#b8922a',
+  bg: '#FDFCFB',
+  paper: '#FFFFFF',
+  ink: '#1A1714',
+  inkLight: '#4B4237',
+  inkMuted: '#948B7F',
+  rule: '#E2DFDA',
+  accent: '#C5A059',
+  accentWarm: '#894B34',
+  gold: '#C5A059',
+  surface: 'rgba(26, 23, 20, 0.03)',
 };
 
 /* ─────────────────────────────────────────────
    INLINE EDITABLE FIELD
    ───────────────────────────────────────────── */
-const EditableText = ({ value, onChange, multiline = false, className = '', placeholder = 'Click to edit…', isEditing }) => {
+const EditableField = ({ value, onChange, multiline = false, className = '', placeholder = 'Click to edit…', isEditing }) => {
   const [local, setLocal] = useState(value ?? '');
   const ref = useRef(null);
   useEffect(() => setLocal(value ?? ''), [value]);
@@ -149,7 +152,38 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEd
       { name: 'Prof. James Okafor', role: 'Organizing Chair' },
       { name: 'Dr. Yuki Tanaka', role: 'Publications Chair' },
     ],
+    template_metadata: initialConf.template_metadata || {
+      headings: {
+        about_head: "ABOUT THE CONFERENCE",
+        about_title: "Conference Overview",
+        schedule_head: "EVENT PROGRAM",
+        schedule_title: "Conference Programme",
+        speakers_head: "EXPERT PANEL",
+        speakers_title: "Distinguished Speakers",
+        dates_head: "IMPORTANT TIMELINE",
+        dates_title: "Key Dates",
+        venue_head: "LOCATION HUB",
+        venue_title: "Venue Information",
+        sponsors_head: "NETWORKING PARTNERS",
+        sponsors_title: "Official Sponsors",
+        contact_head: "SUPPORT HUB",
+        contact_title: "Get In Touch"
+      }
+    }
   });
+
+  const updateHeading = (key, val) => {
+    setPageData(p => ({
+      ...p,
+      template_metadata: {
+        ...p.template_metadata,
+        headings: {
+          ...p.template_metadata.headings,
+          [key]: val
+        }
+      }
+    }));
+  };
 
   const update = (key, value) => setPageData(p => ({ ...p, [key]: value }));
   const updateNested = (key, index, field, value) => {
@@ -200,7 +234,28 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEd
   const sansS = { fontFamily: "'Helvetica Neue', Arial, sans-serif" };
 
   return (
-    <div style={{ background: C.bg, minHeight: '100vh', color: C.ink, ...s }}>
+    <div style={{ background: C.bg, minHeight: '100vh', color: C.ink, transition: 'all 0.5s ease' }}>
+      
+      {/* ── STYLE INJECTION ── */}
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet" />
+      <style>{`
+        @keyframes subtlePan {
+          from { transform: scale(1.05) translate(0, 0); }
+          to { transform: scale(1.1) translate(-1%, -1%); }
+        }
+        .herald-serif { font-family: 'Playfair Display', serif; }
+        .herald-sans { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .drop-cap::first-letter {
+          font-family: 'Playfair Display', serif;
+          float: left;
+          font-size: 7rem;
+          line-height: 0.7;
+          margin-top: 10px;
+          margin-right: 15px;
+          font-weight: 900;
+          color: ${C.accent};
+        }
+      `}</style>
 
       {/* ── Organizer Edit Bar ── */}
       {isOrganizer && (
@@ -263,719 +318,588 @@ const ClassicTemplate = ({ conf: initialConf, isOrganizer = false, onSave, canEd
         </div>
       )}
 
-      {/* ── MASTHEAD ── */}
-      <header style={{ background: C.paper, padding: '0 0 0 0' }}>
-        {/* Top rule + date bar */}
-        <div style={{ borderTop: `4px solid ${C.ink}`, borderBottom: `1px solid ${C.rule}` }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto', padding: '8px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.inkMuted, ...sansS }}>
-              {conf.theme || 'Academic Conference'}
-            </span>
-            <span style={{ fontSize: 11, letterSpacing: '0.1em', color: C.inkMuted, ...sansS }}>
-              {displayDate} &nbsp;·&nbsp; {conf.location || 'Location TBD'}
-            </span>
-          </div>
-        </div>
-
-        {/* Hero banner */}
-        <div style={{ position: 'relative', height: 480, overflow: 'hidden' }}>
-          <img
-            src={pageData.banner_url || conf.banner_url || 'https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?w=1600'}
-            alt="Conference Banner"
-            style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(60%) contrast(1.1)', display: 'block' }}
-          />
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'linear-gradient(to bottom, rgba(26,20,16,0.2) 0%, rgba(26,20,16,0.75) 100%)',
-          }} />
-          <div style={{
-            position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 32px',
-          }}>
-            <h1 style={{
-              fontSize: 'clamp(2.5rem, 6vw, 5rem)', fontWeight: 400, color: '#fdfaf4',
-              letterSpacing: '-0.02em', lineHeight: 1.1, margin: '0 0 16px',
-              textShadow: '0 2px 20px rgba(0,0,0,0.5)', ...s,
-            }}>
-              {isEditing
-                ? <div style={{ minWidth: '300px' }}><EditableText value={pageData.title} onChange={v => update('title', v)} className="" isEditing={isEditing} placeholder="Conference Title…" /></div>
-                : displayName}
-            </h1>
-
-            {isEditing && (
-              <div style={{ marginBottom: 20, width: '100%', maxWidth: 400 }}>
-                <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.gold, marginBottom: 4, ...sansS }}>Change Header Image URL</div>
-                <EditableText value={pageData.banner_url} onChange={v => update('banner_url', v)} className="" isEditing={isEditing} placeholder="Image URL…" />
-              </div>
-            )}
-
-            <div style={{ width: 60, height: 2, background: C.gold, margin: '0 auto 16px' }} />
-            <p style={{ fontSize: '1.15rem', color: 'rgba(253,250,244,0.85)', maxWidth: 600, margin: '0 0 28px', fontStyle: 'italic', lineHeight: 1.5 }}>
-              {isEditing
-                ? <EditableText value={pageData.tagline} onChange={v => update('tagline', v)} className="" isEditing={isEditing} placeholder="Conference tagline…" />
-                : pageData.tagline}
-            </p>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-              <button style={{
-                background: '#fdfaf4', color: C.ink, border: 'none',
-                padding: '12px 28px', fontSize: 13, fontWeight: 700,
-                letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', ...sansS,
-              }}>
-                Register Now
-              </button>
-              <button onClick={() => scrollTo('schedule')} style={{
-                background: 'transparent', color: '#fdfaf4',
-                border: '1px solid rgba(253,250,244,0.5)',
-                padding: '12px 28px', fontSize: 13, letterSpacing: '0.1em', textTransform: 'uppercase',
-                cursor: 'pointer', ...sansS,
-              }}>
-                View Programme
-              </button>
+      {/* ── HERALD MASTHEAD ── */}
+      <header style={{ background: C.bg, overflow: 'hidden' }}>
+        {/* Top Rule / Issue Bar */}
+        <div style={{ borderTop: `8px solid ${C.ink}`, borderBottom: `1px solid ${C.rule}`, background: C.paper }}>
+          <div style={{ maxWidth: 1200, margin: '0 auto', padding: '12px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <BookOpen size={14} color={C.accent} />
+              <span className="herald-sans" style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.25em', textTransform: 'uppercase', color: C.ink }}>
+                {conf.theme || 'ESTABLISHED RESEARCH'}
+              </span>
+            </div>
+            <div className="herald-sans" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', color: C.inkMuted }}>
+              VOL. {new Date().getFullYear()} &nbsp;·&nbsp; {displayDate} &nbsp;·&nbsp; {conf.location || 'GLOBAL REACH'}
             </div>
           </div>
         </div>
 
-        {/* Stats bar */}
-        <div style={{ borderTop: `1px solid ${C.rule}`, borderBottom: `3px double ${C.ink}`, background: C.paper }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto', padding: '14px 32px', display: 'flex', gap: 40, justifyContent: 'center', flexWrap: 'wrap' }}>
-            {[
-              { icon: Calendar, label: 'Date', value: displayDate },
-              { icon: MapPin, label: 'Location', value: conf.location || 'TBD' },
-              { icon: Users, label: 'Capacity', value: pageData.capacity },
-            ].map(({ icon: Icon, label, value }) => (
-              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <Icon size={16} color={C.inkMuted} />
-                <div>
-                  <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.inkMuted, ...sansS }}>{label}</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: C.ink, ...sansS }}>{value}</div>
-                </div>
+        {/* Hero Canvas */}
+        <div style={{ position: 'relative', height: '75vh', minHeight: 650, background: C.ink, overflow: 'hidden' }}>
+          {/* Animated Background Image */}
+          <div style={{ 
+            position: 'absolute', inset: 0, 
+            animation: 'subtlePan 40s infinite linear alternate',
+            transformOrigin: 'center center'
+          }}>
+            <img
+              src={pageData.banner_url || conf.banner_url || 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=1600'}
+              alt="Herald Canvas"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.45, filter: 'sepia(20%) contrast(1.1) brightness(0.8)' }}
+            />
+          </div>
+          
+          <div style={{ 
+            position: 'absolute', inset: 0, 
+            background: 'linear-gradient(to right, rgba(26,23,20,0.9) 0%, rgba(26,23,20,0.4) 60%, transparent 100%)' 
+          }} />
+
+          {/* Hero Content Grid */}
+          <div style={{ 
+            height: '100%', maxWidth: 1200, margin: '0 auto', padding: '0 40px', 
+            position: 'relative', zIndex: 10, display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', alignItems: 'center' 
+          }}>
+            <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1.2 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 15, marginBottom: 25 }}>
+                <div style={{ height: 1, width: 40, background: C.accent }} />
+                <span className="herald-sans" style={{ color: C.accent, fontSize: 13, fontWeight: 900, letterSpacing: '0.4em', textTransform: 'uppercase' }}>
+                  Distinguished Gathering
+                </span>
               </div>
-            ))}
+              
+              <h1 className="herald-serif" style={{ 
+                fontSize: 'clamp(3rem, 8vw, 6rem)', fontWeight: 400, color: '#FFFFFF', 
+                lineHeight: 0.95, margin: '0 0 30px', letterSpacing: '-0.03em' 
+              }}>
+                {isEditing ? (
+                  <EditableField value={pageData.title} onChange={v => update('title', v)} isEditing={isEditing} />
+                ) : displayName}
+              </h1>
+
+              <div style={{ maxWidth: 650, borderLeft: `4px solid ${C.accent}`, paddingLeft: 30, marginBottom: 45 }}>
+                <p className="herald-serif" style={{ fontSize: '1.6rem', color: 'rgba(255,255,255,0.8)', fontStyle: 'italic', lineHeight: 1.4 }}>
+                  {isEditing ? (
+                    <EditableField value={pageData.tagline} onChange={v => update('tagline', v)} isEditing={isEditing} />
+                  ) : pageData.tagline}
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: 20 }}>
+                <button className="herald-sans" style={{ 
+                  background: C.accent, color: C.ink, border: 'none', padding: '16px 36px', 
+                  fontSize: 12, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em', 
+                  cursor: 'pointer', transition: 'all 0.3s', boxShadow: `0 10px 30px -10px ${C.accent}40`
+                }}>
+                  Secure Admission
+                </button>
+                <button 
+                  onClick={() => scrollTo('schedule')}
+                  className="herald-sans" style={{ 
+                    background: 'transparent', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.3)', 
+                    padding: '16px 36px', fontSize: 12, fontWeight: 900, textTransform: 'uppercase', 
+                    letterSpacing: '0.2em', cursor: 'pointer', transition: 'all 0.3s'
+                  }}
+                >
+                  View Index
+                </button>
+              </div>
+            </motion.div>
+
+            {/* Sidebar Editorial Detail */}
+            <motion.div 
+               initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.5, delay: 0.5 }}
+               style={{ justifySelf: 'end', textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 40 }}
+            >
+               {[
+                 { label: 'CALENDAR', value: displayDate, icon: Calendar },
+                 { label: 'PRECINCT', value: conf.location || 'Virtual Venue', icon: MapPin },
+                 { label: 'DELEGATION', value: pageData.capacity, icon: Users }
+               ].map(stat => (
+                 <div key={stat.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: C.accent, marginBottom: 8 }}>
+                     <span className="herald-sans" style={{ fontSize: 9, fontWeight: 900, letterSpacing: '0.3em' }}>{stat.label}</span>
+                     <stat.icon size={12} />
+                   </div>
+                   <div className="herald-serif" style={{ fontSize: '1.4rem', color: '#FFFFFF', fontWeight: 300 }}>{stat.value}</div>
+                 </div>
+               ))}
+               
+               {isEditing && (
+                 <div style={{ 
+                   marginTop: 20, padding: '15px', background: 'rgba(255,255,255,0.05)', 
+                   border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, textAlign: 'left' 
+                 }}>
+                   <span className="herald-sans" style={{ fontSize: 9, color: C.accent, fontWeight: 900, display: 'block', marginBottom: 5 }}>BANNER REWRITE URL</span>
+                   <EditableField value={pageData.banner_url} onChange={v => update('banner_url', v)} isEditing={isEditing} className="text-[10px] text-white" />
+                 </div>
+               )}
+            </motion.div>
           </div>
         </div>
       </header>
 
-      {/* ── SECTION NAV ── */}
-      <nav style={{
-        position: 'sticky', top: isOrganizer ? 45 : 0, zIndex: 40,
-        background: C.ink, borderBottom: `2px solid ${C.ink}`,
-      }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 32px', display: 'flex', overflowX: 'auto', gap: 0 }}>
-          {navItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => scrollTo(item.id)}
-              style={{
-                background: 'transparent', border: 'none', cursor: 'pointer',
-                padding: '14px 20px', fontSize: 12, letterSpacing: '0.12em',
-                textTransform: 'uppercase', whiteSpace: 'nowrap', ...sansS,
-                color: activeNav === item.id ? C.gold : 'rgba(253,250,244,0.65)',
-                borderBottom: activeNav === item.id ? `2px solid ${C.gold}` : '2px solid transparent',
-                transition: 'all 0.2s',
-              }}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </nav>
-
-      {/* ── MAIN CONTENT ── */}
-      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '60px 32px' }}>
-
-        {/* ── ABOUT ── */}
-        <section id="about" style={{ scrollMarginTop: 120, marginBottom: 72 }}>
-          {isEditing && <EditBadge label="About" />}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 64, alignItems: 'start' }}>
-            <div>
-              <Rule thick />
-              <h2 style={{ fontSize: '2rem', fontWeight: 400, margin: '16px 0 24px', letterSpacing: '-0.01em' }}>
-                About the Conference
-              </h2>
-              <p style={{ fontSize: '1.1rem', lineHeight: 1.85, color: C.inkLight, marginBottom: 20 }}>
-                {isEditing
-                  ? <EditableText value={conf.description} onChange={v => setConf(p => ({ ...p, description: v }))} multiline className="" isEditing={isEditing} placeholder="Conference description…" />
-                  : conf.description}
-              </p>
-              <p style={{ fontSize: '1.05rem', lineHeight: 1.85, color: C.inkLight }}>
-                {isEditing
-                  ? <EditableText value={pageData.about_extra} onChange={v => update('about_extra', v)} multiline className="" isEditing={isEditing} placeholder="Additional details…" />
-                  : pageData.about_extra}
-              </p>
-            </div>
-
-            {/* Sidebar registration card */}
-            <div>
-              <Rule thick />
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '16px 0 20px', textTransform: 'uppercase', letterSpacing: '0.08em', ...sansS }}>
-                Registration Fees
-              </h3>
-              <div style={{ borderTop: `1px solid ${C.rule}` }}>
-                {[
-                  { label: 'General Registration', key: 'registration_fee_general' },
-                  { label: 'Early Bird (until deadline)', key: 'registration_fee_early' },
-                  { label: 'Student / Postdoc', key: 'registration_fee_student' },
-                ].map(({ label, key }) => (
-                  <div key={key} style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '14px 0', borderBottom: `1px solid ${C.rule}`,
-                  }}>
-                    <span style={{ fontSize: 14, color: C.inkLight, ...sansS }}>{label}</span>
-                    <span style={{ fontSize: '1.3rem', fontWeight: 700, color: C.ink }}>
-                      {isEditing
-                        ? <EditableText value={pageData[key]} onChange={v => update(key, v)} className="" isEditing={isEditing} />
-                        : pageData[key]}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <button style={{
-                width: '100%', marginTop: 20, background: C.ink, color: C.bg,
-                border: 'none', padding: '14px', fontSize: 13, fontWeight: 700,
-                letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', ...sansS,
-              }}>
-                Register Now
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* ── PROGRAMME / SCHEDULE ── */}
-        <section id="schedule" style={{ scrollMarginTop: 120, marginBottom: 72 }}>
-          {isEditing && <EditBadge label="Programme" />}
-          <Rule thick />
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '16px 0 32px' }}>
-            <h2 style={{ fontSize: '2rem', fontWeight: 400, letterSpacing: '-0.01em', margin: 0 }}>
-              Conference Programme
-            </h2>
-            {canEditSchedule && (
+        {/* ── HERALD SECTION NAV ── */}
+        <nav style={{
+          position: 'sticky', top: isOrganizer ? 45 : 0, zIndex: 40,
+          background: C.paper, borderBottom: `1px solid ${C.rule}`,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.03)'
+        }}>
+          <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 40px', display: 'flex', overflowX: 'auto', gap: 0 }}>
+            {navItems.map(item => (
               <button
-                onClick={() => setShowScheduleEditor(true)}
+                key={item.id}
+                onClick={() => scrollTo(item.id)}
+                className="herald-sans"
                 style={{
-                  background: C.accentWarm, border: 'none', color: '#fdfaf4',
-                  padding: '8px 18px', fontSize: 12, fontWeight: 700,
-                  cursor: 'pointer', ...sansS, display: 'flex', alignItems: 'center', gap: 6,
+                  background: 'transparent', border: 'none', cursor: 'pointer',
+                  padding: '16px 24px', fontSize: 11, fontWeight: 800, letterSpacing: '0.15em',
+                  textTransform: 'uppercase', whiteSpace: 'nowrap',
+                  color: activeNav === item.id ? C.accent : C.inkMuted,
+                  borderBottom: activeNav === item.id ? `3px solid ${C.accent}` : '3px solid transparent',
+                  transition: 'all 0.3s',
                 }}
               >
-                <Edit3 size={12} /> Edit Schedule
+                {item.label}
               </button>
-            )}
+            ))}
           </div>
+        </nav>
 
-          {pageData.schedule.length === 0 ? (
-            <div style={{ padding: '60px 0', textAlign: 'center', border: `1px dashed ${C.rule}`, borderRadius: 4 }}>
-              <Clock size={28} color={C.inkMuted} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.4 }} />
-              <p style={{ color: C.inkMuted, fontSize: 14, ...sansS }}>No schedule has been created yet.</p>
-              {canEditSchedule && (
-                <button
-                  onClick={() => setShowScheduleEditor(true)}
-                  style={{ marginTop: 12, background: 'transparent', border: 'none', color: C.accentWarm, fontSize: 13, cursor: 'pointer', fontWeight: 600, ...sansS }}
-                >
-                  + Create Schedule
+        {/* ── HERALD CONTENT ── */}
+        <main style={{ maxWidth: 1200, margin: '0 auto', padding: '100px 40px' }}>
+
+          {/* ── ABOUT ── */}
+          <section id="about" style={{ scrollMarginTop: 140, marginBottom: 120 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) 380px', gap: 100 }}>
+              <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 20 }}>
+                  <BookOpen size={20} color={C.accent} />
+                  <span className="herald-sans" style={{ fontSize: 11, fontWeight: 900, letterSpacing: '0.3em', color: C.accent, textTransform: 'uppercase' }}>
+                    {pageData.template_metadata.headings.about_head}
+                  </span>
+                </div>
+                
+                <h2 className="herald-serif" style={{ fontSize: '3.5rem', fontWeight: 400, margin: '0 0 40px', lineHeight: 1.1, color: C.ink }}>
+                  {isEditing ? <EditableField value={pageData.template_metadata.headings.about_title} onChange={v => updateHeading('about_title', v)} isEditing={isEditing} /> : pageData.template_metadata.headings.about_title}
+                </h2>
+
+                <div className="herald-serif drop-cap" style={{ fontSize: '1.25rem', lineHeight: 1.8, color: C.inkLight, textAlign: 'justify' }}>
+                  {isEditing ? (
+                    <EditableField value={conf.description} onChange={v => setConf(p => ({ ...p, description: v }))} multiline isEditing={isEditing} />
+                  ) : (
+                    <p>{conf.description}</p>
+                  )}
+                  <div style={{ height: 40 }} />
+                  <p className="herald-sans" style={{ fontSize: '1rem', fontWeight: 400, color: C.inkMuted, fontStyle: 'italic', borderLeft: `2px solid ${C.rule}`, paddingLeft: 30 }}>
+                    {isEditing ? <EditableField value={pageData.about_extra} onChange={v => update('about_extra', v)} multiline isEditing={isEditing} /> : pageData.about_extra}
+                  </p>
+                </div>
+              </motion.div>
+
+              {/* Sidebar: Access & Fees */}
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}
+                style={{ background: C.paper, border: `1px solid ${C.rule}`, padding: '40px', alignSelf: 'start', position: 'sticky', top: 180 }}
+              >
+                <div style={{ textAlign: 'center', marginBottom: 30 }}>
+                  <Award size={32} color={C.accent} style={{ marginBottom: 15 }} />
+                  <h3 className="herald-sans" style={{ fontSize: 12, fontWeight: 900, letterSpacing: '0.2em', textTransform: 'uppercase', color: C.ink }}>
+                    Admission Tiers
+                  </h3>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginBottom: 40 }}>
+                   {[
+                     { label: 'Standard Delegation', key: 'registration_fee_general' },
+                     { label: 'Early Enrollment', key: 'registration_fee_early' },
+                     { label: 'Scholar / Apprentice', key: 'registration_fee_student' },
+                   ].map(fee => (
+                     <div key={fee.key} style={{ borderBottom: `1px solid ${C.rule}`, paddingBottom: 15 }}>
+                       <div className="herald-sans" style={{ fontSize: 10, fontWeight: 700, color: C.inkMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 5 }}>{fee.label}</div>
+                       <div className="herald-serif" style={{ fontSize: '1.8rem', fontWeight: 400, color: C.ink }}>
+                         {isEditing ? <EditableField value={pageData[fee.key]} onChange={v => update(fee.key, v)} isEditing={isEditing} /> : pageData[fee.key]}
+                       </div>
+                     </div>
+                   ))}
+                </div>
+
+                <button className="herald-sans" style={{ 
+                  width: '100%', background: C.ink, color: C.bg, border: 'none', padding: '18px', 
+                  fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.25em', 
+                  cursor: 'pointer', transition: 'all 0.3s' 
+                }}>
+                  Request Invitation
                 </button>
-              )}
+                <p className="herald-sans" style={{ fontSize: 9, color: C.inkMuted, textAlign: 'center', marginTop: 15, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                  * Final review by organizing committee
+                </p>
+              </motion.div>
             </div>
-          ) : (
-            <>
-              {/* Day tabs */}
-              <div style={{ display: 'flex', gap: 0, borderBottom: `2px solid ${C.ink}`, marginBottom: 32 }}>
-                {pageData.schedule.map((day, di) => (
-                  <button
-                    key={di}
-                    onClick={() => setScheduleTab(di)}
-                    style={{
-                      background: 'transparent', border: 'none', cursor: 'pointer',
-                      padding: '10px 24px', fontSize: 13, fontWeight: 700, ...sansS,
-                      color: scheduleTab === di ? C.ink : C.inkMuted,
-                      borderBottom: scheduleTab === di ? `3px solid ${C.ink}` : '3px solid transparent',
-                      marginBottom: -2, transition: 'all 0.15s',
-                      textTransform: 'uppercase', letterSpacing: '0.08em',
-                    }}
-                  >
-                    {day.day}
-                    <span style={{ display: 'block', fontSize: 10, fontWeight: 400, color: C.inkMuted, marginTop: 2 }}>
-                      {day.date}
+          </section>
+
+          {/* ── PROGRAMME / SCHEDULE ── */}
+          <section id="schedule" style={{ scrollMarginTop: 140, marginBottom: 120 }}>
+            <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', marginBottom: 60, borderBottom: `1px solid ${C.rule}`, paddingBottom: 30 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <Clock size={18} color={C.accent} />
+                    <span className="herald-sans" style={{ fontSize: 11, fontWeight: 900, letterSpacing: '0.3em', color: C.accent, textTransform: 'uppercase' }}>
+                      {pageData.template_metadata.headings.schedule_head}
                     </span>
+                  </div>
+                  <h2 className="herald-serif" style={{ fontSize: '3rem', fontWeight: 400, margin: 0, lineHeight: 1.1, color: C.ink }}>
+                    {isEditing ? <EditableField value={pageData.template_metadata.headings.schedule_title} onChange={v => updateHeading('schedule_title', v)} isEditing={isEditing} /> : pageData.template_metadata.headings.schedule_title}
+                  </h2>
+                </div>
+                
+                {canEditSchedule && (
+                  <button onClick={() => setShowScheduleEditor(true)} className="herald-sans" style={{ 
+                    background: 'transparent', border: `1px solid ${C.accent}`, color: C.accent, 
+                    padding: '12px 24px', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', 
+                    letterSpacing: '0.15em', cursor: 'pointer'
+                  }}>
+                    Configure Programme
                   </button>
-                ))}
+                )}
               </div>
 
-              {/* Sessions table */}
-              {pageData.schedule[scheduleTab] && (
-                <div>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr style={{ borderBottom: `1px solid ${C.rule}` }}>
-                        {['Time', 'Session', 'Speaker / Notes', 'Room', 'Type', 'Head'].map(h => (
-                          <th key={h} style={{ textAlign: 'left', padding: '8px 12px', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', color: C.inkMuted, fontWeight: 700, ...sansS }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {pageData.schedule[scheduleTab].sessions.map((session, si) => {
-                        const typeStyle = sessionTypeStyle[session.type] || sessionTypeStyle.talk;
-                        const isSessionHead = currentUserId && session.head_id === currentUserId;
-                        const headMember = session.head_id ? members.find(m => m.user_id === session.head_id) : null;
+              {pageData.schedule.length === 0 ? (
+                <div style={{ padding: '80px 0', textAlign: 'center', border: `1px dashed ${C.rule}`, background: C.paper }}>
+                  <BookOpen size={40} color={C.rule} style={{ margin: '0 auto 20px', display: 'block' }} />
+                  <p className="herald-serif" style={{ color: C.inkMuted, fontSize: '1.2rem', fontStyle: 'italic' }}>Pending Publication of Schedule</p>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 250px', gap: 60 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 30 }}>
+                    {/* Day Selector */}
+                    <div style={{ display: 'flex', gap: 40, borderBottom: `1px solid ${C.rule}`, marginBottom: 20 }}>
+                      {pageData.schedule.map((day, di) => (
+                        <button
+                          key={di}
+                          onClick={() => setScheduleTab(di)}
+                          className="herald-sans"
+                          style={{
+                            background: 'transparent', border: 'none', cursor: 'pointer',
+                            padding: '15px 0', fontSize: 11, fontWeight: 800, letterSpacing: '0.15em',
+                            textTransform: 'uppercase', color: scheduleTab === di ? C.ink : C.inkMuted,
+                            borderBottom: scheduleTab === di ? `3px solid ${C.accent}` : '3px solid transparent',
+                            transition: 'all 0.3s',
+                          }}
+                        >
+                          {day.day}
+                          <span className="herald-serif" style={{ display: 'block', fontSize: 10, fontWeight: 400, color: C.inkMuted, marginTop: 4, textTransform: 'none', letterSpacing: '0' }}>
+                            {day.date}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Timeline View */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                      {pageData.schedule[scheduleTab]?.sessions.map((session, si) => {
+                        const isMain = session.type === 'keynote' || session.type === 'panel';
                         return (
-                          <tr key={si} style={{
-                            borderBottom: `1px solid ${C.rule}`,
-                            background: isSessionHead ? 'rgba(139,58,26,0.08)' : (si % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.02)'),
-                            borderLeft: isSessionHead ? `3px solid ${C.accentWarm}` : '3px solid transparent',
-                          }}>
-                            <td style={{ padding: '14px 12px', fontSize: 13, fontFamily: 'monospace', color: C.inkLight, whiteSpace: 'nowrap', verticalAlign: 'top' }}>
+                          <motion.div 
+                            key={si}
+                            initial={{ opacity: 0, x: -10 }} whileInView={{ opacity: 1, x: 0 }} transition={{ delay: si * 0.05 }}
+                            style={{ 
+                              display: 'grid', gridTemplateColumns: '120px 1fr', gap: 40, 
+                              padding: '35px 0', borderBottom: `1px solid ${C.rule}` 
+                            }}
+                          >
+                            <div className="herald-sans" style={{ fontSize: 13, fontWeight: 900, color: C.accent, tabularNums: true }}>
                               {session.time}
-                            </td>
-                            <td style={{ padding: '14px 12px', verticalAlign: 'top' }}>
-                              <div style={{ fontWeight: 600, fontSize: 15, color: C.ink, marginBottom: 2 }}>
-                                {session.title}
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 30 }}>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                                  <span className="herald-sans" style={{ 
+                                    fontSize: 8, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em',
+                                    padding: '4px 8px', background: C.ink, color: C.bg
+                                  }}>
+                                    {session.type}
+                                  </span>
+                                  {session.room && (
+                                    <span className="herald-sans" style={{ fontSize: 8, fontWeight: 700, color: C.inkMuted, textTransform: 'uppercase' }}>
+                                      HALL: {session.room}
+                                    </span>
+                                  )}
+                                </div>
+                                <h4 className="herald-serif" style={{ fontSize: isMain ? '1.8rem' : '1.4rem', fontWeight: 400, color: C.ink, margin: '0 0 10px', lineHeight: 1.2 }}>
+                                  {session.title}
+                                </h4>
+                                <div className="herald-serif" style={{ fontSize: '1.1rem', color: C.inkLight, fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <Users size={14} color={C.accent} />
+                                  {session.speaker}
+                                </div>
                               </div>
-                            </td>
-                            <td style={{ padding: '14px 12px', fontSize: 13, color: C.inkMuted, verticalAlign: 'top' }}>
-                              {session.speaker}
-                            </td>
-                            <td style={{ padding: '14px 12px', fontSize: 12, color: C.inkMuted, verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                              {session.room || '—'}
-                            </td>
-                            <td style={{ padding: '14px 12px', verticalAlign: 'top' }}>
-                              <span style={{
-                                fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em',
-                                padding: '3px 8px', ...sansS,
-                                background: typeStyle.bg, color: typeStyle.color,
-                              }}>
-                                {session.type}
-                              </span>
-                            </td>
-                            <td style={{ padding: '14px 12px', fontSize: 12, color: C.inkMuted, verticalAlign: 'top' }}>
-                              {headMember ? (
-                                <span style={{
-                                  fontSize: 11, fontWeight: isSessionHead ? 700 : 400,
-                                  color: isSessionHead ? C.accentWarm : C.inkMuted,
-                                  ...sansS,
-                                }}>
-                                  {headMember.full_name || headMember.email}
-                                  {isSessionHead && ' (You)'}
-                                </span>
-                              ) : '—'}
-                            </td>
-                          </tr>
+                              <div style={{ alignSelf: 'start', opacity: 0.05 }}>
+                                <Quote size={60} />
+                              </div>
+                            </div>
+                          </motion.div>
                         );
                       })}
-                    </tbody>
-                  </table>
+                    </div>
+                  </div>
+
+                  {/* Sidebar Metadata */}
+                  <div style={{ paddingTop: 80 }}>
+                    <div style={{ background: C.surface, padding: '30px', border: `1px solid ${C.rule}`, borderRadius: 2 }}>
+                       <Award size={20} color={C.accent} style={{ marginBottom: 15 }} />
+                       <h5 className="herald-sans" style={{ fontSize: 10, fontWeight: 900, letterSpacing: '0.1em', color: C.ink, textTransform: 'uppercase', marginBottom: 15 }}>Programme Note</h5>
+                       <p className="herald-serif" style={{ fontSize: 13, color: C.inkLight, lineHeight: 1.6, fontStyle: 'italic' }}>
+                         "The committee reserves the right to modify the sequence of ceremonies to ensure maximum intellectual rigour."
+                       </p>
+                    </div>
+                  </div>
                 </div>
               )}
-            </>
-          )}
-        </section>
+            </motion.div>
+          </section>
 
-        {/* ── SPEAKERS ── */}
-        <section id="speakers" style={{ scrollMarginTop: 120, marginBottom: 72 }}>
-          {isEditing && <EditBadge label="Speakers" />}
-          <Rule thick />
-          <h2 style={{ fontSize: '2rem', fontWeight: 400, margin: '16px 0 32px', letterSpacing: '-0.01em' }}>
-            Distinguished Speakers
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 32 }}>
-            {pageData.speakers.map((sp, i) => (
-              <div key={i} style={{ position: 'relative', borderTop: `3px solid ${C.ink}`, paddingTop: 20 }}>
-                {isEditing && (
-                  <button
-                    onClick={() => update('speakers', pageData.speakers.filter((_, idx) => idx !== i))}
-                    style={{ position: 'absolute', top: 8, right: 0, background: 'transparent', border: 'none', cursor: 'pointer', color: '#dc2626' }}
-                  >
-                    <X size={14} />
-                  </button>
-                )}
-                <div style={{ width: 80, height: 80, marginBottom: 14, overflow: 'hidden', background: C.rule, position: 'relative' }}>
-                  <img 
-                    src={sp.img || DEFAULT_AVATAR} 
-                    alt={sp.name} 
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', filter: isEditing ? 'none' : 'grayscale(80%)' }} 
-                  />
-                </div>
-
-                {isEditing && (
-                  <div style={{ 
-                    marginBottom: 16, padding: '8px 12px', borderRadius: 4, 
-                    background: 'rgba(0,0,0,0.03)', border: `1px solid ${C.rule}`,
-                  }}>
-                    <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', color: C.accentWarm, marginBottom: 4, ...sansS }}>Photo URL</div>
-                    <EditableText 
-                      value={sp.img || ''} 
-                      onChange={v => updateNested('speakers', i, 'img', v)} 
-                      className="text-[10px]" 
-                      isEditing={isEditing} 
-                      placeholder="Paste link..." 
-                    />
-                  </div>
-                )}
-                <h4 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 4px', color: C.ink }}>
-                  {isEditing
-                    ? <EditableText value={sp.name} onChange={v => updateNested('speakers', i, 'name', v)} className="" isEditing={isEditing} />
-                    : sp.name}
-                </h4>
-                <p style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', color: C.accentWarm, margin: '0 0 2px', ...sansS }}>
-                  {isEditing
-                    ? <EditableText value={sp.role} onChange={v => updateNested('speakers', i, 'role', v)} className="" isEditing={isEditing} />
-                    : sp.role}
-                </p>
-                <p style={{ fontSize: 12, color: C.inkMuted, margin: '0 0 10px', ...sansS }}>
-                  {isEditing
-                    ? <EditableText value={sp.org} onChange={v => updateNested('speakers', i, 'org', v)} className="" isEditing={isEditing} />
-                    : sp.org}
-                </p>
-                <p style={{ fontSize: 13, lineHeight: 1.7, color: C.inkLight, fontStyle: 'italic' }}>
-                  {isEditing
-                    ? <EditableText value={sp.bio} onChange={v => updateNested('speakers', i, 'bio', v)} multiline className="" isEditing={isEditing} />
-                    : sp.bio}
-                </p>
+          {/* ── SPEAKERS ── */}
+          <section id="speakers" style={{ scrollMarginTop: 140, marginBottom: 120 }}>
+            <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 20 }}>
+                <Users size={20} color={C.accent} />
+                <span className="herald-sans" style={{ fontSize: 11, fontWeight: 900, letterSpacing: '0.3em', color: C.accent, textTransform: 'uppercase' }}>
+                  {pageData.template_metadata.headings.speakers_head}
+                </span>
               </div>
-            ))}
-            {isEditing && (
-              <div
-                onClick={() => update('speakers', [...pageData.speakers, {
-                  name: 'New Speaker', role: 'Role', org: 'Institution',
-                  img: '',
-                  bio: 'Speaker biography goes here.',
-                }])}
-                style={{
-                  borderTop: `3px dashed ${C.rule}`, paddingTop: 20, cursor: 'pointer',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  minHeight: 180, color: C.accentWarm, gap: 8,
-                }}
-              >
-                <Plus size={24} />
-                <span style={{ fontSize: 13, ...sansS }}>Add Speaker</span>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* ── KEY DATES ── */}
-        <section id="dates" style={{ scrollMarginTop: 120, marginBottom: 72 }}>
-          {isEditing && <EditBadge label="Key Dates" />}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 64, alignItems: 'start' }}>
-            <div>
-              <Rule thick />
-              <h2 style={{ fontSize: '2rem', fontWeight: 400, margin: '16px 0 28px', letterSpacing: '-0.01em' }}>
-                Key Dates & Deadlines
+              
+              <h2 className="herald-serif" style={{ fontSize: '3.5rem', fontWeight: 400, margin: '0 0 60px', lineHeight: 1.1, color: C.ink }}>
+                {isEditing ? <EditableField value={pageData.template_metadata.headings.speakers_title} onChange={v => updateHeading('speakers_title', v)} isEditing={isEditing} /> : pageData.template_metadata.headings.speakers_title}
               </h2>
-              <div>
-                {pageData.important_dates.map((d, i) => (
-                  <div key={i} style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '16px 0', borderBottom: `1px solid ${C.rule}`,
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
-                      {isEditing && (
-                        <button
-                          onClick={() => update('important_dates', pageData.important_dates.filter((_, idx) => idx !== i))}
-                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#dc2626' }}
-                        >
-                          <X size={12} />
-                        </button>
-                      )}
-                      <span style={{ fontSize: 15, color: C.inkLight }}>
-                        {isEditing
-                          ? <EditableText value={d.label} onChange={v => updateNested('important_dates', i, 'label', v)} className="" isEditing={isEditing} />
-                          : d.label}
-                      </span>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 60 }}>
+                {pageData.speakers.map((sp, i) => (
+                  <motion.div 
+                    key={i} 
+                    initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
+                    style={{ position: 'relative' }}
+                  >
+                    <div style={{ 
+                      position: 'relative', height: 400, marginBottom: 25, 
+                      border: `1px solid ${C.rule}`, padding: '10px', background: C.paper,
+                      boxShadow: '0 10px 40px rgba(0,0,0,0.05)'
+                    }}>
+                      <img 
+                        src={sp.img || DEFAULT_AVATAR} 
+                        alt={sp.name} 
+                        style={{ 
+                          width: '100%', height: '100%', objectFit: 'cover', 
+                          filter: 'sepia(30%) contrast(1.05) brightness(0.95)' 
+                        }} 
+                      />
                     </div>
-                    <span style={{ fontWeight: 700, fontSize: 14, color: C.accentWarm, whiteSpace: 'nowrap', marginLeft: 16 }}>
-                      {isEditing
-                        ? <EditableText value={d.date} onChange={v => updateNested('important_dates', i, 'date', v)} className="" isEditing={isEditing} />
-                        : d.date}
-                    </span>
-                  </div>
+
+                    <div style={{ textAlign: 'center' }}>
+                      <h4 className="herald-serif" style={{ fontSize: '1.6rem', fontWeight: 400, color: C.ink, margin: '0 0 5px' }}>
+                        {isEditing ? <EditableField value={sp.name} onChange={v => updateNested('speakers', i, 'name', v)} isEditing={isEditing} /> : sp.name}
+                      </h4>
+                      <p className="herald-sans" style={{ fontSize: 10, fontWeight: 900, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 5 }}>
+                        {isEditing ? <EditableField value={sp.role} onChange={v => updateNested('speakers', i, 'role', v)} isEditing={isEditing} /> : sp.role}
+                      </p>
+                      <p className="herald-sans" style={{ fontSize: 11, fontWeight: 700, color: C.inkMuted, textTransform: 'uppercase', marginBottom: 15 }}>
+                        {isEditing ? <EditableField value={sp.org} onChange={v => updateNested('speakers', i, 'org', v)} isEditing={isEditing} /> : sp.org}
+                      </p>
+                      <div className="herald-serif" style={{ fontSize: '1rem', lineHeight: 1.6, color: C.inkLight, fontStyle: 'italic', maxWidth: 240, margin: '0 auto' }}>
+                        {isEditing ? <EditableField value={sp.bio} onChange={v => updateNested('speakers', i, 'bio', v)} multiline isEditing={isEditing} /> : sp.bio}
+                      </div>
+                    </div>
+
+                    {isEditing && (
+                      <button
+                        onClick={() => update('speakers', pageData.speakers.filter((_, idx) => idx !== i))}
+                        style={{ position: 'absolute', top: 0, right: 0, background: C.accent, border: 'none', cursor: 'pointer', color: C.bg, padding: 8 }}
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    )}
+                  </motion.div>
                 ))}
+                
                 {isEditing && (
                   <button
-                    onClick={() => update('important_dates', [...pageData.important_dates, { label: 'New Deadline', date: 'Date TBD' }])}
+                    onClick={() => update('speakers', [...pageData.speakers, { name: 'New Fellow', role: 'Scholar', org: 'Academy', img: '', bio: 'Academic contribution summary...' }])}
+                    className="herald-sans"
                     style={{
-                      width: '100%', border: `1px dashed ${C.rule}`, background: 'transparent',
-                      padding: '12px', fontSize: 12, color: C.accentWarm, cursor: 'pointer', ...sansS,
-                      marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                      height: 400, border: `2px dashed ${C.rule}`, background: 'transparent',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                      gap: 15, color: C.accent, cursor: 'pointer', fontSize: 12, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em'
                     }}
                   >
-                    <Plus size={12} /> Add Date
+                    <Plus size={32} />
+                    Enroll Participant
                   </button>
                 )}
               </div>
-            </div>
+            </motion.div>
+          </section>
 
-            {/* Call for papers */}
-            <div>
-              <Rule thick />
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '16px 0 16px', textTransform: 'uppercase', letterSpacing: '0.08em', ...sansS }}>
-                Call for Papers
-              </h3>
-              <p style={{ fontSize: 14, lineHeight: 1.8, color: C.inkLight, marginBottom: 16 }}>
-                We invite original contributions on topics related to <em>{conf.theme}</em>. Accepted papers will be published in the conference proceedings with an ISSN.
-              </p>
-              <div style={{ borderTop: `1px solid ${C.rule}`, paddingTop: 16, marginBottom: 20 }}>
-                {['Original unpublished research', 'Full papers: 8–12 pages (IEEE format)', 'Extended abstracts: 2–4 pages', 'Poster submissions welcome', 'Blind peer review process'].map(item => (
-                  <div key={item} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 10 }}>
-                    <Check size={14} color={C.accentWarm} style={{ marginTop: 2, flexShrink: 0 }} />
-                    <span style={{ fontSize: 13, color: C.inkLight, ...sansS }}>{item}</span>
+          {/* ── KEY DATES ── */}
+          <section id="dates" style={{ scrollMarginTop: 140, marginBottom: 120 }}>
+            <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 450px', gap: 100 }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 20 }}>
+                    <Calendar size={20} color={C.accent} />
+                    <span className="herald-sans" style={{ fontSize: 11, fontWeight: 900, letterSpacing: '0.3em', color: C.accent, textTransform: 'uppercase' }}>
+                      {pageData.template_metadata.headings.dates_head}
+                    </span>
                   </div>
-                ))}
-              </div>
-              <button style={{
-                width: '100%', background: C.accentWarm, color: '#fdfaf4', border: 'none',
-                padding: '13px', fontSize: 13, fontWeight: 700, letterSpacing: '0.08em',
-                textTransform: 'uppercase', cursor: 'pointer', ...sansS,
-              }}>
-                Submit Paper
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* ── VENUE ── */}
-        <section id="venue" style={{ scrollMarginTop: 120, marginBottom: 72 }}>
-          {isEditing && <EditBadge label="Venue" />}
-          <Rule thick />
-          <h2 style={{ fontSize: '2rem', fontWeight: 400, margin: '16px 0 32px', letterSpacing: '-0.01em' }}>
-            Venue & Location
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48 }}>
-            <div>
-              <h3 style={{ fontSize: '1.4rem', fontWeight: 400, marginBottom: 6 }}>
-                {isEditing
-                  ? <EditableText value={pageData.venue_name} onChange={v => update('venue_name', v)} className="" isEditing={isEditing} />
-                  : pageData.venue_name}
-              </h3>
-              <p style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: C.inkMuted, marginBottom: 20, ...sansS }}>
-                <MapPin size={13} />
-                {isEditing
-                  ? <EditableText value={pageData.venue_address} onChange={v => update('venue_address', v)} className="" isEditing={isEditing} />
-                  : pageData.venue_address}
-              </p>
-              <p style={{ fontSize: 15, lineHeight: 1.85, color: C.inkLight, fontStyle: 'italic', marginBottom: 24 }}>
-                {isEditing
-                  ? <EditableText value={pageData.venue_description} onChange={v => update('venue_description', v)} multiline className="" isEditing={isEditing} />
-                  : pageData.venue_description}
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                {[
-                  { label: 'Capacity', value: pageData.capacity },
-                  { label: 'Conference Days', value: `${pageData.schedule.length} Days` },
-                ].map(({ label, value }) => (
-                  <div key={label} style={{ borderTop: `2px solid ${C.ink}`, paddingTop: 12 }}>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 400, color: C.ink }}>{value}</div>
-                    <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.inkMuted, ...sansS }}>{label}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div style={{ background: C.rule, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 260, gap: 12 }}>
-              <MapPin size={40} color={C.inkMuted} style={{ opacity: 0.4 }} />
-              <p style={{ fontSize: 13, color: C.inkMuted, ...sansS }}>{pageData.venue_name}</p>
-              <p style={{ fontSize: 11, color: C.inkMuted, ...sansS, opacity: 0.7 }}>{pageData.venue_address}</p>
-            </div>
-          </div>
-        </section>
-
-        {/* ── ORGANIZING COMMITTEE ── */}
-        <section id="committee" style={{ scrollMarginTop: 120, marginBottom: 72 }}>
-          {isEditing && <EditBadge label="Committee" />}
-          <Rule thick />
-          <h2 style={{ fontSize: '2rem', fontWeight: 400, margin: '16px 0 28px', letterSpacing: '-0.01em' }}>
-            Organizing Committee
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 0 }}>
-            {pageData.organizing_committee.map((member, i) => (
-              <div key={i} style={{
-                padding: '20px 24px', borderRight: `1px solid ${C.rule}`,
-                borderBottom: `1px solid ${C.rule}`, position: 'relative',
-              }}>
-                {isEditing && (
-                  <button
-                    onClick={() => update('organizing_committee', pageData.organizing_committee.filter((_, idx) => idx !== i))}
-                    style={{ position: 'absolute', top: 8, right: 8, background: 'transparent', border: 'none', cursor: 'pointer', color: '#dc2626' }}
-                  >
-                    <X size={12} />
-                  </button>
-                )}
-                <div style={{ width: 32, height: 2, background: C.accentWarm, marginBottom: 12 }} />
-                <h4 style={{ fontSize: 15, fontWeight: 700, color: C.ink, marginBottom: 4 }}>
-                  {isEditing
-                    ? <EditableText value={member.name} onChange={v => updateNested('organizing_committee', i, 'name', v)} className="" isEditing={isEditing} />
-                    : member.name}
-                </h4>
-                <p style={{ fontSize: 12, color: C.accentWarm, textTransform: 'uppercase', letterSpacing: '0.08em', ...sansS }}>
-                  {isEditing
-                    ? <EditableText value={member.role} onChange={v => updateNested('organizing_committee', i, 'role', v)} className="" isEditing={isEditing} />
-                    : member.role}
-                </p>
-              </div>
-            ))}
-            {isEditing && (
-              <div
-                onClick={() => update('organizing_committee', [...pageData.organizing_committee, { name: 'New Member', role: 'Role' }])}
-                style={{
-                  padding: '20px 24px', border: `1px dashed ${C.rule}`, cursor: 'pointer',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  minHeight: 100, color: C.accentWarm, gap: 6,
-                }}
-              >
-                <Plus size={18} />
-                <span style={{ fontSize: 12, ...sansS }}>Add Member</span>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* ── SPONSORS ── */}
-        <section id="sponsors" style={{ scrollMarginTop: 120, marginBottom: 72 }}>
-          {isEditing && <EditBadge label="Sponsors" />}
-          <Rule thick />
-          <h2 style={{ fontSize: '2rem', fontWeight: 400, margin: '16px 0 32px', letterSpacing: '-0.01em' }}>
-            Sponsors & Partners
-          </h2>
-          {['platinum', 'gold', 'silver'].map(tier => {
-            const tierSponsors = pageData.sponsors.filter(s => s.tier === tier);
-            if (!tierSponsors.length && !isEditing) return null;
-            const tierLabel = { platinum: 'Platinum Sponsors', gold: 'Gold Sponsors', silver: 'Silver Sponsors' };
-            return (
-              <div key={tier} style={{ marginBottom: 36 }}>
-                <h3 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.15em', color: C.inkMuted, marginBottom: 16, ...sansS }}>
-                  {tierLabel[tier]}
-                </h3>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
-                  {tierSponsors.map((sp) => {
-                    const globalIndex = pageData.sponsors.indexOf(sp);
-                    return (
-                      <div key={globalIndex} style={{
-                        border: `1px solid ${C.rule}`, padding: tier === 'platinum' ? '20px 36px' : tier === 'gold' ? '14px 28px' : '10px 20px',
-                        position: 'relative', display: 'flex', alignItems: 'center',
-                      }}>
-                        {isEditing && (
-                          <button
-                            onClick={() => update('sponsors', pageData.sponsors.filter((_, idx) => idx !== globalIndex))}
-                            style={{ position: 'absolute', top: 4, right: 4, background: 'transparent', border: 'none', cursor: 'pointer', color: '#dc2626' }}
-                          >
-                            <X size={10} />
-                          </button>
-                        )}
-                        <span style={{
-                          fontWeight: 700, ...sansS,
-                          fontSize: tier === 'platinum' ? 18 : tier === 'gold' ? 15 : 13,
-                          color: tier === 'platinum' ? C.ink : tier === 'gold' ? C.gold : C.inkMuted,
-                        }}>
-                          {isEditing
-                            ? <EditableText value={sp.name} onChange={v => updateNested('sponsors', globalIndex, 'name', v)} className="" isEditing={isEditing} />
-                            : sp.name}
+                  <h2 className="herald-serif" style={{ fontSize: '3rem', fontWeight: 400, margin: '0 0 40px', lineHeight: 1.1, color: C.ink }}>
+                    {isEditing ? <EditableField value={pageData.template_metadata.headings.dates_title} onChange={v => updateHeading('dates_title', v)} isEditing={isEditing} /> : pageData.template_metadata.headings.dates_title}
+                  </h2>
+                  <div style={{ borderTop: `1px solid ${C.rule}` }}>
+                    {pageData.important_dates.map((d, i) => (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '25px 0', borderBottom: `1px solid ${C.rule}` }}>
+                        <span className="herald-serif" style={{ fontSize: '1.2rem', color: C.ink }}>{isEditing ? <EditableField value={d.label} onChange={v => updateNested('important_dates', i, 'label', v)} isEditing={isEditing} /> : d.label}</span>
+                        <span className="herald-sans" style={{ fontSize: 12, fontWeight: 900, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                          {isEditing ? <EditableField value={d.date} onChange={v => updateNested('important_dates', i, 'date', v)} isEditing={isEditing} /> : d.date}
                         </span>
                       </div>
-                    );
-                  })}
-                  {isEditing && (
-                    <button
-                      onClick={() => update('sponsors', [...pageData.sponsors, { name: 'Sponsor Name', tier }])}
-                      style={{
-                        border: `1px dashed ${C.rule}`, background: 'transparent',
-                        padding: tier === 'platinum' ? '20px 36px' : '14px 28px',
-                        cursor: 'pointer', color: C.accentWarm, display: 'flex', alignItems: 'center', gap: 6, ...sansS, fontSize: 12,
-                      }}
-                    >
-                      <Plus size={12} /> Add
-                    </button>
-                  )}
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ background: C.paper, padding: '50px', border: `1px solid ${C.rule}` }}>
+                  <Award size={32} color={C.accent} style={{ marginBottom: 20 }} />
+                  <h3 className="herald-sans" style={{ fontSize: 13, fontWeight: 900, letterSpacing: '0.2em', textTransform: 'uppercase', color: C.ink, marginBottom: 20 }}>Call for Original Research</h3>
+                  <p className="herald-serif" style={{ fontSize: '1.1rem', lineHeight: 1.7, color: C.inkLight, marginBottom: 30 }}>
+                    We welcome contributions of unparalleled rigour. All submissions undergo a thorough blind peer-review by the high council of scholars.
+                  </p>
+                  <button className="herald-sans" style={{ width: '100%', background: C.accent, color: C.ink, border: 'none', padding: '16px', fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em', cursor: 'pointer' }}>
+                    Submit Abstract
+                  </button>
                 </div>
               </div>
-            );
-          })}
-        </section>
+            </motion.div>
+          </section>
 
-        {/* ── CONTACT ── */}
-        <section id="contact" style={{ scrollMarginTop: 120, marginBottom: 72 }}>
-          {isEditing && <EditBadge label="Contact" />}
-          <Rule thick />
-          <h2 style={{ fontSize: '2rem', fontWeight: 400, margin: '16px 0 32px', letterSpacing: '-0.01em' }}>
-            Contact & Enquiries
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64 }}>
-            <div>
-              <div style={{ borderTop: `1px solid ${C.rule}` }}>
-                {[
-                  { icon: Mail, label: 'General Enquiries', key: 'contact_email' },
-                  { icon: Phone, label: 'Telephone', key: 'contact_phone' },
-                  { icon: Globe, label: 'Website', key: 'website' },
-                  { icon: Twitter, label: 'Twitter / X', key: 'twitter' },
-                  { icon: Linkedin, label: 'LinkedIn', key: 'linkedin' },
-                ].map(({ icon: Icon, label, key }) => (
-                  <div key={key} style={{ display: 'flex', gap: 16, alignItems: 'flex-start', padding: '18px 0', borderBottom: `1px solid ${C.rule}` }}>
-                    <Icon size={16} color={C.inkMuted} style={{ marginTop: 3, flexShrink: 0 }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', color: C.inkMuted, marginBottom: 4, ...sansS }}>{label}</div>
-                      {isEditing
-                        ? <EditableText value={pageData[key]} onChange={v => update(key, v)} className="" isEditing={isEditing} placeholder={`Enter ${label}…`} />
-                        : <span style={{ fontSize: 14, color: C.inkLight }}>{pageData[key] || '—'}</span>}
+          {/* ── VENUE ── */}
+          <section id="venue" style={{ scrollMarginTop: 140, marginBottom: 120 }}>
+            <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 20 }}>
+                <MapPin size={20} color={C.accent} />
+                <span className="herald-sans" style={{ fontSize: 11, fontWeight: 900, letterSpacing: '0.3em', color: C.accent, textTransform: 'uppercase' }}>
+                  {pageData.template_metadata.headings.venue_head}
+                </span>
+              </div>
+              <h2 className="herald-serif" style={{ fontSize: '3rem', fontWeight: 400, margin: '0 0 60px', lineHeight: 1.1, color: C.ink }}>
+                {isEditing ? <EditableField value={pageData.template_metadata.headings.venue_title} onChange={v => updateHeading('venue_title', v)} isEditing={isEditing} /> : pageData.template_metadata.headings.venue_title}
+              </h2>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: 60, alignItems: 'center' }}>
+                <div style={{ padding: '40px', border: `1px solid ${C.rule}`, background: C.paper }}>
+                  <h4 className="herald-serif" style={{ fontSize: '1.8rem', color: C.ink, marginBottom: 15 }}>
+                    {isEditing ? <EditableField value={pageData.venue_name} onChange={v => update('venue_name', v)} isEditing={isEditing} /> : pageData.venue_name}
+                  </h4>
+                  <p className="herald-sans" style={{ fontSize: 11, color: C.accent, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 25 }}>
+                    {isEditing ? <EditableField value={pageData.venue_address} onChange={v => update('venue_address', v)} isEditing={isEditing} /> : pageData.venue_address}
+                  </p>
+                  <p className="herald-serif" style={{ fontSize: '1.1rem', color: C.inkLight, lineHeight: 1.7, fontStyle: 'italic' }}>
+                    {isEditing ? <EditableField value={pageData.venue_description} onChange={v => update('venue_description', v)} multiline isEditing={isEditing} /> : pageData.venue_description}
+                  </p>
+                </div>
+                <div style={{ height: 450, background: C.rule, overflow: 'hidden', border: `1px solid ${C.rule}`, padding: 10 }}>
+                   <div style={{ width: '100%', height: '100%', background: `url(https://images.unsplash.com/photo-1541339907198-e08756ebafe3?w=800) center/cover`, filter: 'sepia(40%) brightness(0.9) contrast(1.1)' }} />
+                </div>
+              </div>
+            </motion.div>
+          </section>
+
+          {/* ── COMMITTEE ── */}
+          <section id="committee" style={{ scrollMarginTop: 140, marginBottom: 120 }}>
+            <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
+              <div style={{ textAlign: 'center', marginBottom: 60 }}>
+                <h3 className="herald-sans" style={{ fontSize: 12, fontWeight: 900, letterSpacing: '0.4em', textTransform: 'uppercase', color: C.accent, marginBottom: 15 }}>Organizing Committee</h3>
+                <div style={{ height: 2, width: 60, background: C.accent, margin: '0 auto' }} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 40 }}>
+                {pageData.organizing_committee.map((m, i) => (
+                  <div key={i} style={{ padding: '25px', textAlign: 'center', border: `1px solid ${C.rule}`, background: C.paper }}>
+                    <div className="herald-serif" style={{ fontSize: '1.3rem', color: C.ink, marginBottom: 5 }}>
+                      {isEditing ? <EditableField value={m.name} onChange={v => updateNested('organizing_committee', i, 'name', v)} isEditing={isEditing} /> : m.name}
+                    </div>
+                    <div className="herald-sans" style={{ fontSize: 9, fontWeight: 900, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.15em' }}>
+                      {isEditing ? <EditableField value={m.role} onChange={v => updateNested('organizing_committee', i, 'role', v)} isEditing={isEditing} /> : m.role}
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
+            </motion.div>
+          </section>
 
-            <div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 20, textTransform: 'uppercase', letterSpacing: '0.08em', ...sansS }}>
-                Send an Enquiry
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {['Full Name', 'Email Address', 'Institution / Organisation'].map(ph => (
-                  <input key={ph} placeholder={ph} style={{
-                    width: '100%', border: `1px solid ${C.rule}`, background: C.paper,
-                    padding: '12px 14px', fontSize: 13, color: C.ink, outline: 'none',
-                    fontFamily: 'inherit', boxSizing: 'border-box',
-                  }} />
-                ))}
-                <textarea rows={5} placeholder="Your message…" style={{
-                  width: '100%', border: `1px solid ${C.rule}`, background: C.paper,
-                  padding: '12px 14px', fontSize: 13, color: C.ink, outline: 'none',
-                  resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box',
-                }} />
-                <button style={{
-                  background: C.ink, color: C.bg, border: 'none',
-                  padding: '14px', fontSize: 13, fontWeight: 700,
-                  letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', ...sansS,
-                }}>
-                  Send Message
-                </button>
+          {/* ── SPONSORS ── */}
+          <section id="sponsors" style={{ scrollMarginTop: 140, marginBottom: 120, textAlign: 'center' }}>
+            <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
+               <h2 className="herald-serif" style={{ fontSize: '2.5rem', fontWeight: 400, color: C.ink, marginBottom: 50 }}>Distinguished Patrons</h2>
+               <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 60 }}>
+                  {pageData.sponsors.map((s, i) => (
+                    <div key={i} style={{ opacity: 0.6, filter: 'grayscale(1)' }}>
+                      <div className="herald-sans" style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em' }}>{s.name}</div>
+                      <div style={{ height: 1.5, width: 20, background: C.accent, margin: '8px auto' }} />
+                      <div className="herald-sans" style={{ fontSize: 9, fontWeight: 700, color: C.accent }}>{s.tier.toUpperCase()}</div>
+                    </div>
+                  ))}
+               </div>
+            </motion.div>
+          </section>
+
+          {/* ── SUPPORT / CONTACT ── */}
+          <section id="contact" style={{ scrollMarginTop: 140, borderTop: `4px solid ${C.ink}`, paddingTop: 80 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 60 }}>
+              <div>
+                <h4 className="herald-sans" style={{ fontSize: 10, fontWeight: 900, color: C.ink, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 25 }}>Communication</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 14, color: C.inkLight }}><Mail size={14} color={C.accent} /> {pageData.contact_email}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 14, color: C.inkLight }}><Phone size={14} color={C.accent} /> {pageData.contact_phone}</div>
+                </div>
+              </div>
+              <div>
+                <h4 className="herald-sans" style={{ fontSize: 10, fontWeight: 900, color: C.ink, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 25 }}>Registry</h4>
+                <p className="herald-serif" style={{ fontSize: 14, color: C.inkMuted, lineHeight: 1.6, fontStyle: 'italic' }}>
+                  All inquiries regarding visas, accommodations, and formal invitations should be directed to the registry.
+                </p>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                 <div className="herald-serif" style={{ fontSize: '2rem', color: C.ink, marginBottom: 10 }}>The Herald</div>
+                 <p className="herald-sans" style={{ fontSize: 9, fontWeight: 800, color: C.accent, letterSpacing: '0.2em', textTransform: 'uppercase' }}>Academic Excellence &middot; Vol. {new Date().getFullYear()}</p>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </main>
 
-      </main>
-
-      {/* ── Schedule Editor Modal ── */}
-      {showScheduleEditor && (
-        <ScheduleEditor
-          schedule={pageData.schedule}
-          members={members}
-          onSave={async (newSchedule) => {
-            if (onScheduleSave) await onScheduleSave(newSchedule);
-            setPageData(p => ({ ...p, schedule: newSchedule }));
-          }}
-          onClose={() => setShowScheduleEditor(false)}
-        />
-      )}
-
-      {/* ── FOOTER ── */}
-      <footer style={{ background: C.ink, color: 'rgba(253,250,244,0.6)', padding: '40px 32px' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
-          <div>
-            <div style={{ color: C.bg, fontWeight: 400, fontSize: '1.1rem', marginBottom: 6, ...s }}>{displayName}</div>
-            <div style={{ fontSize: 12, ...sansS }}>{displayDate} · {conf.location}</div>
+        <footer style={{ background: C.ink, padding: '40px 0', borderTop: `1px solid ${C.rule}` }}>
+          <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="herald-sans" style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontWeight: 700, letterSpacing: '0.1em' }}>
+              &copy; {new Date().getFullYear()} ACADEMIC ASSEMBLY REGISTRY. ALL RIGHTS RESERVED.
+            </span>
+            <div style={{ display: 'flex', gap: 25 }}>
+              {[Twitter, Linkedin, Globe].map((Icon, idx) => <Icon key={idx} size={16} color="rgba(255,255,255,0.4)" style={{ cursor: 'pointer' }} />)}
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: 28, fontSize: 12, ...sansS }}>
-            {['Privacy Policy', 'Terms of Use', 'Accessibility'].map(link => (
-              <a key={link} href="#" style={{ color: 'rgba(253,250,244,0.5)', textDecoration: 'none' }}>{link}</a>
-            ))}
-          </div>
-        </div>
-      </footer>
+        </footer>
+
+        {/* Schedule Editor Modal */}
+        <AnimatePresence>
+          {showScheduleEditor && (
+            <ScheduleEditor
+              conferenceId={conf.conference_id}
+              initialSchedule={pageData.schedule}
+              members={members}
+              onSave={(newSchedule) => {
+                update('schedule', newSchedule);
+                setShowScheduleEditor(false);
+                if (onScheduleSave) onScheduleSave(newSchedule);
+              }}
+              onCancel={() => setShowScheduleEditor(false)}
+            />
+          )}
+        </AnimatePresence>
     </div>
   );
 };

@@ -2,6 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowRight, Share2, Check, LogIn, Star } from 'lucide-react';
 import ModernTemplate from './Templates/ModernTemplate';
 import ClassicTemplate from './Templates/ClassicTemplate';
+import TechTemplate from './Templates/TechTemplate';
+import BusinessTemplate from './Templates/BusinessTemplate';
+import CreativeTemplate from './Templates/CreativeTemplate';
 import RoleBasedDashboard from '../Dashboard/RoleBasedDashboard';
 import PaperSubmission from './Templates/PaperSubmission';
 import { supabase } from '../../Supabase/supabaseclient';
@@ -320,7 +323,13 @@ const ConferenceView = ({
         {viewMode === 'home' ? (
           conf.template === 'classic'
             ? <ClassicTemplate {...templateProps} />
-            : <ModernTemplate {...templateProps} />
+            : conf.template === 'tech'
+              ? <TechTemplate {...templateProps} />
+              : conf.template === 'business'
+                ? <BusinessTemplate {...templateProps} />
+                : conf.template === 'creative'
+                  ? <CreativeTemplate {...templateProps} />
+                  : <ModernTemplate {...templateProps} />
         ) : viewMode === 'dashboard' ? (
           <RoleBasedDashboard conf={conf} role={resolvedRole} onBack={onBack} onSwitchView={handleTabClick} />
         ) : viewMode === 'submitPaper' ? (
