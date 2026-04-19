@@ -1,5 +1,5 @@
-import { supabase } from "../lib/supabaseClient.js";
-import { sendEmailsToRecipients } from "../services/emailService.js";
+import { supabase } from "../lib/supabaseClient.mjs";
+import { sendEmailsToRecipients } from "../services/emailService.mjs";
 
 /**
  * Vercel Cron Handler

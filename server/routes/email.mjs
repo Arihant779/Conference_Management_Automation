@@ -1,6 +1,6 @@
 import express from "express";
-import { callLLM } from "../services/llmService.js";
-import { sendEmailsToRecipients, sendTestEmail, sendEmailWithAttachment } from "../services/emailService.js";
+import { callLLM } from "../services/llmService.mjs";
+import { sendEmailsToRecipients, sendTestEmail, sendEmailWithAttachment } from "../services/emailService.mjs";
 
 const router = express.Router();
 
@@ -64,7 +64,7 @@ router.post("/send-email", async (req, res) => {
       return res.status(500).json({ error: `Send failed: ${firstError}` });
     }
 
-    const { DEFAULT_SENDER } = await import("../config/email.js");
+    const { DEFAULT_SENDER } = await import("../config/email.mjs");
     res.json({ success: true, sent, failed: failed.length, from: DEFAULT_SENDER.email });
   } catch (err) {
     console.error("Send error:", err.message);
