@@ -39,7 +39,7 @@ const FieldLabel = ({ label, hint, isDark }) => (
 const Input = ({ className, isDark, ...props }) => (
   <input {...props} className={cls(
     'w-full rounded-xl px-4 py-2.5 text-sm transition-all duration-200 outline-none border',
-    isDark ? 'bg-white/5 border-white/8 text-white focus:border-indigo-500' : 'bg-zinc-50 border-zinc-200 text-zinc-900 focus:border-amber-500',
+    isDark ? 'bg-white/5 border-white/8 text-white focus:border-amber-500' : 'bg-zinc-50 border-zinc-200 text-zinc-900 focus:border-amber-500',
     className
   )} />
 );
@@ -233,7 +233,7 @@ const EmailAutomationsManager = ({ conf }) => {
           </p>
         </div>
         {!wizardOpen && (
-          <button onClick={openNew} className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 transition-all active:scale-95">
+          <button onClick={openNew} className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-amber-500 hover:bg-amber-400 text-black shadow-lg shadow-amber-500/20 transition-all active:scale-95">
             <Plus size={16} /> New Automation
           </button>
         )}
@@ -280,7 +280,7 @@ const EmailAutomationsManager = ({ conf }) => {
                     <button onClick={() => toggleActive(auto.id, auto.is_active)} className={cls("p-2 rounded-lg transition-all", auto.is_active ? "text-zinc-400 hover:text-red-500" : "text-zinc-400 hover:text-emerald-500")}>
                       {auto.is_active ? <PowerOff size={16} /> : <Power size={16} />}
                     </button>
-                    <button onClick={() => openEdit(auto)} className="p-2 rounded-lg text-zinc-400 hover:text-indigo-400 transition-all"><Edit3 size={16} /></button>
+                    <button onClick={() => openEdit(auto)} className="p-2 rounded-lg text-zinc-400 hover:text-amber-400 transition-all"><Edit3 size={16} /></button>
                     <button onClick={() => deleteAuto(auto.id)} className="p-2 rounded-lg text-zinc-400 hover:text-red-400 transition-all"><Trash2 size={16} /></button>
                   </div>
                 </div>
@@ -312,8 +312,8 @@ const EmailAutomationsManager = ({ conf }) => {
                     {TRIGGERS.map(t => {
                       const sel = form.trigger_type === t.id;
                       return (
-                        <div key={t.id} onClick={() => setForm({...form, trigger_type: t.id})} className={cls("flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all", sel ? (isDark ? "border-indigo-500 bg-indigo-500/10 text-indigo-300" : "border-indigo-500 bg-indigo-50 text-indigo-700") : (isDark ? "border-white/5 hover:border-white/15" : "border-zinc-200 hover:border-zinc-300"))}>
-                          <t.icon size={16} className={sel ? "text-indigo-500" : "text-zinc-400"} />
+                        <div key={t.id} onClick={() => setForm({...form, trigger_type: t.id})} className={cls("flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all", sel ? (isDark ? "border-amber-500 bg-amber-500/10 text-amber-300" : "border-amber-500 bg-amber-50 text-amber-700") : (isDark ? "border-white/5 hover:border-white/15" : "border-zinc-200 hover:border-zinc-300"))}>
+                          <t.icon size={16} className={sel ? "text-amber-500" : "text-zinc-400"} />
                           <span className="text-sm font-semibold">{t.label}</span>
                         </div>
                       )
@@ -328,7 +328,7 @@ const EmailAutomationsManager = ({ conf }) => {
                   </select>
                 </div>
 
-                <div className={cls("p-4 rounded-xl border flex gap-3 text-sm", isDark ? "bg-indigo-500/5 border-indigo-500/20 text-indigo-200" : "bg-indigo-50 border-indigo-100 text-indigo-700")}>
+                <div className={cls("p-4 rounded-xl border flex gap-3 text-sm", isDark ? "bg-amber-500/5 border-amber-500/20 text-amber-200" : "bg-amber-50 border-amber-100 text-amber-700")}>
                   <AlertCircle size={18} className="shrink-0 mt-0.5" />
                   <div>
                     <strong>Available Variables: </strong>
@@ -356,7 +356,7 @@ const EmailAutomationsManager = ({ conf }) => {
                       <button key={t} onClick={() => setTone(t)} className={cls("text-[10px] px-2 py-1 rounded-lg border font-bold", tone === t ? (isDark ? "bg-white/20 text-white" : "bg-zinc-800 text-white") : "opacity-50 hover:opacity-100")}>{t}</button>
                     ))}
                   </div>
-                  <button onClick={generateEmail} disabled={generating || !intent.trim()} className={cls("w-full py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 text-xs", isDark ? "bg-indigo-600 text-white hover:bg-indigo-500" : "bg-indigo-500 text-white hover:bg-indigo-600")}>
+                  <button onClick={generateEmail} disabled={generating || !intent.trim()} className={cls("w-full py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 text-xs", isDark ? "bg-amber-600 text-black hover:bg-amber-500" : "bg-amber-500 text-black hover:bg-amber-600")}>
                     {generating ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />} Generate Content
                   </button>
                   {genError && <div className="text-red-400 text-xs mt-2 text-center">{genError}</div>}
