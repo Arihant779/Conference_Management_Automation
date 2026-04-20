@@ -1,9 +1,5 @@
-<<<<<<< HEAD
-import { BarChart2, LogOut, X } from 'lucide-react';
-=======
 import React, { useState } from 'react';
 import { BarChart2, LogOut, Menu, X } from 'lucide-react';
->>>>>>> 969d7219940bda0292b30fecba967888f9cd9fc6
 import { motion } from 'framer-motion';
 import { useApp } from '../../../../context/AppContext';
 import ThemeToggle from '../../../Common/ThemeToggle';
@@ -14,9 +10,6 @@ const Sidebar = ({ nav, section, setSection, isOrganizer, roleLabel, mobileMenuO
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-<<<<<<< HEAD
-    <aside className={`w-full md:w-64 shrink-0 absolute md:relative z-40 md:z-0 left-0 right-0 origin-top flex flex-col gap-1 overflow-y-auto no-scrollbar transition-all duration-300 ease-in-out ${mobileMenuOpen ? 'top-0 bottom-0 max-h-none opacity-100 py-6 border-b pointer-events-auto' : 'top-0 bottom-full md:bottom-auto md:top-0 max-h-0 opacity-0 md:max-h-none md:opacity-100 pointer-events-none md:pointer-events-auto'} shadow-2xl md:shadow-none ${isDark ? 'bg-[#0B0F1A] md:bg-[#0B0F1A]/50 border-white/10' : 'bg-white md:bg-white/80 border-slate-200'}`}
-=======
     <>
       <button 
         onClick={() => setIsOpen(!isOpen)} 
@@ -33,7 +26,6 @@ const Sidebar = ({ nav, section, setSection, isOrganizer, roleLabel, mobileMenuO
       )}
 
     <aside className={`fixed md:sticky top-0 z-50 transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} w-64 shrink-0 flex flex-col gap-1 overflow-y-auto no-scrollbar transition-colors duration-500 ${isDark ? 'bg-[#0B0F1A]/95 md:bg-[#0B0F1A]/50' : 'bg-white/95 md:bg-white/80'}`}
->>>>>>> 969d7219940bda0292b30fecba967888f9cd9fc6
       style={{
         backdropFilter: 'blur(20px)',
         borderRight: isDark ? '1px solid rgba(251,191,36,0.1)' : '1px solid rgba(15,23,42,0.15)',
@@ -66,11 +58,7 @@ const Sidebar = ({ nav, section, setSection, isOrganizer, roleLabel, mobileMenuO
         {nav.map(({ id, label, icon: Icon, badge }, i) => {
           const active = section === id;
           return (
-<<<<<<< HEAD
-            <motion.button key={id} onClick={() => { setSection(id); setMobileMenuOpen(false); }}
-=======
-            <motion.button key={id} onClick={() => { setSection(id); setIsOpen(false); }}
->>>>>>> 969d7219940bda0292b30fecba967888f9cd9fc6
+            <motion.button key={id} onClick={() => { setSection(id); setIsOpen(false); setMobileMenuOpen?.(false); }}
               initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 * i }}
               whileHover={{ x: 5 }} whileTap={{ scale: 0.98 }}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold w-full text-left transition-all relative overflow-hidden group ${active

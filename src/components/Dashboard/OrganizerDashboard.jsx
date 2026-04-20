@@ -647,8 +647,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
      RENDER
   ══════════════════════════════════════════════════════════ */
   return (
-    <div className="relative min-h-full h-full w-full text-slate-200 selection:bg-amber-500/30 flex flex-col" style={{ background: '#04070D', fontFamily: "'Space Grotesk', 'Inter', system-ui, sans-serif" }}>
-    <div className="relative h-full flex flex-col text-slate-200 selection:bg-amber-500/30" style={{ background: '#04070D', fontFamily: "'Space Grotesk', 'Inter', system-ui, sans-serif" }}>
+    <div className="relative h-full flex flex-col w-full text-slate-200 selection:bg-amber-500/30" style={{ background: '#04070D', fontFamily: "'Space Grotesk', 'Inter', system-ui, sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
       <CinematicBackground />
 
