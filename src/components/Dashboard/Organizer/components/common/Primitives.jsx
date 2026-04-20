@@ -27,11 +27,11 @@ export const Modal = ({ title, onClose, children, width = 'max-w-lg' }) => {
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className={cls('w-full shadow-2xl max-h-[90vh] overflow-y-auto rounded-3xl p-8 transition-colors duration-500', width, 
+        className={cls('w-full shadow-2xl max-h-[90vh] overflow-y-auto rounded-3xl p-5 md:p-8 transition-colors duration-500', width, 
           isDark ? 'bg-[#0B0F1A]/95 border border-white/[0.08]' : 'bg-white border border-zinc-300 shadow-xl shadow-zinc-200/50'
         )}
       >
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-6 md:mb-8">
           <h3 className={`text-xl font-bold tracking-tight transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>{title}</h3>
           <button onClick={onClose}
             className={`p-2 rounded-full transition-all hover:rotate-90 ${
@@ -232,3 +232,4 @@ export const LoadingRows = () => {
     </div>
   );
 };
+

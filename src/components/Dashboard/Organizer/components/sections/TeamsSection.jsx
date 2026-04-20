@@ -15,7 +15,7 @@ const TeamsSection = ({
 
   return (
     <AnimatedSection className="space-y-6">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
         <div>
           <h2 className={`text-3xl font-black transition-colors duration-500 tracking-tight mb-1 ${isDark ? 'text-white' : 'text-zinc-900'}`}>Teams</h2>
           <p className="text-slate-500 font-medium tracking-wide">{teams.filter(t => isOrganizer || myTeamIds.includes(t.id)).length} active teams</p>

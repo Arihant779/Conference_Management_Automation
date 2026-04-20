@@ -88,7 +88,7 @@ const OverviewSection = ({
             <div className={`rounded-2xl p-6 h-full border backdrop-blur-xl transition-all duration-500 ${
               isDark ? 'border-white/5 bg-slate-900/50 hover:bg-slate-900/70' : 'border-zinc-300 bg-white hover:bg-zinc-50 shadow-md shadow-zinc-200/50'
             }`}>
-              <div className="flex justify-between items-center mb-5">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-5">
                 <span className={`text-sm font-bold tracking-wide transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>Paper Review</span>
                 <button onClick={() => setSection?.('papers')} className="text-xs font-bold text-amber-500 hover:text-amber-400 transition-colors">View all →</button>
               </div>
@@ -114,7 +114,7 @@ const OverviewSection = ({
             <div className={`rounded-2xl p-6 h-full border backdrop-blur-xl transition-all duration-500 ${
               isDark ? 'border-white/5 bg-slate-900/50 hover:bg-slate-900/70' : 'border-zinc-300 bg-white hover:bg-zinc-50 shadow-md shadow-zinc-200/50'
             }`}>
-              <div className="flex justify-between items-center mb-5">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-5">
                 <span className={`text-sm font-bold tracking-wide transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>Active Teams</span>
                 {can?.('manage_teams') && <button onClick={() => setSection?.('teams')} className="text-xs font-bold text-amber-500 hover:text-amber-400 transition-colors">Manage →</button>}
               </div>
@@ -137,7 +137,7 @@ const OverviewSection = ({
           <div className={`rounded-2xl p-6 h-full border backdrop-blur-xl transition-all duration-500 ${
             isDark ? 'border-white/5 bg-slate-900/50 hover:bg-slate-900/70' : 'border-zinc-300 bg-white shadow-md shadow-zinc-200/50'
           }`}>
-            <div className="flex justify-between items-center mb-5">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-5">
               <span className={`text-sm font-bold tracking-wide transition-colors ${isDark ? 'text-white' : 'text-zinc-900'}`}>Task Completion</span>
               {can?.('manage_tasks') && <button onClick={() => setSection?.('tasks')} className="text-xs font-bold text-amber-500 hover:text-amber-400 transition-colors">Manage →</button>}
             </div>

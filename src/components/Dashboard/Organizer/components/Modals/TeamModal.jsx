@@ -161,7 +161,7 @@ const TeamModal = ({
         <div className={cls('space-y-4', !isOrganizer && 'opacity-70 pointer-events-none')}>
           <Field label="Team Type or Department">
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1 custom-scrollbar">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1 custom-scrollbar">
                 {TEAM_TYPES.map(({ id, label }) => (
                   <button key={id} type="button" onClick={() => setTmForm({ ...tmForm, type: id, name: label })}
                     className="text-left px-4 py-2.5 rounded-xl text-[11px] font-bold transition-all flex items-center gap-2.5"
@@ -403,3 +403,4 @@ const TeamModal = ({
 };
 
 export default TeamModal;
+

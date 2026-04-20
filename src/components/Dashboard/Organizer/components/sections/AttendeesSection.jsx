@@ -21,7 +21,7 @@ const AttendeesSection = ({
 
   return (
     <AnimatedSection className="space-y-6 pb-20">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
         <div>
           <h2 className={`text-3xl font-black transition-colors duration-500 tracking-tight mb-1 ${isDark ? 'text-white' : 'text-zinc-900'}`}>Attendees</h2>
           <p className="text-slate-500 font-medium tracking-wide">{attendees.length} registered attendee{attendees.length !== 1 ? 's' : ''}</p>

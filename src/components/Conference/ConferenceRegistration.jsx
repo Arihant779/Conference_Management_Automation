@@ -451,7 +451,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
                 <div className="border-t border-white/10 pt-6">
                   <h3 className="text-sm font-bold text-white mb-4">Personal Information</h3>
                   <div className="space-y-4">
-                    <div className="grid grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                       <div>
                         <Label>Title</Label>
                         <Select value={form.salutation} onChange={e => set('salutation', e.target.value)}>
@@ -469,7 +469,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
                           error={errors.first_name}
                         />
                       </div>
-                      <div className="col-span-2">
+                      <div className="col-span-2 lg:col-span-2">
                         <Label required>Last Name</Label>
                         <Input
                           placeholder="Rivera"
@@ -479,7 +479,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <Label required>Email</Label>
                         <Input
@@ -532,7 +532,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
                     error={errors.organization}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label>Department</Label>
                     <Input
@@ -550,7 +550,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label required>Country</Label>
                     <Input
@@ -581,7 +581,7 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
                   <p className="text-slate-500 text-sm">Help us personalise your experience.</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label>Dietary Requirements</Label>
                     <Select value={form.dietary} onChange={e => set('dietary', e.target.value)}>
@@ -854,3 +854,4 @@ const ConferenceRegistration = ({ conf, currentUser, onSuccess, onBack }) => {
 };
 
 export default ConferenceRegistration;
+
