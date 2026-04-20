@@ -1,8 +1,34 @@
 import express from "express";
+import { supabase } from "../lib/supabaseClient.mjs";
 import { callLLM } from "../services/llmService.mjs";
 import { sendEmailsToRecipients, sendTestEmail, sendEmailWithAttachment } from "../services/emailService.mjs";
+import { DEFAULT_SENDER } from "../config/email.mjs";
 
 const router = express.Router();
+
+/**
+ * Fetch custom sender config from Supabase for a conference
+ */
+async function getConferenceSenderConfig(conferenceId) {
+  if (!conferenceId) return null;
+  const { data, error } = await supabase
+    .from("conference")
+    .select("email_sender_address, email_sender_name, gmail_client_id, gmail_refresh_token, email_use_default")
+    .eq("conference_id", conferenceId)
+    .single();
+
+  if (error || !data || data.email_use_default) return null;
+  
+  // Verify mandatory pieces exist
+  if (!data.email_sender_address || !data.gmail_client_id || !data.gmail_refresh_token) return null;
+
+  return {
+    email: data.email_sender_address,
+    name: data.email_sender_name,
+    clientId: data.gmail_client_id,
+    refreshToken: data.gmail_refresh_token
+  };
+}
 
 /* ── Generate email subject + body via LLM ── */
 router.post("/generate-email", async (req, res) => {
@@ -57,15 +83,15 @@ router.post("/send-email", async (req, res) => {
   console.log(`\nSend -> recipients: ${to.length}, subject: "${subject}"`);
 
   try {
-    const { sent, failed } = await sendEmailsToRecipients(to, subject, body);
+    const customConfig = await getConferenceSenderConfig(req.body.conferenceId);
+    const { sent, failed } = await sendEmailsToRecipients(to, subject, body, customConfig);
 
     if (sent === 0) {
       const firstError = failed[0]?.reason?.message || "Unknown error";
       return res.status(500).json({ error: `Send failed: ${firstError}` });
     }
 
-    const { DEFAULT_SENDER } = await import("../config/email.mjs");
-    res.json({ success: true, sent, failed: failed.length, from: DEFAULT_SENDER.email });
+    res.json({ success: true, sent, failed: failed.length, from: customConfig?.email || DEFAULT_SENDER.email });
   } catch (err) {
     console.error("Send error:", err.message);
     res.status(422).json({ error: err.message });
@@ -85,6 +111,7 @@ router.post("/send-email-with-attachment", async (req, res) => {
   console.log(`\nSend w/ attachment -> to: ${to}, subject: "${subject}", file: ${attachment.filename}`);
 
   try {
+    const customConfig = await getConferenceSenderConfig(req.body.conferenceId);
     await sendEmailWithAttachment(
       to,
       subject,
@@ -93,10 +120,11 @@ router.post("/send-email-with-attachment", async (req, res) => {
         filename: attachment.filename,
         content: Buffer.from(attachment.content, "base64"),
         contentType: attachment.contentType || "application/pdf",
-      }
+      },
+      customConfig
     );
 
-    res.json({ success: true, sent: 1 });
+    res.json({ success: true, sent: 1, from: customConfig?.email || DEFAULT_SENDER.email });
   } catch (err) {
     console.error("Send w/ attachment error:", err.message);
     res.status(500).json({ error: err.message });

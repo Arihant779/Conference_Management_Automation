@@ -2,18 +2,112 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   X, Upload, Type, PenTool, ZoomIn, ZoomOut,
   MousePointer, Check, Trash2, RotateCcw, Eye, Download,
-  Plus, Edit3, AlignCenter
+  Plus, Edit3, AlignCenter, Award
 } from 'lucide-react';
 
 /* ─── constants ─────────────────────────────────────────── */
 const FONTS = [
   { key: 'Inter', label: 'Inter', css: "'Inter', sans-serif", url: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap' },
+  { key: 'Space Grotesk', label: 'Space Grotesk', css: "'Space Grotesk', sans-serif", url: 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap' },
   { key: 'Playfair Display', label: 'Playfair Display', css: "'Playfair Display', serif", url: 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap' },
   { key: 'Dancing Script', label: 'Dancing Script', css: "'Dancing Script', cursive", url: 'https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600;700&display=swap' },
   { key: 'Roboto Serif', label: 'Roboto Serif', css: "'Roboto Serif', serif", url: 'https://fonts.googleapis.com/css2?family=Roboto+Serif:wght@400;600;700&display=swap' },
   { key: 'Georgia', label: 'Georgia', css: "Georgia, 'Times New Roman', serif", url: null },
-  { key: 'Great Vibes', label: 'Great Vibes', css: "'Great Vibes', cursive", url: 'https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap' },
 ];
+
+/* ── PRESETS ────────────────────────────────────────────── */
+/* ── PRESETS ────────────────────────────────────────────── */
+const PRESETS = {
+  modern: {
+    name: 'Modern Vanguard',
+    font: 'Space Grotesk',
+    fontSize: 72,
+    color: '#fbbf24', // Amber
+    bg: '#04070D',
+    accent: '#3b82f6', // Blue
+    style: 'geometric',
+    items: [
+      { id: 'title', text: 'CERTIFICATE OF PARTICIPATION', font: 'Space Grotesk', fontSize: 48, color: '#fbbf24', pos: { x: 1000, y: 300 } },
+      { id: 'subtitle', text: 'This is to certify that', font: 'Inter', fontSize: 24, color: '#FFFFFF', pos: { x: 1000, y: 450 } },
+      { id: 'participant_label', text: 'has participated in', font: 'Inter', fontSize: 24, color: '#FFFFFF', pos: { x: 1000, y: 750 } },
+      { id: 'conf_val', text: '[[Conference Name]]', font: 'Space Grotesk', fontSize: 36, color: '#3b82f6', pos: { x: 1000, y: 820 } },
+      { id: 'id_val', text: 'Certificate ID: [[Certificate ID]]', font: 'Inter', fontSize: 13, color: 'rgba(255,255,255,0.4)', pos: { x: 400, y: 1250 } },
+      { id: 'date_val', text: 'Awarded on: [[Date]]', font: 'Inter', fontSize: 13, color: 'rgba(255,255,255,0.4)', pos: { x: 1600, y: 1250 } },
+    ],
+    nameY: 600
+  },
+  classic: {
+    name: 'Classic Nexus',
+    font: 'Playfair Display',
+    fontSize: 82,
+    color: '#1A1714', // Ink
+    bg: '#FDFCFB',    // Antique
+    accent: '#C5A059', // Gold
+    style: 'heraldic',
+    items: [
+      { id: 'title', text: 'CERTIFICATE OF PARTICIPATION', font: 'Playfair Display', fontSize: 44, color: '#1A1714', pos: { x: 1000, y: 320 } },
+      { id: 'subtitle', text: 'This is to certify that', font: 'Georgia', fontSize: 22, color: '#4B4237', pos: { x: 1000, y: 460 } },
+      { id: 'participant_label', text: 'has participated in', font: 'Georgia', fontSize: 22, color: '#4B4237', pos: { x: 1000, y: 760 } },
+      { id: 'conf_val', text: '[[Conference Name]]', font: 'Playfair Display', fontSize: 32, color: '#C5A059', pos: { x: 1000, y: 830 } },
+      { id: 'id_val', text: 'Certificate ID: [[Certificate ID]]', font: 'Inter', fontSize: 12, color: '#948B7F', pos: { x: 400, y: 1250 } },
+      { id: 'date_val', text: 'Date: [[Date]]', font: 'Inter', fontSize: 12, color: '#948B7F', pos: { x: 1600, y: 1250 } },
+    ],
+    nameY: 610
+  },
+  tech: {
+    name: 'Terminal Tech',
+    font: 'Space Grotesk',
+    fontSize: 70,
+    color: '#f5c518', // Tech Gold
+    bg: '#020408',    // Dark
+    accent: '#ff0055', // Digital Rose
+    style: 'cyber',
+    items: [
+      { id: 'title', text: 'CERTIFICATE OF PARTICIPATION', font: 'Space Grotesk', fontSize: 46, color: '#f5c518', pos: { x: 1000, y: 300 } },
+      { id: 'subtitle', text: '> verification_source: identified', font: 'Inter', fontSize: 18, color: 'rgba(245,197,24,0.5)', pos: { x: 1000, y: 430 } },
+      { id: 'participant_label', text: 'has successfully completed residency at', font: 'Inter', fontSize: 20, color: '#FFFFFF', pos: { x: 1000, y: 760 } },
+      { id: 'conf_val', text: '[[Conference Name]]', font: 'Space Grotesk', fontSize: 34, color: '#ff0055', pos: { x: 1000, y: 830 } },
+      { id: 'id_val', text: '[[Certificate ID]]', font: 'Inter', fontSize: 14, color: 'rgba(245,197,24,0.3)', pos: { x: 1000, y: 1300 } },
+      { id: 'date_val', text: 'TS: [[Date]]', font: 'Inter', fontSize: 14, color: 'rgba(245,197,24,0.3)', pos: { x: 1600, y: 1300 } },
+    ],
+    nameY: 600
+  },
+  business: {
+    name: 'Elite Business',
+    font: 'Roboto Serif',
+    fontSize: 76,
+    color: '#fbbf24', // Platinum/Gold
+    bg: '#01050e',    // Navy
+    accent: '#f8fafc', // Platinum
+    style: 'corporate',
+    items: [
+      { id: 'title', text: 'CERTIFICATE OF PARTICIPATION', font: 'Roboto Serif', fontSize: 42, color: '#f8fafc', pos: { x: 1000, y: 320 } },
+      { id: 'subtitle', text: 'This is to officially certify that', font: 'Inter', fontSize: 20, color: 'rgba(248,250,252,0.6)', pos: { x: 1000, y: 460 } },
+      { id: 'participant_label', text: 'has been a distinguished participant in', font: 'Inter', fontSize: 20, color: 'rgba(248,250,252,0.6)', pos: { x: 1000, y: 770 } },
+      { id: 'conf_val', text: '[[Conference Name]]', font: 'Roboto Serif', fontSize: 34, color: '#fbbf24', pos: { x: 1000, y: 840 } },
+      { id: 'id_val', text: 'Ref: [[Certificate ID]]', font: 'Inter', fontSize: 12, color: 'rgba(248,250,252,0.3)', pos: { x: 400, y: 1250 } },
+      { id: 'date_val', text: 'Date: [[Date]]', font: 'Inter', fontSize: 12, color: 'rgba(248,250,252,0.3)', pos: { x: 1600, y: 1250 } },
+    ],
+    nameY: 620
+  },
+  creative: {
+    name: 'Artistic Prism',
+    font: 'Dancing Script',
+    fontSize: 90,
+    color: '#0f172a',
+    bg: '#fdfcfd',
+    accent: '#f5c518',
+    style: 'artistic',
+    items: [
+      { id: 'title', text: 'CERTIFICATE OF PARTICIPATION', font: 'Dancing Script', fontSize: 50, color: '#0f172a', pos: { x: 1000, y: 340 } },
+      { id: 'subtitle', text: 'We celebrate the presence of', font: 'Inter', fontSize: 22, color: '#64748b', pos: { x: 1000, y: 480 } },
+      { id: 'participant_label', text: 'in the creative spectrum of', font: 'Inter', fontSize: 22, color: '#64748b', pos: { x: 1000, y: 780 } },
+      { id: 'conf_val', text: '[[Conference Name]]', font: 'Dancing Script', fontSize: 40, color: '#f5c518', pos: { x: 1000, y: 850 } },
+      { id: 'id_val', text: 'ID: [[Certificate ID]]', font: 'Inter', fontSize: 12, color: '#cbd5e1', pos: { x: 1000, y: 1320 } },
+    ],
+    nameY: 630
+  }
+};
 
 const MIN_ZOOM = 0.3;
 const MAX_ZOOM = 3;
@@ -156,11 +250,11 @@ const SignaturePad = ({ onSave, onCancel }) => {
    MAIN CERTIFICATE EDITOR
    Full-screen popup triggered from EmailComposer.
 ═══════════════════════════════════════════════════════════ */
-const CertificateEditor = ({ onSave, onClose }) => {
+const CertificateEditor = ({ onSave, onClose, conf }) => {
   /* ── state ── */
   const [templateImg, setTemplateImg] = useState(null);       // HTMLImageElement
   const [templateDataURL, setTemplateDataURL] = useState(''); // base64 of the uploaded image
-  const [font, setFont] = useState('Playfair Display');
+  const [font, setFont] = useState('Space Grotesk');
   const [fontSize, setFontSize] = useState(36);
   const [namePos, setNamePos] = useState(null);       // {x, y} in original image coords
   const [zoom, setZoom] = useState(1);
@@ -192,6 +286,41 @@ const CertificateEditor = ({ onSave, onClose }) => {
     });
   }, []);
 
+  /* ── handle preset selection ── */
+  const loadPreset = (key) => {
+    const p = PRESETS[key];
+    if (!p) return;
+
+    // Canvas dimensions for landscape A4 (2000x1414)
+    const width = 2000;
+    const height = 1414;
+
+    // Use an object that mimics Image properties for consistent JSX access
+    setTemplateImg({ isProcedural: true, width, height });
+    setTemplateDataURL(key);       // Use key as identifier
+    setFont(p.font);
+    setFontSize(p.fontSize);
+    setNamePos({ x: width / 2, y: p.nameY });
+    setTextItems(p.items.map(it => ({ ...it, id: Date.now() + Math.random().toString(36).substr(2, 9) })));
+    setSignaturePos(null);
+
+    // Set zoom to fit both width and height of container
+    if (containerRef.current) {
+      const containerW = containerRef.current.clientWidth - 80;
+      const containerH = containerRef.current.clientHeight - 80;
+      const zoomW = containerW / width;
+      const zoomH = containerH / height;
+      setZoom(Math.min(zoomW, zoomH, 1));
+    }
+  };
+
+  // Auto-load recommended preset on mount if template matches
+  useEffect(() => {
+    if (conf?.template && PRESETS[conf.template] && !templateImg) {
+      loadPreset(conf.template);
+    }
+  }, [conf]);
+
   /* ── handle template upload ── */
   const handleUpload = (e) => {
     const file = e.target.files?.[0];
@@ -205,11 +334,14 @@ const CertificateEditor = ({ onSave, onClose }) => {
         setTemplateDataURL(reader.result);
         setNamePos(null);
         setSignaturePos(null);
-        // Fit into the container
+        
+        // Fit into the container (both dimensions)
         if (containerRef.current) {
-          const containerW = containerRef.current.clientWidth - 40;
-          const ratio = containerW / img.width;
-          setZoom(Math.min(ratio, 1));
+          const containerW = containerRef.current.clientWidth - 80;
+          const containerH = containerRef.current.clientHeight - 80;
+          const zoomW = containerW / img.width;
+          const zoomH = containerH / img.height;
+          setZoom(Math.min(zoomW, zoomH, 1));
         }
       };
       img.src = reader.result;
@@ -249,39 +381,126 @@ const CertificateEditor = ({ onSave, onClose }) => {
     setMode('placeText');
   };
 
+  /* ── draw procedural background ── */
+  const drawProceduralBackground = (ctx, width, height, themeKey) => {
+    const p = PRESETS[themeKey];
+    if (!p) return;
+
+    // Fill background
+    ctx.fillStyle = p.bg;
+    ctx.fillRect(0, 0, width, height);
+
+    if (p.style === 'geometric') {
+      // Modern Modern Vanguard
+      ctx.strokeStyle = p.accent + '33';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < width; i += 100) {
+        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, height); ctx.stroke();
+      }
+      // Accent corner
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(300, 0); ctx.lineTo(0, 300); ctx.fill();
+      // Border
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = 20;
+      ctx.strokeRect(40, 40, width - 80, height - 80);
+    } else if (p.style === 'heraldic') {
+      // Classic Nexus
+      ctx.strokeStyle = p.accent;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(60, 60, width - 120, height - 120);
+      ctx.lineWidth = 8;
+      ctx.strokeRect(80, 80, width - 160, height - 160);
+      // Corner Ornaments
+      ctx.fillStyle = p.accent;
+      const size = 150;
+      [
+        [80, 80], [width - 80 - size, 80],
+        [80, height - 80 - size], [width - 80 - size, height - 80 - size]
+      ].forEach(([x, y]) => {
+        ctx.fillRect(x, y, size, 10); ctx.fillRect(x, y, 10, size);
+      });
+    } else if (p.style === 'cyber') {
+      // Terminal Tech
+      ctx.strokeStyle = 'rgba(245,197,24,0.1)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < height; i += 40) {
+        ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(width, i); ctx.stroke();
+      }
+      // Corner Brackets
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = 4;
+      const b = 100; const s = 40;
+      // TL
+      ctx.beginPath(); ctx.moveTo(s, s + b); ctx.lineTo(s, s); ctx.lineTo(s + b, s); ctx.stroke();
+      // TR
+      ctx.beginPath(); ctx.moveTo(width - s - b, s); ctx.lineTo(width - s, s); ctx.lineTo(width - s, s + b); ctx.stroke();
+      // BL
+      ctx.beginPath(); ctx.moveTo(s, height - s - b); ctx.lineTo(s, height - s); ctx.lineTo(s + b, height - s); ctx.stroke();
+      // BR
+      ctx.beginPath(); ctx.moveTo(width - s - b, height - s); ctx.lineTo(width - s, height - s); ctx.lineTo(width - s, height - s - b); ctx.stroke();
+    } else if (p.style === 'corporate') {
+      // Elite Business
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(50, 50, width - 100, height - 100);
+      ctx.lineWidth = 1;
+      ctx.strokeRect(65, 65, width - 130, height - 130);
+      // Left Stripe
+      ctx.fillStyle = p.color + '22';
+      ctx.fillRect(0, 0, 150, height);
+    } else if (p.style === 'artistic') {
+      // Creative Prism
+      const grad = ctx.createRadialGradient(width, 0, 0, width, 0, width);
+      grad.addColorStop(0, 'rgba(245,197,24,0.1)');
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+      // Soft dots
+      ctx.fillStyle = 'rgba(245,197,24,0.3)';
+      for (let i = 0; i < 20; i++) {
+        ctx.beginPath();
+        ctx.arc(Math.random() * width, Math.random() * height, Math.random() * 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  };
+
   /* ── redraw canvas ── */
   const redraw = useCallback(() => {
     const canvas = canvasRef.current;
-    const img = templateImg;
-    if (!canvas || !img) return;
+    if (!canvas || !templateImg) return;
 
     const ctx = canvas.getContext('2d');
-    canvas.width = img.width;
-    canvas.height = img.height;
-
-    // Draw template
-    ctx.drawImage(img, 0, 0);
+    
+    if (templateImg.isProcedural) {
+      canvas.width = 2000;
+      canvas.height = 1414;
+      drawProceduralBackground(ctx, canvas.width, canvas.height, templateDataURL);
+    } else {
+      canvas.width = templateImg.width;
+      canvas.height = templateImg.height;
+      ctx.drawImage(templateImg, 0, 0);
+    }
 
     // Draw name marker if position set
     if (namePos) {
       const selectedFont = FONTS.find(f => f.key === font) || FONTS[0];
       ctx.font = `${fontSize}px ${selectedFont.css}`;
-      ctx.fillStyle = '#1a1a2e';
+      ctx.fillStyle = templateImg.isProcedural ? PRESETS[templateDataURL]?.color : (PRESETS[conf?.template]?.color || '#1a1a2e');
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('[[Participant Name]]', namePos.x, namePos.y);
 
-      // Draw crosshair
-      ctx.strokeStyle = 'rgba(99,102,241,0.6)';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([6, 4]);
-      ctx.beginPath();
-      ctx.moveTo(namePos.x - 100, namePos.y);
-      ctx.lineTo(namePos.x + 100, namePos.y);
-      ctx.moveTo(namePos.x, namePos.y - 30);
-      ctx.lineTo(namePos.x, namePos.y + 30);
-      ctx.stroke();
-      ctx.setLineDash([]);
+      // Marker line for name
+      if (templateImg.isProcedural) {
+        ctx.strokeStyle = ctx.fillStyle;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(namePos.x - 300, namePos.y + fontSize * 0.7);
+        ctx.lineTo(namePos.x + 300, namePos.y + fontSize * 0.7);
+        ctx.stroke();
+      }
     }
 
     // Draw custom text items
@@ -292,7 +511,13 @@ const CertificateEditor = ({ onSave, onClose }) => {
       ctx.fillStyle = item.color;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(item.text, item.pos.x, item.pos.y);
+      
+      // Handle placeholders in preview
+      let displayMsg = item.text;
+      if (displayMsg.includes('[[Certificate ID]]')) displayMsg = displayMsg.replace('[[Certificate ID]]', 'ABC-12345');
+      if (displayMsg.includes('[[Date]]')) displayMsg = displayMsg.replace('[[Date]]', new Date().toLocaleDateString());
+      
+      ctx.fillText(displayMsg, item.pos.x, item.pos.y);
 
       // Draw subtle indicator border
       const metrics = ctx.measureText(item.text);
@@ -330,6 +555,11 @@ const CertificateEditor = ({ onSave, onClose }) => {
   /* ── JS Pixel Scanning: find blank center on click row ── */
   const findBlankCenter = useCallback((imgX, imgY) => {
     if (!templateImg) return imgX;
+
+    // For procedural templates, we don't need to scan pixels; just return center
+    if (templateImg.isProcedural) {
+      return templateImg.width / 2;
+    }
 
     // Draw a fresh copy of the template to scan pixels
     const offscreen = document.createElement('canvas');
@@ -574,12 +804,39 @@ const CertificateEditor = ({ onSave, onClose }) => {
         {/* ── Left toolbar ── */}
         <aside className="w-full lg:w-72 shrink-0 bg-[#0d1117] border-b lg:border-b-0 lg:border-r border-white/8 p-4 overflow-y-auto space-y-5">
 
-          {/* Upload */}
+          {/* Presets */}
           <div>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Template</p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Presets</p>
+              {conf?.template && <span className="text-[9px] text-indigo-400 font-bold bg-indigo-500/10 px-2 py-0.5 rounded-full">Recommended</span>}
+            </div>
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              {Object.entries(PRESETS).map(([key, p]) => (
+                <button
+                  key={key}
+                  onClick={() => loadPreset(key)}
+                  className={cls(
+                    'flex flex-col items-center gap-2 p-3 rounded-xl border transition-all text-center group',
+                    conf?.template === key ? 'border-indigo-500/50 bg-indigo-500/10' : 'border-white/5 hover:border-white/15'
+                  )}
+                >
+                  <div className={cls(
+                    "w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110",
+                    key === 'modern' ? 'bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 
+                    key === 'classic' ? 'bg-amber-100 shadow-[0_0_15px_rgba(254,243,199,0.3)]' : 
+                    'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
+                  )}>
+                    <Award size={16} className={key === 'classic' ? 'text-amber-800' : 'text-white'} />
+                  </div>
+                  <span className="text-[10px] font-bold text-white leading-tight">{p.name}</span>
+                </button>
+              ))}
+            </div>
+
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Custom Template</p>
             <label className={cls(
               'flex flex-col items-center justify-center gap-2 py-5 border-2 border-dashed rounded-xl cursor-pointer transition-all',
-              templateImg ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-white/15 hover:border-indigo-500/40 hover:bg-indigo-500/5',
+              templateImg && !Object.keys(PRESETS).some(k => templateDataURL.includes(k)) ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-white/15 hover:border-indigo-500/40 hover:bg-indigo-500/5',
             )}>
               <Upload size={20} className={templateImg ? 'text-emerald-400' : 'text-slate-500'} />
               <span className="text-xs text-slate-400 font-medium">

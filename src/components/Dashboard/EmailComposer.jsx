@@ -250,31 +250,105 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
   };
 
   /* ── render a single certificate PDF for a given participant name ── */
-  const renderCertificatePdf = async (name) => {
+  const renderCertificatePdf = async (name, certId) => {
     if (!certConfig) return null;
 
     const { templateDataURL, templateWidth, templateHeight, namePos, font: certFont, fontSize: certFontSize, signatureDataURL, signaturePos, signatureSize, textItems: certTextItems } = certConfig;
+    const currentDate = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
 
-    // Create an offscreen canvas at the template's native resolution
+    const width = templateWidth || 2000;
+    const height = templateHeight || 1414;
+
+    // Create an offscreen canvas
     const offscreen = document.createElement('canvas');
-    offscreen.width = templateWidth;
-    offscreen.height = templateHeight;
+    offscreen.width = width;
+    offscreen.height = height;
     const ctx = offscreen.getContext('2d');
 
-    // Load template image
-    const tplImg = await new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.src = templateDataURL;
-    });
-    ctx.drawImage(tplImg, 0, 0);
+    // Check if it's procedural or an image
+    const isProcedural = ['modern', 'classic', 'tech', 'business', 'creative'].includes(templateDataURL);
 
-    // Draw participant name (centered)
+    if (isProcedural) {
+      // ── Procedural Drawing (Duplicate of CertificateEditor logic for PDF fidelity) ──
+      const themes = {
+        modern: { bg: '#04070D', color: '#fbbf24', accent: '#3b82f6', style: 'geometric' },
+        classic: { bg: '#FDFCFB', color: '#1A1714', accent: '#C5A059', style: 'heraldic' },
+        tech: { bg: '#020408', color: '#f5c518', accent: '#ff0055', style: 'cyber' },
+        business: { bg: '#01050e', color: '#fbbf24', accent: '#f8fafc', style: 'corporate' },
+        creative: { bg: '#fdfcfd', color: '#0f172a', accent: '#f5c518', style: 'artistic' }
+      };
+      const p = themes[templateDataURL];
+      
+      // Fill background
+      ctx.fillStyle = p.bg;
+      ctx.fillRect(0, 0, width, height);
+
+      if (p.style === 'geometric') {
+        ctx.strokeStyle = p.accent + '33'; ctx.lineWidth = 1;
+        for (let i = 0; i < width; i += 100) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, height); ctx.stroke(); }
+        ctx.fillStyle = p.color; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(300, 0); ctx.lineTo(0, 300); ctx.fill();
+        ctx.strokeStyle = p.color; ctx.lineWidth = 20; ctx.strokeRect(40, 40, width - 80, height - 80);
+      } else if (p.style === 'heraldic') {
+        ctx.strokeStyle = p.accent; ctx.lineWidth = 2; ctx.strokeRect(60, 60, width - 120, height - 120);
+        ctx.lineWidth = 8; ctx.strokeRect(80, 80, width - 160, height - 160);
+        ctx.fillStyle = p.accent; const size = 150;
+        [[80, 80], [width - 80 - size, 80], [80, height - 80 - size], [width - 80 - size, height - 80 - size]].forEach(([x, y]) => {
+          ctx.fillRect(x, y, size, 10); ctx.fillRect(x, y, 10, size);
+        });
+      } else if (p.style === 'cyber') {
+        ctx.strokeStyle = 'rgba(245,197,24,0.1)'; ctx.lineWidth = 1;
+        for (let i = 0; i < height; i += 40) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(width, i); ctx.stroke(); }
+        ctx.strokeStyle = p.color; ctx.lineWidth = 4; const b = 100, s = 40;
+        ctx.beginPath(); ctx.moveTo(s, s + b); ctx.lineTo(s, s); ctx.lineTo(s + b, s); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(width - s - b, s); ctx.lineTo(width - s, s); ctx.lineTo(width - s, s + b); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(s, height - s - b); ctx.lineTo(s, height - s); ctx.lineTo(s + b, height - s); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(width - s - b, height - s); ctx.lineTo(width - s, height - s); ctx.lineTo(width - s, height - s - b); ctx.stroke();
+      } else if (p.style === 'corporate') {
+        ctx.strokeStyle = p.color; ctx.lineWidth = 2; ctx.strokeRect(50, 50, width - 100, height - 100);
+        ctx.lineWidth = 1; ctx.strokeRect(65, 65, width - 130, height - 130);
+        ctx.fillStyle = p.color + '22'; ctx.fillRect(0, 0, 150, height);
+      } else if (p.style === 'artistic') {
+        const grad = ctx.createRadialGradient(width, 0, 0, width, 0, width);
+        grad.addColorStop(0, 'rgba(245,197,24,0.1)'); grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad; ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = 'rgba(245,197,24,0.3)';
+        for (let i = 0; i < 20; i++) {
+          ctx.beginPath(); ctx.arc(Math.random() * width, Math.random() * height, Math.random() * 5, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+    } else {
+      // Load and draw template image
+      const tplImg = await new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.src = templateDataURL;
+      });
+      ctx.drawImage(tplImg, 0, 0);
+    }
+
+    // Draw participant name
     ctx.font = `${certFontSize}px ${certFont}, serif`;
-    ctx.fillStyle = '#1a1a2e';
+    ctx.fillStyle = (isProcedural && templateDataURL !== 'artistic' && templateDataURL !== 'classic') ? '#fbbf24' : '#1a1a2e';
+    
+    // Explicitly check for tech and classic colors
+    if (templateDataURL === 'tech') ctx.fillStyle = '#f5c518';
+    if (templateDataURL === 'modern') ctx.fillStyle = '#fbbf24';
+    if (templateDataURL === 'classic') ctx.fillStyle = '#1A1714';
+    if (templateDataURL === 'business') ctx.fillStyle = '#fbbf24';
+
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(name, namePos.x, namePos.y);
+
+    // Marker line for name (for procedural)
+    if (isProcedural && namePos) {
+      ctx.strokeStyle = ctx.fillStyle;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(namePos.x - 300, namePos.y + certFontSize * 0.7);
+      ctx.lineTo(namePos.x + 300, namePos.y + certFontSize * 0.7);
+      ctx.stroke();
+    }
 
     // Draw custom text items
     if (certTextItems && certTextItems.length > 0) {
@@ -284,37 +358,34 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
         ctx.fillStyle = item.color || '#1a1a2e';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(item.text, item.pos.x, item.pos.y);
+        
+        let displayMsg = item.text;
+        displayMsg = displayMsg.replace(/\[\[Certificate ID\]\]/g, certId);
+        displayMsg = displayMsg.replace(/\[\[Date\]\]/g, currentDate);
+        displayMsg = displayMsg.replace(/\[\[Conference Name\]\]/g, conf?.title || 'Our Conference');
+        
+        ctx.fillText(displayMsg, item.pos.x, item.pos.y);
       });
     }
 
-    // Draw signature if present
+    // Draw signature
     if (signatureDataURL && signaturePos && signatureSize) {
       const sigImg = await new Promise((resolve) => {
         const img = new Image();
         img.onload = () => resolve(img);
         img.src = signatureDataURL;
       });
-      ctx.drawImage(
-        sigImg,
-        signaturePos.x - signatureSize.w / 2,
-        signaturePos.y - signatureSize.h / 2,
-        signatureSize.w,
-        signatureSize.h,
-      );
+      ctx.drawImage(sigImg, signaturePos.x - signatureSize.w / 2, signaturePos.y - signatureSize.h / 2, signatureSize.w, signatureSize.h);
     }
 
-    // Convert canvas to PDF
-    const isLandscape = templateWidth > templateHeight;
+    // Convert to PDF
     const pdf = new jsPDF({
-      orientation: isLandscape ? 'landscape' : 'portrait',
+      orientation: width > height ? 'landscape' : 'portrait',
       unit: 'px',
-      format: [templateWidth, templateHeight],
+      format: [width, height],
     });
-    const canvasDataURL = offscreen.toDataURL('image/jpeg', 0.92);
-    pdf.addImage(canvasDataURL, 'JPEG', 0, 0, templateWidth, templateHeight);
-
-    return pdf.output('datauristring').split(',')[1]; // base64 only
+    pdf.addImage(offscreen.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, width, height);
+    return pdf.output('datauristring').split(',')[1];
   };
 
   const sendEmail = async () => {
@@ -339,8 +410,11 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
           const name = emailToName[email.toLowerCase()] || email.split('@')[0];
           setCertSendProgress(`Generating certificate ${i + 1}/${resolvedRecipients.length} for ${name}…`);
 
+          // Generate unique certificate ID
+          const certId = `C-${Math.random().toString(36).substr(2, 4).toUpperCase()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+
           try {
-            const pdfBase64 = await renderCertificatePdf(name);
+            const pdfBase64 = await renderCertificatePdf(name, certId);
 
             const res = await fetch(`${API_BASE_URL}/api/send-email-with-attachment`, {
               method: 'POST',
@@ -348,7 +422,8 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
               body: JSON.stringify({
                 to: email,
                 subject,
-                body,
+                body: body.replace(/{Name}/gi, name),
+                conferenceId: confId, // Pass conferenceId for custom sender support
                 attachment: {
                   filename: `Certificate_${name.replace(/\s+/g, '_')}.pdf`,
                   content: pdfBase64,
@@ -397,6 +472,7 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
                 subject,
                 body: personalizedBody,
                 senderRole,
+                conferenceId: confId, // Pass conferenceId for custom sender support
               }),
             });
 
@@ -553,11 +629,32 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
                 </Field>
 
                 {selectedGroups.includes('custom') && (
-                  <Field label="Custom Email Addresses" isDark={isDark}>
-                    <div className="flex gap-2">
+                  <Field label="Custom Email Addresses" hint={`${customEmailList.length} added`} isDark={isDark}>
+                    <div className="flex gap-2 mb-3">
                       <Input isDark={isDark} placeholder="someone@example.com" value={customInput} onChange={e => setCustomInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && addCustomEmail()} />
-                      <button onClick={addCustomEmail} className="bg-pink-600 text-white px-4 rounded-xl active:scale-95"><Plus size={14} /></button>
+                      <button onClick={addCustomEmail} className="bg-pink-600 hover:bg-pink-500 text-white px-4 rounded-xl active:scale-95 transition-all"><Plus size={14} /></button>
                     </div>
+                    {customEmailList.length > 0 && (
+                      <div className={cls("flex flex-wrap gap-2 p-3 rounded-xl border max-h-32 overflow-y-auto", isDark ? "bg-black/20 border-white/5" : "bg-zinc-50 border-zinc-100")}>
+                        {customEmailList.map(email => (
+                          <div 
+                            key={email} 
+                            className={cls(
+                              "flex items-center gap-2 pl-2.5 pr-1 py-1 rounded-lg text-[10px] font-bold border animate-in zoom-in-95 duration-200",
+                              isDark ? "bg-white/5 border-white/10 text-slate-300" : "bg-white border-zinc-200 text-zinc-600"
+                            )}
+                          >
+                            <span className="truncate max-w-[150px]">{email}</span>
+                            <button 
+                              onClick={() => setCustomEmailList(prev => prev.filter(e => e !== email))} 
+                              className={cls("p-1 rounded hover:bg-red-500/10 hover:text-red-400 transition-all")}
+                            >
+                              <X size={10} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </Field>
                 )}
 
@@ -754,6 +851,7 @@ const EmailComposer = ({ conf, senderRole = 'organizer', onOpenEmailSettings }) 
       {/* ── Certificate Editor Modal (rendered via portal to escape parent transforms) ── */}
       {showCertEditor && ReactDOM.createPortal(
         <CertificateEditor
+          conf={conf}
           onSave={(config) => {
             setCertConfig(config);
             setShowCertEditor(false);

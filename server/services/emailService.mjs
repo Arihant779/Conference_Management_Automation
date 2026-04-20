@@ -1,8 +1,24 @@
+import nodemailer from "nodemailer";
 import { createDefaultTransporter, DEFAULT_SENDER } from "../config/email.mjs";
 
-export async function sendEmailsToRecipients(to, subject, body) {
-  const transporter = createDefaultTransporter();
-  const fromField = `"${DEFAULT_SENDER.name}" <${DEFAULT_SENDER.email}>`;
+export function createCustomTransporter(config) {
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      type: "OAuth2",
+      user: config.email,
+      clientId: config.clientId,
+      clientSecret: config.clientSecret || DEFAULT_SENDER.clientSecret,
+      refreshToken: config.refreshToken,
+    },
+  });
+}
+
+export async function sendEmailsToRecipients(to, subject, body, customConfig = null) {
+  const transporter = customConfig ? createCustomTransporter(customConfig) : createDefaultTransporter();
+  const senderName = customConfig?.name || DEFAULT_SENDER.name;
+  const senderEmail = customConfig?.email || DEFAULT_SENDER.email;
+  const fromField = `"${senderName}" <${senderEmail}>`;
 
   const results = await Promise.allSettled(
     to.map(email =>
@@ -37,9 +53,11 @@ export async function sendTestEmail() {
  * @param {string} body        – plain-text email body
  * @param {Object} attachment  – { filename, content (Buffer), contentType }
  */
-export async function sendEmailWithAttachment(to, subject, body, attachment) {
-  const transporter = createDefaultTransporter();
-  const fromField = `"${DEFAULT_SENDER.name}" <${DEFAULT_SENDER.email}>`;
+export async function sendEmailWithAttachment(to, subject, body, attachment, customConfig = null) {
+  const transporter = customConfig ? createCustomTransporter(customConfig) : createDefaultTransporter();
+  const senderName = customConfig?.name || DEFAULT_SENDER.name;
+  const senderEmail = customConfig?.email || DEFAULT_SENDER.email;
+  const fromField = `"${senderName}" <${senderEmail}>`;
 
   await transporter.sendMail({
     from: fromField,
