@@ -11,7 +11,7 @@ const TaskModal = ({
     <div className="space-y-4">
       <Field label="Task Title"><Input placeholder="Describe the task…" value={tkForm.title} onChange={e => setTkForm({ ...tkForm, title: e.target.value })} /></Field>
       <Field label="Description (optional)"><Textarea className="h-20" placeholder="Additional details…" value={tkForm.description} onChange={e => setTkForm({ ...tkForm, description: e.target.value })} /></Field>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Assign to Team">
           <Sel value={tkForm.team_id} onChange={e => setTkForm({ ...tkForm, team_id: e.target.value })}>
             <option value="">{isOrganizer ? 'No team' : 'Select your team'}</option>
@@ -42,3 +42,4 @@ const TaskModal = ({
 );
 
 export default TaskModal;
+

@@ -145,7 +145,7 @@ const SentimentBar = ({ positive, negative, neutral, total, isDark }) => {
   return (
     <div className="space-y-8">
       {/* Big numbers */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
             { label: 'Positive', pct: posPct, icon: <ThumbsUp />, color: 'emerald', isDark },
             { label: 'Neutral', pct: neuPct, icon: <BarChart2 />, color: 'slate', isDark },
@@ -333,3 +333,4 @@ const FeedbackSummary = ({ form, questions, confId, onClose }) => {
 };
 
 export default FeedbackSummary;
+

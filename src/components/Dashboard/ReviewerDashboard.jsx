@@ -188,7 +188,7 @@ const ReviewerDashboard = ({ conf, onBack }) => {
   };
 
   return (
-    <div className={`relative min-h-screen transition-colors duration-500 selection:bg-amber-500/30 ${isDark ? 'text-slate-200' : 'text-zinc-800'}`} style={{ fontFamily: "'Space Grotesk', 'Inter', system-ui, sans-serif" }}>
+    <div className={`relative min-h-full h-full flex flex-col w-full flex-1 transition-colors duration-500 selection:bg-amber-500/30 ${isDark ? 'text-slate-200' : 'text-zinc-800'}`} style={{ fontFamily: "'Space Grotesk', 'Inter', system-ui, sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
       <AmbientBackground />
 
@@ -523,3 +523,4 @@ const PaperCard = ({ paper, isExpanded, onToggle, submitting, onReview, isReview
 };
 
 export default ReviewerDashboard;
+

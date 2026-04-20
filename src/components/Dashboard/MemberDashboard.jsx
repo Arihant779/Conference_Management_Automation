@@ -657,10 +657,10 @@ const MemberDashboard = ({ conf, onBack }) => {
   };
 
   return (
-    <div className={`relative min-h-screen transition-colors duration-500 selection:bg-amber-500/30 overflow-hidden ${isDark ? 'text-slate-200' : 'text-zinc-800'}`} style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
+    <div className={`relative min-h-full h-full flex flex-col w-full flex-1 transition-colors duration-500 selection:bg-amber-500/30 overflow-hidden ${isDark ? 'text-slate-200' : 'text-zinc-800'}`} style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
       <AmbientBackground />
 
-      <div className="w-full h-screen flex relative z-10 overflow-hidden">
+      <div className="w-full flex-1 flex relative z-10 overflow-hidden">
         <Sidebar nav={nav} section={section} setSection={setSection} isOrganizer={false} roleLabel={myMember?.role || 'Member'} onBack={onBack} />
 
         <main className={cls('flex-1 p-8 custom-scrollbar flex flex-col', section === 'chat' ? 'overflow-hidden' : 'overflow-y-auto')}>
@@ -731,3 +731,6 @@ const MemberDashboard = ({ conf, onBack }) => {
 };
 
 export default MemberDashboard;
+
+
+

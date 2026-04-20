@@ -252,9 +252,15 @@ const ConferenceView = ({
   };
 
   return (
+<<<<<<< HEAD
     <div className="flex flex-col h-screen w-full font-sans bg-[#0f1117] text-slate-200 overflow-hidden">
       <nav className="bg-[#0f1117] static border-b border-white/5 px-4 md:px-6 py-3 md:py-4 flex flex-col md:flex-row justify-between md:items-center gap-4 z-50 shrink-0 w-full">
         <div className="flex items-center gap-3 md:gap-6 w-full md:w-auto overflow-x-auto no-scrollbar pb-1 md:pb-0 shrink-0">
+=======
+    <div className="flex flex-col h-screen overflow-hidden font-sans bg-[#0f1117] text-slate-200">
+      <nav className="bg-[#0f1117] border-b border-white/5 px-4 md:px-6 py-3 flex flex-col md:flex-row gap-3 md:gap-4 justify-between md:items-center z-50 shrink-0 shadow-md relative w-full overflow-hidden">
+        <div className="flex items-center gap-3 md:gap-6 overflow-x-auto no-scrollbar w-full md:w-auto pb-1 md:pb-0">
+>>>>>>> 969d7219940bda0292b30fecba967888f9cd9fc6
           {!isGuest && (
             <>
               <button
@@ -295,17 +301,25 @@ const ConferenceView = ({
           )}
         </div>
 
+<<<<<<< HEAD
         <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto no-scrollbar shrink-0">
+=======
+        <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto no-scrollbar justify-start md:justify-end shrink-0">
+>>>>>>> 969d7219940bda0292b30fecba967888f9cd9fc6
           {isGuest && (
             <button
               onClick={() => onRequireAuth && onRequireAuth('home')}
-              className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:border-white/20 transition-all"
+              className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:border-white/20 transition-all shrink-0"
             >
               <LogIn size={13} /> Sign in
             </button>
           )}
 
+<<<<<<< HEAD
           <div className="flex bg-black/40 p-1.5 rounded-full border border-white/5 shrink-0">
+=======
+          <div className="flex overflow-x-auto max-w-full bg-black/40 p-1.5 rounded-full border border-white/5 custom-scrollbar shrink-0">
+>>>>>>> 969d7219940bda0292b30fecba967888f9cd9fc6
             <NavTab active={viewMode === 'home'} onClick={() => handleTabClick('home')} activeClass="bg-gradient-to-br from-amber-50 to-amber-100 text-amber-900 shadow-lg shadow-amber-500/10">
               Site Preview
             </NavTab>
@@ -320,7 +334,11 @@ const ConferenceView = ({
           </div>
         </div>
       </nav>
+<<<<<<< HEAD
       <div className="flex-1 w-full bg-black overflow-y-auto relative flex flex-col" id="conf-scroll-area">
+=======
+      <div className="flex-1 flex flex-col bg-black overflow-y-auto relative no-scrollbar" id="conf-scroll-area">
+>>>>>>> 969d7219940bda0292b30fecba967888f9cd9fc6
         {viewMode === 'home' ? (
           conf.template === 'classic'
             ? <ClassicTemplate {...templateProps} />
@@ -344,7 +362,7 @@ const ConferenceView = ({
 const NavTab = ({ active, onClick, activeClass, children }) => (
   <button
     onClick={onClick}
-    className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${active ? activeClass : 'text-slate-500 hover:text-slate-300'}`}
+    className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap shrink-0 transition-all ${active ? activeClass : 'text-slate-500 hover:text-slate-300'}`}
   >
     {children}
   </button>

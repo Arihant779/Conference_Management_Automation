@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Settings, FileText, CheckCircle, XCircle, AlertCircle, Save } from 'lucide-react';
 import { supabase } from '../../../../../Supabase/supabaseclient';
 import { Btn } from '../common/Primitives';

@@ -9,7 +9,7 @@ const NotificationsSection = ({ notifs, teamName, setModal }) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
           <h2 className={`text-2xl font-bold transition-colors duration-500 tracking-tight ${isDark ? 'text-white' : 'text-zinc-900'}`}>Notifications</h2>
           <p className={`text-sm mt-0.5 transition-colors duration-500 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Announcements sent to members</p>

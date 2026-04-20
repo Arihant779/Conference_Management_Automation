@@ -419,7 +419,7 @@ const FeedbackManager = ({ conf }) => {
               {/* Question type selector */}
               <div>
                 <label className={cls("text-[10px] font-black uppercase tracking-[0.2em] block mb-4", isDark ? "text-slate-600" : "text-zinc-400")}>Response Format</label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {QUESTION_TYPES.map(t => {
                     const TIcon = t.icon;
                     const isSelected = newType === t.value;
@@ -506,3 +506,4 @@ const FeedbackManager = ({ conf }) => {
 };
 
 export default FeedbackManager;
+
