@@ -645,7 +645,7 @@ const ModernTemplate = ({
               </div>
 
               {/* Quick stats */}
-              <div className="grid grid-cols-3 gap-4 pt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
                 {[
                   { icon: Users, value: pageData.capacity, label: 'Attendees', color: '#fbbf24' },
                   { icon: Award, value: `${pageData.speakers.length}+`, label: 'Speakers', color: '#3b82f6' },
@@ -959,7 +959,7 @@ const ModernTemplate = ({
                       {isEditing ? <EditableText value={pageData.venue_description} onChange={v => update('venue_description', v)} multiline className="w-full" isEditing={isEditing} /> : pageData.venue_description}
                     </p>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 relative z-10">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-10">
                     <div className="rounded-2xl p-5 text-center" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
                       <div className="text-3xl font-black text-white mb-1">
                         {isEditing ? <EditableText value={pageData.capacity} onChange={v => update('capacity', v)} className="text-center" isEditing={isEditing} /> : pageData.capacity}
@@ -1100,7 +1100,7 @@ const ModernTemplate = ({
                   <div className="absolute inset-0 rounded-3xl pointer-events-none" style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.04), rgba(139,92,246,0.04))' }} />
                   <h3 className="text-2xl font-black text-white mb-8">Send an Inquiry</h3>
                   <form className="space-y-5 relative z-10" onSubmit={e => e.preventDefault()}>
-                    <div className="grid grid-cols-2 gap-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       <input className="rounded-xl px-5 py-4 text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-amber-400/30 transition-all font-medium"
                         style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }} placeholder="First Name" />
                       <input className="rounded-xl px-5 py-4 text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-amber-400/30 transition-all font-medium"

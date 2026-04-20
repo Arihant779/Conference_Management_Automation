@@ -225,15 +225,15 @@ const EmailAutomationsManager = ({ conf }) => {
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
       {/* ── List View Header ── */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Email Automations</h2>
-          <p className={cls("text-sm mt-0.5", isDark ? "text-slate-400" : "text-zinc-500")}>
+          <h2 className="text-2xl font-bold tracking-tight">Automations</h2>
+          <p className={cls("text-sm mt-0.5 max-w-sm", isDark ? "text-slate-400" : "text-zinc-500")}>
             Manage triggers and scheduled emails for your conference workflow.
           </p>
         </div>
         {!wizardOpen && (
-          <button onClick={openNew} className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-amber-500 hover:bg-amber-400 text-black shadow-lg shadow-amber-500/20 transition-all active:scale-95">
+          <button onClick={openNew} className="flex items-center justify-center gap-2 px-5 py-2.5 w-full sm:w-auto rounded-xl font-bold text-sm bg-amber-500 hover:bg-amber-400 text-black shadow-lg shadow-amber-500/20 transition-all active:scale-95 shrink-0">
             <Plus size={16} /> New Automation
           </button>
         )}
@@ -254,34 +254,43 @@ const EmailAutomationsManager = ({ conf }) => {
               const triggerName = TRIGGERS.find(t => t.id === auto.trigger_type)?.label || auto.trigger_type;
               return (
                 <div key={auto.id} className={cls(
-                  "p-5 rounded-2xl border transition-all flex items-center justify-between",
+                  "p-4 md:p-5 rounded-2xl border transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4",
                   isDark ? "bg-[#0d1117] border-white/5 hover:border-white/15" : "bg-white border-zinc-200 hover:border-zinc-300"
                 )}>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-start gap-3 w-full md:w-auto min-w-0">
                     <div className={cls(
-                      "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
+                      "hidden md:flex w-12 h-12 rounded-xl items-center justify-center shrink-0 shadow-sm",
                       auto.is_active ? (isDark ? "bg-amber-500/10 text-amber-400" : "bg-amber-50 text-amber-600") : (isDark ? "bg-white/5 text-slate-500" : "bg-zinc-100 text-zinc-400")
                     )}>
                       <Icon size={20} />
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm">{auto.title}</span>
-                        {!auto.is_active && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-500">PAUSED</span>}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between md:justify-start gap-2 mb-2 md:mb-1">
+                        <span className="font-bold text-sm md:text-base truncate">{auto.title}</span>
+                        {!auto.is_active && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-500 shrink-0">PAUSED</span>}
                       </div>
-                      <div className={cls("text-xs mt-1 flex items-center gap-1.5", isDark ? "text-slate-400" : "text-zinc-500")}>
-                        <Zap size={10} className="text-amber-500" /> {triggerName} 
-                        <span className="opacity-50">·</span> <Users size={10} /> {TARGET_ROLES.find(r => r.id === auto.target_role)?.label || auto.target_role}
+
+                      {/* Mobile vertically stacked details, Desktop inline */}
+                      <div className={cls("text-xs flex flex-col md:flex-row md:items-center gap-2", isDark ? "text-slate-400" : "text-zinc-500")}>
+                        <div className="flex items-start md:items-center gap-2">
+                          <Icon size={12} className="text-amber-500 shrink-0 mt-0.5 md:mt-0" /> 
+                          <span className="leading-tight">{triggerName}</span>
+                        </div>
+                        <span className="hidden md:inline opacity-50">·</span> 
+                        <div className="flex items-start md:items-center gap-2">
+                          <Users size={12} className="shrink-0 mt-0.5 md:mt-0" /> 
+                          <span className="truncate leading-tight max-w-[200px]">{TARGET_ROLES.find(r => r.id === auto.target_role)?.label || auto.target_role}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => toggleActive(auto.id, auto.is_active)} className={cls("p-2 rounded-lg transition-all", auto.is_active ? "text-zinc-400 hover:text-red-500" : "text-zinc-400 hover:text-emerald-500")}>
+                  <div className="flex items-center justify-end gap-2 w-full md:w-auto mt-2 md:mt-0 pt-3 md:pt-0 border-t md:border-transparent shrink-0" style={{ borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}>
+                    <button onClick={() => toggleActive(auto.id, auto.is_active)} className={cls("p-2 rounded-xl transition-all border", auto.is_active ? "border-transparent text-zinc-400 hover:text-red-500 hover:bg-red-500/10" : "border-transparent text-zinc-400 hover:text-emerald-500 hover:bg-emerald-500/10")}>
                       {auto.is_active ? <PowerOff size={16} /> : <Power size={16} />}
                     </button>
-                    <button onClick={() => openEdit(auto)} className="p-2 rounded-lg text-zinc-400 hover:text-amber-400 transition-all"><Edit3 size={16} /></button>
-                    <button onClick={() => deleteAuto(auto.id)} className="p-2 rounded-lg text-zinc-400 hover:text-red-400 transition-all"><Trash2 size={16} /></button>
+                    <button onClick={() => openEdit(auto)} className="p-2 rounded-xl text-zinc-400 border border-transparent hover:border-amber-500/20 hover:text-amber-400 hover:bg-amber-500/10 transition-all"><Edit3 size={16} /></button>
+                    <button onClick={() => deleteAuto(auto.id)} className="p-2 rounded-xl text-zinc-400 border border-transparent hover:border-red-500/20 hover:text-red-400 hover:bg-red-500/10 transition-all"><Trash2 size={16} /></button>
                   </div>
                 </div>
               );

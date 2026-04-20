@@ -691,11 +691,11 @@ const PresenterDashboard = ({ conf, onBack }) => {
   const withSlides = papers.filter(p => p.slide_url).length;
 
   return (
-    <div className={`relative min-h-screen transition-colors duration-500 selection:bg-amber-500/30 overflow-hidden ${isDark ? 'text-slate-200' : 'text-zinc-800'}`} style={{ fontFamily: "'Space Grotesk', 'Inter', system-ui, sans-serif" }}>
+    <div className={`relative min-h-full h-full flex flex-col flex-1 w-full transition-colors duration-500 selection:bg-amber-500/30 overflow-hidden ${isDark ? 'text-slate-200' : 'text-zinc-800'}`} style={{ fontFamily: "'Space Grotesk', 'Inter', system-ui, sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
       <AmbientBackground />
 
-      <div className="w-full h-screen flex relative z-10 overflow-hidden">
+      <div className="w-full flex-1 flex relative z-10 overflow-hidden">
         <Sidebar nav={nav} section={section} setSection={setSection} isOrganizer={false} onBack={onBack} roleLabel="Presenter" />
 
         <main className="flex-1 overflow-y-auto p-8 custom-scrollbar">
@@ -740,7 +740,7 @@ const PresenterDashboard = ({ conf, onBack }) => {
 
                 {/* ── Stats strip ── */}
                 {!loading && papers.length > 0 && (
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {[
                       { label: 'Total Submissions', value: papers.length, color: isDark ? 'text-slate-200' : 'text-zinc-800', icon: FileText },
                       { label: 'Accepted', value: accepted, color: 'text-emerald-400', icon: CheckCircle },
@@ -867,3 +867,5 @@ const PresenterDashboard = ({ conf, onBack }) => {
 };
 
 export default PresenterDashboard;
+
+

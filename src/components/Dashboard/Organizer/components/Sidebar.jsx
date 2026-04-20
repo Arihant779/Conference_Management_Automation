@@ -1,20 +1,45 @@
-import { BarChart2, LogOut } from 'lucide-react';
+import React, { useState } from 'react';
+import { BarChart2, LogOut, Menu, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useApp } from '../../../../context/AppContext';
 import ThemeToggle from '../../../Common/ThemeToggle';
 
-const Sidebar = ({ nav, section, setSection, isOrganizer, roleLabel }) => {
+const Sidebar = ({ nav, section, setSection, isOrganizer, roleLabel, mobileMenuOpen, setMobileMenuOpen }) => {
   const { theme, logout } = useApp();
   const isDark = theme === 'dark';
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <aside className={`w-64 shrink-0 sticky top-0 flex flex-col gap-1 overflow-y-auto no-scrollbar transition-colors duration-500 ${isDark ? 'bg-[#0B0F1A]/50' : 'bg-white/80'}`}
+    <>
+      <button 
+        onClick={() => setIsOpen(!isOpen)} 
+        className={`md:hidden fixed bottom-6 right-6 z-[60] p-4 rounded-full shadow-2xl transition-all ${isDark ? 'bg-amber-500 text-zinc-900' : 'bg-zinc-900 text-white'}`}
+      >
+        {isOpen ? <X size={24} /> : <Menu size={24} />}
+      </button>
+
+      {isOpen && (
+        <div 
+          className="md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+    <aside className={`fixed md:sticky top-0 z-50 transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} w-64 shrink-0 flex flex-col gap-1 overflow-y-auto no-scrollbar transition-colors duration-500 ${isDark ? 'bg-[#0B0F1A]/95 md:bg-[#0B0F1A]/50' : 'bg-white/95 md:bg-white/80'}`}
       style={{
-        height: '100vh',
         backdropFilter: 'blur(20px)',
         borderRight: isDark ? '1px solid rgba(251,191,36,0.1)' : '1px solid rgba(15,23,42,0.15)',
-        padding: '32px 16px'
+        padding: mobileMenuOpen ? '24px 16px' : '0 16px', // mobile padding only when open
+        paddingTop: '32px', // overridden by md below, but just in case
       }}>
+
+      {/* Hidden close button on mobile since header chevron toggles it */}
+      <button 
+        className="hidden absolute top-4 right-4 p-2 rounded-xl bg-amber-500/10 text-amber-500"
+        onClick={() => setMobileMenuOpen(false)}
+      >
+        <X size={20} />
+      </button>
 
       {/* Logo / Title */}
       <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="px-3 mb-10">
@@ -33,7 +58,7 @@ const Sidebar = ({ nav, section, setSection, isOrganizer, roleLabel }) => {
         {nav.map(({ id, label, icon: Icon, badge }, i) => {
           const active = section === id;
           return (
-            <motion.button key={id} onClick={() => setSection(id)}
+            <motion.button key={id} onClick={() => { setSection(id); setIsOpen(false); setMobileMenuOpen?.(false); }}
               initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 * i }}
               whileHover={{ x: 5 }} whileTap={{ scale: 0.98 }}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold w-full text-left transition-all relative overflow-hidden group ${active
@@ -80,7 +105,9 @@ const Sidebar = ({ nav, section, setSection, isOrganizer, roleLabel }) => {
         </button>
       </div>
     </aside>
+    </>
   );
 };
 
 export default Sidebar;
+

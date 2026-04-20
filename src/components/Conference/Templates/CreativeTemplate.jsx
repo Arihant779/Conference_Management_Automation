@@ -356,12 +356,12 @@ const CreativeTemplate = ({
               </div>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                <PrismButton onClick={() => setShowReg(true)} className="min-w-[220px]">
-                  Join the Spectrum <ArrowRight size={20} />
-                </PrismButton>
-                <PrismButton onClick={() => document.getElementById('about').scrollIntoView({ behavior: 'smooth' })} variant="secondary" className="min-w-[220px]">
-                  Experience <MousePointer2 size={18} />
-                </PrismButton>
+                 <PrismButton onClick={() => setShowReg(true)} className="w-full sm:min-w-[220px]">
+                    Join the Spectrum <ArrowRight size={20} />
+                 </PrismButton>
+                 <PrismButton onClick={() => document.getElementById('about').scrollIntoView({ behavior: 'smooth' })} variant="secondary" className="w-full sm:min-w-[220px]">
+                    Experience <MousePointer2 size={18} />
+                 </PrismButton>
               </div>
             </motion.div>
 
@@ -417,28 +417,28 @@ const CreativeTemplate = ({
            </div>
         </nav>
 
-        <main className="max-w-7xl mx-auto px-10 py-48 space-y-64">
+        <main className="max-w-7xl mx-auto px-6 md:px-10 py-20 md:py-48 space-y-24 md:space-y-64">
 
           {/* ══════════ ABOUT ══════════ */}
           <section id="about" className="scroll-mt-48">
-            <div className="grid lg:grid-cols-2 gap-32 items-start">
-              <div className="space-y-16">
-                <div className="space-y-6">
-                  <span className="text-[11px] font-black text-p-secondary tracking-[0.3em] uppercase block">// THE GENESIS</span>
-                  <h2 className="text-6xl md:text-8xl font-black tracking-tighter text-slate-900">BRINGING<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-p-primary to-p-accent">COLOR</span> TO LOGIC.</h2>
+             <div className="grid lg:grid-cols-2 gap-32 items-start">
+                <div className="space-y-16">
+                   <div className="space-y-6">
+                      <span className="text-[11px] font-black text-p-secondary tracking-[0.3em] uppercase block">// THE GENESIS</span>
+                      <h2 className="text-6xl md:text-8xl font-black tracking-tighter text-slate-900">BRINGING<br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-p-primary to-p-accent">COLOR</span> TO LOGIC.</h2>
+                   </div>
+                   <div className="text-2xl text-slate-500 font-light leading-relaxed space-y-12">
+                      <p className="first-letter:text-8xl first-letter:font-black first-letter:text-p-primary first-letter:mr-6 first-letter:float-left">
+                        {isEditing ? <EditableField value={conf.description} onChange={v => setConf(p => ({ ...p, description: v }))} multiline isEditing /> : conf.description}
+                      </p>
+                      <div className="p-1? rounded-[3rem] bg-gradient-to-br from-p-primary/5 to-p-secondary/5 p-12 border border-white/50 relative overflow-hidden group">
+                         <div className="absolute -top-12 -right-12 w-32 h-32 bg-p-primary/10 blur-[50px] rounded-full group-hover:scale-150 transition-transform" />
+                         <p className="relative z-10 text-slate-600 font-medium tracking-tight">
+                            {isEditing ? <EditableField value={pageData.about_extra} onChange={v => update('about_extra', v)} multiline isEditing /> : pageData.about_extra}
+                         </p>
+                      </div>
+                   </div>
                 </div>
-                <div className="text-2xl text-slate-500 font-light leading-relaxed space-y-12">
-                  <p className="first-letter:text-8xl first-letter:font-black first-letter:text-p-primary first-letter:mr-6 first-letter:float-left">
-                    {isEditing ? <EditableField value={conf.description} onChange={v => setConf(p => ({ ...p, description: v }))} multiline isEditing /> : conf.description}
-                  </p>
-                  <div className="p-1? rounded-[3rem] bg-gradient-to-br from-p-primary/5 to-p-secondary/5 p-12 border border-white/50 relative overflow-hidden group">
-                    <div className="absolute -top-12 -right-12 w-32 h-32 bg-p-primary/10 blur-[50px] rounded-full group-hover:scale-150 transition-transform" />
-                    <p className="relative z-10 text-slate-600 font-medium tracking-tight">
-                      {isEditing ? <EditableField value={pageData.about_extra} onChange={v => update('about_extra', v)} multiline isEditing /> : pageData.about_extra}
-                    </p>
-                  </div>
-                </div>
-              </div>
 
               <div className="relative">
                 <div className="absolute -inset-10 bg-gradient-to-tr from-p-accent/20 via-p-primary/20 to-p-secondary/20 blur-[100px] opacity-30 rounded-full" />
@@ -599,7 +599,7 @@ const CreativeTemplate = ({
 
           {/* ══════════ LOCATION ══════════ */}
           <section id="location" className="scroll-mt-48">
-             <div className="grid lg:grid-cols-2 gap-32 items-center">
+             <div className="grid lg:grid-cols-2 gap-12 lg:gap-32 items-center">
                 <div className="space-y-16">
                    <div className="space-y-6">
                       <span className="text-[11px] font-black text-accent tracking-[0.3em] uppercase block">// PHYSICAL SPACE</span>
@@ -720,24 +720,24 @@ const CreativeTemplate = ({
         </main>
 
         <footer className="p-32 border-t border-black/5 bg-white/40 backdrop-blur-md">
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-24 text-center md:text-left">
-            <div>
-              <h2 className="text-6xl font-black tracking-tighter text-slate-900 uppercase mb-4">{pageData.title}</h2>
-              <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                {['Twitter', 'Instagram', 'Discord', 'LinkedIn'].map(s => (
-                  <span key={s} className="text-[10px] font-black text-slate-300 hover:text-primary cursor-pointer uppercase tracking-widest">{s}</span>
-                ))}
+           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-24 text-center md:text-left">
+              <div>
+                 <h2 className="text-6xl font-black tracking-tighter text-slate-900 uppercase mb-4">{pageData.title}</h2>
+                 <div className="flex flex-wrap justify-center md:justify-start gap-4">
+                    {['Twitter', 'Instagram', 'Discord', 'LinkedIn'].map(s => (
+                       <span key={s} className="text-[10px] font-black text-slate-300 hover:text-primary cursor-pointer uppercase tracking-widest">{s}</span>
+                    ))}
+                 </div>
               </div>
-            </div>
-            <div className="flex items-center gap-16">
-              <div className="text-right hidden md:block">
-                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest block mb-2">Developed By</span>
-                <span className="text-sm font-extrabold uppercase tracking-[0.2em] text-primary">Prism_Studio_v5</span>
+              <div className="flex items-center gap-16">
+                 <div className="text-right hidden md:block">
+                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest block mb-2">Developed By</span>
+                    <span className="text-sm font-extrabold uppercase tracking-[0.2em] text-primary">Prism_Studio_v5</span>
+                 </div>
+                 <div className="w-px h-24 bg-black/5" />
+                 <span className="text-[12px] font-black text-slate-300 uppercase tracking-widest whitespace-nowrap">© {new Date().getFullYear()} THE SPECTRUM</span>
               </div>
-              <div className="w-px h-24 bg-black/5" />
-              <span className="text-[12px] font-black text-slate-300 uppercase tracking-widest whitespace-nowrap">© {new Date().getFullYear()} THE SPECTRUM</span>
-            </div>
-          </div>
+           </div>
         </footer>
       </div>
     </div>

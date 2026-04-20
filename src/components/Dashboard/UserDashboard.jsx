@@ -1153,7 +1153,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
         style={{ borderBottomColor: navBorderColor }}
         className={`sticky top-0 z-40 px-6 py-3 border-b transition-colors duration-500 ${isDark ? 'border-white/[0.04]' : 'border-zinc-900/[0.08]'}`}
       >
-        <div className="max-w-[90rem] mx-auto flex justify-between items-center">
+        <div className="max-w-[90rem] mx-auto flex flex-wrap justify-between items-center gap-3">
           <div className="flex items-center gap-3">
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-sm transition-colors duration-200 ${isDark ? 'bg-white' : 'bg-zinc-900'}`}>
               <Layout size={17} className={isDark ? 'text-zinc-900' : 'text-white'} />
@@ -1162,7 +1162,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
           </div>
 
           {/* Center nav items */}
-          <div className="hidden md:flex items-center gap-1">
+          <div className="flex overflow-x-auto items-center gap-1 w-full md:w-auto order-last md:order-none pb-2 md:pb-0 scroll-smooth custom-scrollbar">
             {[
               { key: 'conferences', label: 'Dashboard', icon: Layout },
               { key: 'profile', label: 'Profile', icon: User },

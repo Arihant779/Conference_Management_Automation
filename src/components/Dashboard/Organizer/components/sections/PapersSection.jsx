@@ -25,7 +25,7 @@ const PapersSection = ({
         <p className="text-slate-500 font-medium tracking-wide">{confPapers.length} total · {pendingCount} pending review</p>
       </div>
       
-      <div className={`flex gap-2 p-1.5 rounded-xl w-fit backdrop-blur-md border transition-all duration-500 ${
+      <div className={`flex gap-2 p-1.5 rounded-xl w-full md:w-fit max-w-full overflow-x-auto no-scrollbar backdrop-blur-md border transition-all duration-500 ${
         isDark ? 'bg-white/5 border-white/10 shadow-inner' : 'bg-zinc-100 border-zinc-200'
       }`}>
         {[
@@ -37,7 +37,7 @@ const PapersSection = ({
           <button 
             key={k} 
             onClick={() => setPaperFilter(k)} 
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 ${
+            className={`whitespace-nowrap shrink-0 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 ${
               paperFilter === k 
                 ? 'shadow-md' 
                 : isDark ? 'text-slate-400 hover:text-slate-100' : 'text-slate-600 hover:text-zinc-900'
@@ -62,8 +62,8 @@ const PapersSection = ({
                     ? 'bg-slate-900/40 border-white/5 hover:border-white/10 hover:bg-slate-900/60 shadow-lg' 
                     : 'bg-white/80 border-zinc-200 hover:border-amber-200/50 hover:bg-white shadow-sm'
                 }`}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-4 min-w-0">
+                  <div className="flex flex-col md:flex-row items-start justify-between gap-6 md:gap-4">
+                    <div className="flex items-start gap-4 min-w-0 w-full">
                       <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-black shrink-0 shadow-inner" 
                         style={{ 
                           background: isDark ? 'linear-gradient(135deg, rgba(251,191,36,0.1), rgba(245,158,11,0.05))' : 'linear-gradient(135deg, #FFFBEB, #FEF3C7)', 
@@ -108,7 +108,7 @@ const PapersSection = ({
                         })()}
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-3 shrink-0">
+                    <div className="flex flex-row md:flex-col items-center md:items-end justify-between w-full md:w-auto mt-2 md:mt-0 gap-3 shrink-0">
                       <span className="px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest shadow-sm"
                         style={paper.status === 'accepted'
                           ? { background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }
@@ -117,7 +117,7 @@ const PapersSection = ({
                           : { background: 'rgba(251,191,36,0.1)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.2)' }}>
                         {paper.status === 'accepted' || paper.status === 'rejected' ? paper.status : 'Pending'}
                       </span>
-                      <div className="flex items-center gap-2 relative z-10">
+                      <div className="flex items-center justify-end flex-wrap gap-2 relative z-10">
                         {paper.file_url && (
                           <a href={paper.file_url} target="_blank" rel="noreferrer"
                             className="text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all text-amber-500 hover:bg-amber-500/10"

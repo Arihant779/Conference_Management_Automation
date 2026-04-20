@@ -272,7 +272,7 @@ const BusinessTemplate = ({
             )}
 
         {/* ══════════ HERO SECTION ══════════ */}
-        <header className="min-h-screen flex flex-col justify-center relative overflow-hidden px-10 py-20 pb-0">
+        <header className="min-h-screen flex flex-col justify-center relative overflow-hidden px-4 md:px-10 py-10 md:py-20 pb-0">
           <div className="absolute inset-0 z-0 overflow-hidden">
              {(pageData.banner_url || initialConf.banner_url) && (
                <motion.img 
@@ -369,31 +369,31 @@ const BusinessTemplate = ({
           </motion.div>
         </header>
 
-            {/* ── STICKY NAV ── */}
-            <nav className={`sticky top-0 z-[100] transition-all duration-700 border-b ${scrolled ? 'py-4 bg-e-navy/95 backdrop-blur-2xl border-white/10 shadow-2xl shadow-black/60' : 'py-8 bg-transparent border-transparent'}`}
-               style={scrolled ? {} : { background: 'linear-gradient(to bottom, rgba(1,5,14,1), transparent)' }}>
-               <div className="max-w-7xl mx-auto px-10 flex items-center justify-between">
-                  <div className="flex items-center gap-14 overflow-x-auto no-scrollbar">
-                     {['about', 'schedule', 'speakers', 'dates', 'venue', 'sponsors', 'contact'].map(id => (
-                        <button
-                           key={id}
-                           onClick={() => {
-                              const el = document.getElementById(id);
-                              if (el) el.scrollIntoView({ behavior: 'smooth' });
-                              setActiveNav(id);
-                           }}
-                           className={`text-[10px] font-black tracking-widest uppercase transition-all whitespace-nowrap relative ${activeNav === id ? 'text-white' : 'text-white/30 hover:text-e-accent'}`}
-                        >
-                           {id}
-                           {activeNav === id && <motion.div layoutId="navline" className="absolute -bottom-2 left-0 right-0 h-0.5 bg-e-accent shadow-[0_0_12px_rgba(251,191,36,0.6)]" />}
-                        </button>
-                     ))}
-                  </div>
-                  <EliteButton onClick={handleRegisterClick} className="hidden md:block !py-2.5 !px-8 !text-[10px]">Register Now</EliteButton>
-               </div>
-            </nav>
+        {/* ── STICKY NAV ── */}
+        <nav className={`sticky top-0 z-[100] transition-all duration-700 border-b ${scrolled ? 'py-4 bg-e-navy/95 backdrop-blur-2xl border-white/10 shadow-2xl shadow-black/60' : 'py-8 bg-transparent border-transparent'}`}
+             style={scrolled ? {} : { background: 'linear-gradient(to bottom, rgba(1,5,14,1), transparent)' }}>
+           <div className="max-w-7xl mx-auto px-4 md:px-10 flex items-center justify-between">
+              <div className="flex items-center gap-14 overflow-x-auto no-scrollbar">
+                {['about', 'schedule', 'speakers', 'dates', 'venue', 'sponsors', 'contact'].map(id => (
+                  <button 
+                    key={id} 
+                    onClick={() => { 
+                      const el = document.getElementById(id);
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                      setActiveNav(id); 
+                    }}
+                    className={`text-[10px] font-black tracking-widest uppercase transition-all whitespace-nowrap relative ${activeNav === id ? 'text-white' : 'text-white/30 hover:text-e-accent'}`}
+                  >
+                    {id}
+                    {activeNav === id && <motion.div layoutId="navline" className="absolute -bottom-2 left-0 right-0 h-0.5 bg-e-accent shadow-[0_0_12px_rgba(251,191,36,0.6)]" />}
+                  </button>
+                ))}
+              </div>
+              <EliteButton onClick={handleRegisterClick} className="hidden md:block !py-2.5 !px-8 !text-[10px]">Register Now</EliteButton>
+           </div>
+        </nav>
 
-            <main className="max-w-7xl mx-auto px-10 py-48 space-y-64">
+        <main className="max-w-7xl mx-auto px-10 py-48 space-y-64">
 
                {/* ══════════ ABOUT ══════════ */}
                <section id="about" className="scroll-mt-48">
@@ -600,28 +600,28 @@ const BusinessTemplate = ({
                         </div>
                      </div>
 
-                     <EliteCard title="CALL FOR PAPERS" className="!p-16 border-none shadow-3xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #08101f 0%, #01050e 100%)' }}>
-                        <div className="relative z-10 space-y-12">
-                           <div className="space-y-4">
-                              <h3 className="text-5xl font-black text-white uppercase tracking-tight">Executive <span className="text-e-accent italic">Submissions.</span></h3>
-                              <p className="text-e-slate text-xl font-light italic leading-relaxed">
-                                 Contribute original insights for the main plenary sessions and technical research tracks.
-                              </p>
+                <EliteCard title="CALL FOR PAPERS" className="!p-16 border-none shadow-3xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #08101f 0%, #01050e 100%)' }}>
+                   <div className="relative z-10 space-y-12">
+                      <div className="space-y-4">
+                         <h3 className="text-5xl font-black text-white uppercase tracking-tight">Executive <span className="text-e-accent italic">Submissions.</span></h3>
+                         <p className="text-e-slate text-xl font-light italic leading-relaxed">
+                            Contribute original insights for the main plenary sessions and technical research tracks.
+                         </p>
+                      </div>
+                      <div className="grid gap-4 max-w-sm">
+                         {['Original Industry Analysis', 'Policy Frameworks'].map(ch => (
+                           <div key={ch} className="flex items-center gap-4 py-4 px-8 bg-white/5 border border-white/5 rounded-2xl">
+                              <Check size={20} className="text-e-accent" />
+                              <span className="text-[10px] font-black text-white/40 tracking-widest uppercase">{ch}</span>
                            </div>
-                           <div className="grid gap-4 max-w-sm">
-                              {['Original Industry Analysis', 'Policy Frameworks'].map(ch => (
-                                 <div key={ch} className="flex items-center gap-4 py-4 px-8 bg-white/5 border border-white/5 rounded-2xl">
-                                    <Check size={20} className="text-e-accent" />
-                                    <span className="text-[10px] font-black text-white/40 tracking-widest uppercase">{ch}</span>
-                                 </div>
-                              ))}
-                           </div>
-                           <EliteButton onClick={() => onSwitchToTab?.('submitPaper')} className="w-full !rounded-2xl !bg-white !text-e-navy !font-black !scale-105">Submit Paper Now</EliteButton>
-                        </div>
-                        <div className="absolute -top-10 -right-10 w-64 h-64 bg-e-accent/5 blur-[80px] rounded-full" />
-                     </EliteCard>
-                  </div>
-               </section>
+                         ))}
+                      </div>
+                      <EliteButton onClick={() => onSwitchToTab?.('submitPaper')} className="w-full !rounded-2xl !bg-white !text-e-navy !font-black !scale-105">Submit Paper Now</EliteButton>
+                   </div>
+                   <div className="absolute -top-10 -right-10 w-64 h-64 bg-e-accent/5 blur-[80px] rounded-full" />
+                </EliteCard>
+             </div>
+          </section>
 
           {/* ══════════ VENUE ══════════ */}
           <section id="venue" className="scroll-mt-48">
@@ -717,42 +717,42 @@ const BusinessTemplate = ({
                      <div className="h-px flex-1 bg-white/10 hidden lg:block" />
                   </div>
 
-                  <div className="space-y-32">
-                     {['platinum', 'gold', 'silver'].map(tier => {
-                        const tierSponsors = pageData.sponsors.filter(s => s.tier === tier);
-                        if (!tierSponsors.length && !isEditing) return null;
-                        return (
-                           <div key={tier} className="space-y-16">
-                              <span className="text-[12px] font-black text-white/30 tracking-widest uppercase border-l-4 border-e-accent pl-8 block">{tier.toUpperCase()} LEVEL PARTNERS</span>
-                              <div className="flex flex-wrap gap-12">
-                                 {tierSponsors.map((sp, idx) => {
-                                    const gi = pageData.sponsors.indexOf(sp);
-                                    return (
-                                       <motion.div
-                                          key={idx} whileHover={{ y: -10, scale: 1.05 }}
-                                          className="bg-white/[0.01] border border-white/5 p-16 hover:bg-white/[0.04] hover:border-e-accent/30 transition-all relative rounded-[2rem] flex items-center justify-center min-w-[320px] shadow-2xl"
-                                       >
-                                          {isEditing && (
-                                             <button onClick={() => update('sponsors', pageData.sponsors.filter((_, i) => i !== gi))} className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-2xl hover:scale-110 transition-transform"><X size={18} /></button>
-                                          )}
-                                          <span className="text-4xl font-black text-white uppercase tracking-tighter group-hover:text-e-accent transition-colors">
-                                             {isEditing ? <EditableField value={sp.name} onChange={v => updateNested('sponsors', gi, 'name', v)} isEditing /> : sp.name}
-                                          </span>
-                                       </motion.div>
-                                    )
-                                 })}
-                                 {isEditing && (
-                                    <button onClick={() => update('sponsors', [...pageData.sponsors, { name: 'New Sponsor', tier }])}
-                                       className="px-20 py-12 border-2 border-dashed border-white/5 rounded-[2rem] text-white/10 text-[12px] font-black uppercase tracking-widest hover:text-e-accent hover:border-e-accent/30 transition-all">
-                                       + ADD SPONSOR
-                                    </button>
-                                 )}
-                              </div>
-                           </div>
-                        )
-                     })}
-                  </div>
-               </section>
+             <div className="space-y-32">
+                {['platinum', 'gold', 'silver'].map(tier => {
+                   const tierSponsors = pageData.sponsors.filter(s => s.tier === tier);
+                   if (!tierSponsors.length && !isEditing) return null;
+                   return (
+                     <div key={tier} className="space-y-16">
+                       <span className="text-[12px] font-black text-white/30 tracking-widest uppercase border-l-4 border-e-accent pl-8 block">{tier.toUpperCase()} LEVEL PARTNERS</span>
+                       <div className="flex flex-wrap gap-12">
+                          {tierSponsors.map((sp, idx) => {
+                             const gi = pageData.sponsors.indexOf(sp);
+                             return (
+                               <motion.div 
+                                 key={idx} whileHover={{ y: -10, scale: 1.05 }}
+                                 className="bg-white/[0.01] border border-white/5 p-16 hover:bg-white/[0.04] hover:border-e-accent/30 transition-all relative rounded-[2rem] flex items-center justify-center min-w-[320px] shadow-2xl"
+                               >
+                                  {isEditing && (
+                                    <button onClick={() => update('sponsors', pageData.sponsors.filter((_, i) => i !== gi))} className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-2xl hover:scale-110 transition-transform"><X size={18} /></button>
+                                  )}
+                                  <span className="text-4xl font-black text-white uppercase tracking-tighter group-hover:text-e-accent transition-colors">
+                                     {isEditing ? <EditableField value={sp.name} onChange={v => updateNested('sponsors', gi, 'name', v)} isEditing /> : sp.name}
+                                  </span>
+                               </motion.div>
+                             )
+                          })}
+                          {isEditing && (
+                             <button onClick={() => update('sponsors', [...pageData.sponsors, { name: 'New Sponsor', tier }])}
+                                     className="px-20 py-12 border-2 border-dashed border-white/5 rounded-[2rem] text-white/10 text-[12px] font-black uppercase tracking-widest hover:text-e-accent hover:border-e-accent/30 transition-all">
+                                + ADD SPONSOR
+                             </button>
+                          )}
+                       </div>
+                     </div>
+                   )
+                })}
+             </div>
+          </section>
 
                {/* ══════════ CONTACT ══════════ */}
                <section id="contact" className="scroll-mt-48">

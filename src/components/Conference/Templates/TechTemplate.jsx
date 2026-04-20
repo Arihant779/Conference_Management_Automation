@@ -482,7 +482,7 @@ const TechTemplate = ({
           </div>
         </nav>
 
-        <main className="max-w-7xl mx-auto px-8 py-32 space-y-48">
+        <main className="max-w-7xl mx-auto px-4 md:px-8 py-16 md:py-32 space-y-16 md:space-y-48">
 
           {/* ══════════ ABOUT ══════════ */}
           <section id="about" className="scroll-mt-32">
@@ -812,59 +812,59 @@ const TechTemplate = ({
 
           {/* ══════════ CONTACT ══════════ */}
           <section id="contact" className="scroll-mt-32">
-            <div className="grid lg:grid-cols-12 gap-16">
-              <div className="lg:col-span-12">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="h-[1px] w-12 bg-accent opacity-30" />
-                  <span className="text-xs font-black tracking-widest text-accent uppercase">// Get in Touch</span>
+             <div className="grid lg:grid-cols-12 gap-16">
+                <div className="lg:col-span-12">
+                   <div className="flex items-center gap-4 mb-4">
+                      <div className="h-[1px] w-12 bg-accent opacity-30" />
+                      <span className="text-xs font-black tracking-widest text-accent uppercase">// Get in Touch</span>
+                   </div>
+                   <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
+                      Contact <span className="text-accent">Us.</span>
+                   </h2>
                 </div>
-                <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
-                  Contact <span className="text-accent">Us.</span>
-                </h2>
-              </div>
-
-              <div className="lg:col-span-5 space-y-4">
-                {[
-                  { label: 'EMAIL ADDRESS', key: 'contact_email', icon: Mail },
-                  { label: 'WEBSITE', key: 'website', icon: Globe },
-                  { label: 'TWITTER / X', key: 'twitter', icon: Twitter },
-                  { label: 'LINKEDIN', key: 'linkedin', icon: Linkedin },
-                ].map(({ label, key, icon: Icon }) => (
-                  <HUDCard key={key} className="p-4" spotlight={false}>
-                    <div className="flex items-center gap-6">
-                      <div className="w-12 h-12 bg-accent/10 rounded flex items-center justify-center text-accent">
-                        <Icon size={20} />
-                      </div>
-                      <div>
-                        <div className="text-[10px] font-black text-white/20 tracking-widest uppercase">{label}</div>
-                        <div className="text-lg font-bold text-white truncate w-48 md:w-64">
-                          {isEditing ? <EditableField value={pageData[key]} onChange={v => update(key, v)} isEditing /> : pageData[key] || '---'}
+                
+                <div className="lg:col-span-5 space-y-4">
+                   {[
+                     { label: 'EMAIL ADDRESS', key: 'contact_email', icon: Mail },
+                     { label: 'WEBSITE', key: 'website', icon: Globe },
+                     { label: 'TWITTER / X', key: 'twitter', icon: Twitter },
+                     { label: 'LINKEDIN', key: 'linkedin', icon: Linkedin },
+                   ].map(({ label, key, icon: Icon }) => (
+                     <HUDCard key={key} className="p-4" spotlight={false}>
+                        <div className="flex items-center gap-6">
+                           <div className="w-12 h-12 bg-accent/10 rounded flex items-center justify-center text-accent">
+                              <Icon size={20} />
+                           </div>
+                           <div>
+                              <div className="text-[10px] font-black text-white/20 tracking-widest uppercase">{label}</div>
+                              <div className="text-lg font-bold text-white truncate w-32 sm:w-48 md:w-64">
+                                {isEditing ? <EditableField value={pageData[key]} onChange={v => update(key, v)} isEditing /> : pageData[key] || '---'}
+                              </div>
+                           </div>
                         </div>
+                     </HUDCard>
+                   ))}
+                </div>
+                <div className="lg:col-span-7">
+                   <HUDCard title="Send a Message">
+                      <div className="grid md:grid-cols-2 gap-6 mb-6">
+                         <div className="space-y-2">
+                            <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Full Name</span>
+                            <input placeholder="Enter name" className="w-full bg-white/5 border border-white/10 p-4 text-xs font-bold text-white outline-none focus:border-accent transition-all" />
+                         </div>
+                         <div className="space-y-2">
+                           <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Email Address</span>
+                           <input placeholder="Enter email" className="w-full bg-white/5 border border-white/10 p-4 text-xs font-bold text-white outline-none focus:border-accent transition-all" />
+                         </div>
                       </div>
-                    </div>
-                  </HUDCard>
-                ))}
-              </div>
-              <div className="lg:col-span-7">
-                <HUDCard title="Send a Message">
-                  <div className="grid md:grid-cols-2 gap-6 mb-6">
-                    <div className="space-y-2">
-                      <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Full Name</span>
-                      <input placeholder="Enter name" className="w-full bg-white/5 border border-white/10 p-4 text-xs font-bold text-white outline-none focus:border-accent transition-all" />
-                    </div>
-                    <div className="space-y-2">
-                      <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Email Address</span>
-                      <input placeholder="Enter email" className="w-full bg-white/5 border border-white/10 p-4 text-xs font-bold text-white outline-none focus:border-accent transition-all" />
-                    </div>
-                  </div>
-                  <div className="space-y-2 mb-8">
-                    <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Message</span>
-                    <textarea placeholder="Your inquiries..." rows={4} className="w-full bg-white/5 border border-white/10 p-4 text-xs font-bold text-white outline-none focus:border-accent transition-all resize-none" />
-                  </div>
-                  <CyberButton className="w-full">Submit Message</CyberButton>
-                </HUDCard>
-              </div>
-            </div>
+                      <div className="space-y-2 mb-8">
+                         <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Message</span>
+                         <textarea placeholder="Your inquiries..." rows={4} className="w-full bg-white/5 border border-white/10 p-4 text-xs font-bold text-white outline-none focus:border-accent transition-all resize-none" />
+                      </div>
+                      <CyberButton className="w-full">Submit Message</CyberButton>
+                   </HUDCard>
+                </div>
+             </div>
           </section>
         </main>
 

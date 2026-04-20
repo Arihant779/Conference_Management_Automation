@@ -570,9 +570,9 @@ const CertificateEditor = ({ onSave, onClose }) => {
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-col lg:flex-row flex-1 overflow-auto lg:overflow-hidden">
         {/* ── Left toolbar ── */}
-        <aside className="w-72 shrink-0 bg-[#0d1117] border-r border-white/8 p-4 overflow-y-auto space-y-5">
+        <aside className="w-full lg:w-72 shrink-0 bg-[#0d1117] border-b lg:border-b-0 lg:border-r border-white/8 p-4 overflow-y-auto space-y-5">
 
           {/* Upload */}
           <div>
@@ -913,7 +913,7 @@ const CertificateEditor = ({ onSave, onClose }) => {
         {/* ── Main canvas area ── */}
         <div
           ref={containerRef}
-          className="flex-1 overflow-auto bg-[#0a0d14] p-5 flex items-start justify-center"
+          className="flex-1 overflow-auto bg-[#0a0d14] p-4 md:p-8 flex items-start justify-center min-h-[400px]"
           onWheel={handleWheel}
         >
           {!templateImg ? (
@@ -958,7 +958,7 @@ const CertificateEditor = ({ onSave, onClose }) => {
 
         {/* ── Signature pad overlay ── */}
         {showSignaturePad && (
-          <div className="absolute bottom-6 right-6 w-[400px] z-20 shadow-2xl">
+          <div className="absolute bottom-4 left-4 right-4 lg:left-auto lg:bottom-6 lg:right-6 lg:w-[400px] z-20 shadow-2xl">
             <SignaturePad
               onSave={(dataURL) => {
                 setSignatureDataURL(dataURL);

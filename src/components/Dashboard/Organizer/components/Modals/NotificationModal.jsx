@@ -6,7 +6,7 @@ const NotificationModal = ({ nForm, setNForm, teams, saving, onClose, onSend }) 
   <Modal title="Send Announcement" onClose={onClose}>
     <div className="space-y-4">
       <Field label="Title"><Input placeholder="Announcement headline…" value={nForm.title} onChange={e => setNForm({ ...nForm, title: e.target.value })} /></Field>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Target Role">
           <Sel value={nForm.target_role} onChange={e => setNForm({ ...nForm, target_role: e.target.value })}>
             <option value="all">All Members</option><option value="presenter">Presenters</option><option value="reviewer">Reviewers</option><option value="organizer">Organizers</option>
@@ -31,3 +31,4 @@ const NotificationModal = ({ nForm, setNForm, teams, saving, onClose, onSend }) 
 );
 
 export default NotificationModal;
+

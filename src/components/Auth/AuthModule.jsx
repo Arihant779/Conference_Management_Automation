@@ -176,7 +176,7 @@ const AuthModule = ({ onSuccess }) => {
       {/* LEFT: FORM PANEL */}
       <div 
         ref={scrollContainerRef}
-        className="w-full md:w-[45%] lg:w-[35%] h-full flex flex-col p-8 pb-8 md:p-12 md:pb-12 lg:p-16 lg:pb-16 border-r border-white/5 relative z-20 bg-[#080B12] overflow-y-auto no-scrollbar"
+        className={`w-full md:w-[45%] lg:w-[35%] h-full flex flex-col p-6 pb-6 md:p-12 md:pb-12 lg:p-16 lg:pb-16 border-r border-white/5 relative z-20 bg-[#080B12] overflow-y-auto no-scrollbar`}
       >
 
         {/* Textures */}
