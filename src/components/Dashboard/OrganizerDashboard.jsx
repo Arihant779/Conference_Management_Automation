@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BarChart2, FileText, Users, CheckSquare, Bell, Send,
-  Layers, Clock, Sparkles, Star, Check, Settings2, MessageSquare, Zap
+  Layers, Clock, Sparkles, Star, Check, Settings2, MessageSquare, Zap, Menu
 } from 'lucide-react';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
@@ -48,6 +48,7 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
   const isDark = theme === 'dark';
   const confId = conf.conference_id || conf.id;
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [section, setSection] = useState('overview');
   const [members, setMembers] = useState([]);
   const [loadingMembers, setLM] = useState(true);
@@ -646,17 +647,28 @@ const OrganizerDashboard = ({ conf, onBack, onSwitchView }) => {
      RENDER
   ══════════════════════════════════════════════════════════ */
   return (
-    <div className="relative min-h-screen text-slate-200 selection:bg-amber-500/30" style={{ background: '#04070D', fontFamily: "'Space Grotesk', 'Inter', system-ui, sans-serif" }}>
+    <div className="relative h-full flex flex-col text-slate-200 selection:bg-amber-500/30" style={{ background: '#04070D', fontFamily: "'Space Grotesk', 'Inter', system-ui, sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
       <CinematicBackground />
 
-      <div className="w-full h-screen overflow-hidden flex relative z-10">
+      <div className="w-full flex-1 overflow-hidden flex relative z-10">
 
         {/* ── SIDEBAR ── */}
-        <Sidebar nav={nav} section={section} setSection={setSection} isOrganizer={isOrganizer} roleLabel={roleLabel} />
+        <Sidebar nav={nav} section={section} setSection={setSection} isOrganizer={isOrganizer} roleLabel={roleLabel} mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} />
 
         {/* ── MAIN CONTENT ── */}
-        <main className={`flex-1 p-8 relative custom-scrollbar flex flex-col ${section === 'chat' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+        <main className={`flex-1 p-4 md:p-8 relative custom-scrollbar flex flex-col ${section === 'chat' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+          
+          {/* ── MOBILE MENU FAB ── */}
+          <div className="md:hidden fixed bottom-6 right-6 z-[60]">
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="w-14 h-14 bg-amber-500 text-black rounded-full shadow-[0_4px_20px_rgba(245,158,11,0.4)] flex items-center justify-center transition-transform active:scale-90"
+            >
+              <Menu size={24} strokeWidth={2.5} />
+            </button>
+          </div>
+
           <div className={`flex-1 min-h-0 flex flex-col w-full ${section !== 'chat' ? 'max-w-[1400px] mx-auto' : ''}`}>
 
             {/* ── PUBLISH STATUS BANNER ── */}

@@ -482,7 +482,7 @@ const TechTemplate = ({
           </div>
         </nav>
 
-        <main className="max-w-7xl mx-auto px-8 py-32 space-y-48">
+        <main className="max-w-7xl mx-auto px-4 md:px-8 py-16 md:py-32 space-y-16 md:space-y-48">
 
           {/* ══════════ ABOUT ══════════ */}
           <section id="about" className="scroll-mt-32">
@@ -837,7 +837,7 @@ const TechTemplate = ({
                            </div>
                            <div>
                               <div className="text-[10px] font-black text-white/20 tracking-widest uppercase">{label}</div>
-                              <div className="text-lg font-bold text-white truncate w-48 md:w-64">
+                              <div className="text-lg font-bold text-white truncate w-32 sm:w-48 md:w-64">
                                 {isEditing ? <EditableField value={pageData[key]} onChange={v => update(key, v)} isEditing /> : pageData[key] || '---'}
                               </div>
                            </div>

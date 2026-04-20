@@ -272,7 +272,7 @@ const BusinessTemplate = ({
         )}
 
         {/* ══════════ HERO SECTION ══════════ */}
-        <header className="min-h-screen flex flex-col justify-center relative overflow-hidden px-10 py-20 pb-0">
+        <header className="min-h-screen flex flex-col justify-center relative overflow-hidden px-4 md:px-10 py-10 md:py-20 pb-0">
           <div className="absolute inset-0 z-0 overflow-hidden">
              {(pageData.banner_url || initialConf.banner_url) && (
                <motion.img 
@@ -372,7 +372,7 @@ const BusinessTemplate = ({
         {/* ── STICKY NAV ── */}
         <nav className={`sticky top-0 z-[100] transition-all duration-700 border-b ${scrolled ? 'py-4 bg-e-navy/95 backdrop-blur-2xl border-white/10 shadow-2xl shadow-black/60' : 'py-8 bg-transparent border-transparent'}`}
              style={scrolled ? {} : { background: 'linear-gradient(to bottom, rgba(1,5,14,1), transparent)' }}>
-           <div className="max-w-7xl mx-auto px-10 flex items-center justify-between">
+           <div className="max-w-7xl mx-auto px-4 md:px-10 flex items-center justify-between">
               <div className="flex items-center gap-14 overflow-x-auto no-scrollbar">
                 {['about', 'schedule', 'speakers', 'dates', 'venue', 'sponsors', 'contact'].map(id => (
                   <button 
@@ -393,7 +393,7 @@ const BusinessTemplate = ({
            </div>
         </nav>
 
-        <main className="max-w-7xl mx-auto px-10 py-48 space-y-64">
+        <main className="max-w-7xl mx-auto px-4 md:px-10 py-24 md:py-48 space-y-24 md:space-y-64">
 
           {/* ══════════ ABOUT ══════════ */}
           <section id="about" className="scroll-mt-48">
@@ -600,7 +600,7 @@ const BusinessTemplate = ({
                    </div>
                 </div>
 
-                <EliteCard title="CALL FOR PAPERS" className="!p-16 border-none shadow-3xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #08101f 0%, #01050e 100%)' }}>
+                <EliteCard title="CALL FOR PAPERS" className="!p-6 sm:!p-10 lg:!p-16 border-none shadow-3xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #08101f 0%, #01050e 100%)' }}>
                    <div className="relative z-10 space-y-12">
                       <div className="space-y-4">
                          <h3 className="text-5xl font-black text-white uppercase tracking-tight">Executive <span className="text-e-accent italic">Submissions.</span></h3>
@@ -730,7 +730,7 @@ const BusinessTemplate = ({
                              return (
                                <motion.div 
                                  key={idx} whileHover={{ y: -10, scale: 1.05 }}
-                                 className="bg-white/[0.01] border border-white/5 p-16 hover:bg-white/[0.04] hover:border-e-accent/30 transition-all relative rounded-[2rem] flex items-center justify-center min-w-[320px] shadow-2xl"
+                                 className="bg-white/[0.01] border border-white/5 p-6 sm:p-10 lg:p-16 hover:bg-white/[0.04] hover:border-e-accent/30 transition-all relative rounded-[2rem] flex items-center justify-center w-full md:min-w-[320px] shadow-2xl"
                                >
                                   {isEditing && (
                                     <button onClick={() => update('sponsors', pageData.sponsors.filter((_, i) => i !== gi))} className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-2xl hover:scale-110 transition-transform"><X size={18} /></button>

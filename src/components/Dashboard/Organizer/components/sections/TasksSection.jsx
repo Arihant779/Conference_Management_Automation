@@ -35,28 +35,38 @@ const TasksSection = ({
               const isDone = task.status === 'done';
               return (
                 <AnimatedSection key={task.id} delay={0.05 * i} 
-                  className={`rounded-2xl px-6 py-4 flex items-center gap-5 transition-all duration-500 group backdrop-blur-xl border ${
+                  className={`rounded-2xl px-4 md:px-6 py-4 flex flex-col md:flex-row items-start md:items-center gap-4 transition-all duration-500 group backdrop-blur-xl border ${
                     isDone 
                       ? isDark ? 'bg-amber-500/5 border-amber-500/20' : 'bg-amber-50/50 border-amber-200/50' 
                       : isDark ? 'bg-slate-900/40 border-white/5 hover:border-white/10 hover:bg-slate-900/60 shadow-md' : 'bg-white border-zinc-200 hover:border-amber-200/50 hover:bg-zinc-50 shadow-sm'
                   }`}>
                   
-                  <div onClick={() => toggleTask(task)}
-                    className={`w-6 h-6 rounded-lg flex items-center justify-center cursor-pointer shrink-0 transition-all duration-300 ${
-                      isDone 
-                        ? 'bg-amber-500 border-amber-500 text-black shadow-[0_0_10px_rgba(251,191,36,0.3)]' 
-                        : isDark ? 'border border-slate-600 bg-white/5 text-transparent hover:border-amber-400' : 'border border-zinc-300 bg-zinc-50 text-transparent hover:border-amber-500'
-                    }`}>
-                    <Check size={14} className={isDone ? 'opacity-100' : 'opacity-0 hover:opacity-50 text-amber-500'} />
+                  <div className="flex items-center gap-4 w-full md:w-auto">
+                    <div onClick={() => toggleTask(task)}
+                      className={`w-6 h-6 rounded-lg flex items-center justify-center cursor-pointer shrink-0 transition-all duration-300 ${
+                        isDone 
+                          ? 'bg-amber-500 border-amber-500 text-black shadow-[0_0_10px_rgba(251,191,36,0.3)]' 
+                          : isDark ? 'border border-slate-600 bg-white/5 text-transparent hover:border-amber-400' : 'border border-zinc-300 bg-zinc-50 text-transparent hover:border-amber-500'
+                      }`}>
+                      <Check size={14} className={isDone ? 'opacity-100' : 'opacity-0 hover:opacity-50 text-amber-500'} />
+                    </div>
+                    
+                    <div className="md:hidden flex-1 min-w-0">
+                      <div className={`text-base font-bold tracking-wide transition-all duration-500 ${
+                        isDone 
+                          ? 'line-through text-slate-400' 
+                          : isDark ? 'text-white' : 'text-zinc-900'
+                      }`}>{task.title}</div>
+                    </div>
                   </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className={`text-base font-bold tracking-wide transition-all duration-500 ${
+
+                  <div className="flex-1 min-w-0 w-full pl-0 md:pl-0">
+                    <div className={`hidden md:block text-base font-bold tracking-wide transition-all duration-500 ${
                       isDone 
                         ? 'line-through text-slate-400' 
                         : isDark ? 'text-white' : 'text-zinc-900'
                     }`}>{task.title}</div>
-                    <div className="flex items-center gap-4 mt-2 flex-wrap">
+                    <div className="flex items-center gap-2 md:gap-4 mt-2 flex-wrap">
                       {task.team_id && (
                         <span className={`text-[11px] font-semibold flex items-center gap-1.5 px-2 py-1 rounded border transition-colors ${
                           isDark ? 'bg-white/5 border-white/10 text-slate-400' : 'bg-zinc-100 border-zinc-200 text-zinc-500'
@@ -81,19 +91,21 @@ const TasksSection = ({
                     </div>
                   </div>
                   
-                  <span className={cls('text-[10px] font-black px-3 py-1.5 rounded-lg border-2 uppercase tracking-widest shadow-sm', PRIORITY_STYLE[task.priority || 'medium'])}>{task.priority || 'med'}</span>
-                  
-                  <div className={`flex gap-2 transition-opacity duration-300 ${isDark ? 'opacity-0 group-hover:opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'}`}>
-                    <button onClick={() => openEditTask(task)} className={`p-2.5 rounded-xl transition-all ${
-                      isDark ? 'text-slate-400 bg-white/5 hover:bg-white/10 hover:text-white' : 'text-slate-400 bg-zinc-100 hover:bg-zinc-200 hover:text-zinc-900'
-                    }`}>
-                      <Edit2 size={16} />
-                    </button>
-                    <button onClick={() => deleteTask(task.id)} className={`p-2.5 rounded-xl transition-all ${
-                      isDark ? 'text-slate-400 bg-white/5 hover:bg-rose-500/10 hover:text-rose-400' : 'text-slate-400 bg-zinc-100 hover:bg-rose-50 hover:text-rose-500'
-                    }`}>
-                      <Trash2 size={16} />
-                    </button>
+                  <div className="flex items-center justify-between w-full md:w-auto pl-10 md:pl-0 mt-2 md:mt-0 pt-2 md:pt-0 border-t border-white/5 md:border-transparent">
+                    <span className={cls('text-[10px] font-black px-3 py-1.5 rounded-lg border-2 uppercase tracking-widest shadow-sm shrink-0', PRIORITY_STYLE[task.priority || 'medium'])}>{task.priority || 'med'}</span>
+                    
+                    <div className={`flex gap-2 transition-opacity duration-300 ${isDark ? 'opacity-100 md:opacity-0 md:group-hover:opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'}`}>
+                      <button onClick={() => openEditTask(task)} className={`p-2.5 rounded-xl transition-all ${
+                        isDark ? 'text-slate-400 bg-white/5 hover:bg-white/10 hover:text-white' : 'text-slate-400 bg-zinc-100 hover:bg-zinc-200 hover:text-zinc-900'
+                      }`}>
+                        <Edit2 size={16} />
+                      </button>
+                      <button onClick={() => deleteTask(task.id)} className={`p-2.5 rounded-xl transition-all ${
+                        isDark ? 'text-slate-400 bg-white/5 hover:bg-rose-500/10 hover:text-rose-400' : 'text-slate-400 bg-zinc-100 hover:bg-rose-50 hover:text-rose-500'
+                      }`}>
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                 </AnimatedSection>
               );

@@ -1,20 +1,28 @@
-import { BarChart2, LogOut } from 'lucide-react';
+import { BarChart2, LogOut, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useApp } from '../../../../context/AppContext';
 import ThemeToggle from '../../../Common/ThemeToggle';
 
-const Sidebar = ({ nav, section, setSection, isOrganizer, roleLabel }) => {
+const Sidebar = ({ nav, section, setSection, isOrganizer, roleLabel, mobileMenuOpen, setMobileMenuOpen }) => {
   const { theme, logout } = useApp();
   const isDark = theme === 'dark';
 
   return (
-    <aside className={`w-64 shrink-0 sticky top-0 flex flex-col gap-1 overflow-y-auto no-scrollbar transition-colors duration-500 ${isDark ? 'bg-[#0B0F1A]/50' : 'bg-white/80'}`}
+    <aside className={`w-full md:w-64 shrink-0 absolute md:relative z-40 md:z-0 left-0 right-0 origin-top flex flex-col gap-1 overflow-y-auto no-scrollbar transition-all duration-300 ease-in-out ${mobileMenuOpen ? 'top-0 bottom-0 max-h-none opacity-100 py-6 border-b pointer-events-auto' : 'top-0 bottom-full md:bottom-auto md:top-0 max-h-0 opacity-0 md:max-h-none md:opacity-100 pointer-events-none md:pointer-events-auto'} shadow-2xl md:shadow-none ${isDark ? 'bg-[#0B0F1A] md:bg-[#0B0F1A]/50 border-white/10' : 'bg-white md:bg-white/80 border-slate-200'}`}
       style={{
-        height: '100vh',
         backdropFilter: 'blur(20px)',
         borderRight: isDark ? '1px solid rgba(251,191,36,0.1)' : '1px solid rgba(15,23,42,0.15)',
-        padding: '32px 16px'
+        padding: mobileMenuOpen ? '24px 16px' : '0 16px', // mobile padding only when open
+        paddingTop: '32px', // overridden by md below, but just in case
       }}>
+
+      {/* Hidden close button on mobile since header chevron toggles it */}
+      <button 
+        className="hidden absolute top-4 right-4 p-2 rounded-xl bg-amber-500/10 text-amber-500"
+        onClick={() => setMobileMenuOpen(false)}
+      >
+        <X size={20} />
+      </button>
 
       {/* Logo / Title */}
       <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="px-3 mb-10">
@@ -33,7 +41,7 @@ const Sidebar = ({ nav, section, setSection, isOrganizer, roleLabel }) => {
         {nav.map(({ id, label, icon: Icon, badge }, i) => {
           const active = section === id;
           return (
-            <motion.button key={id} onClick={() => setSection(id)}
+            <motion.button key={id} onClick={() => { setSection(id); setMobileMenuOpen(false); }}
               initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 * i }}
               whileHover={{ x: 5 }} whileTap={{ scale: 0.98 }}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold w-full text-left transition-all relative overflow-hidden group ${active

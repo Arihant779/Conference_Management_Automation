@@ -356,10 +356,10 @@ const CreativeTemplate = ({
               </div>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                 <PrismButton onClick={() => setShowReg(true)} className="min-w-[220px]">
+                 <PrismButton onClick={() => setShowReg(true)} className="w-full sm:min-w-[220px]">
                     Join the Spectrum <ArrowRight size={20} />
                  </PrismButton>
-                 <PrismButton onClick={() => document.getElementById('about').scrollIntoView({ behavior: 'smooth' })} variant="secondary" className="min-w-[220px]">
+                 <PrismButton onClick={() => document.getElementById('about').scrollIntoView({ behavior: 'smooth' })} variant="secondary" className="w-full sm:min-w-[220px]">
                     Experience <MousePointer2 size={18} />
                  </PrismButton>
               </div>
@@ -417,11 +417,11 @@ const CreativeTemplate = ({
            </div>
         </nav>
 
-        <main className="max-w-7xl mx-auto px-10 py-48 space-y-64">
+        <main className="max-w-7xl mx-auto px-6 md:px-10 py-20 md:py-48 space-y-24 md:space-y-64">
 
           {/* ══════════ ABOUT ══════════ */}
           <section id="about" className="scroll-mt-48">
-             <div className="grid lg:grid-cols-2 gap-32 items-start">
+             <div className="grid lg:grid-cols-2 gap-12 lg:gap-32 items-start">
                 <div className="space-y-16">
                    <div className="space-y-6">
                       <span className="text-[11px] font-black text-p-secondary tracking-[0.3em] uppercase block">// THE GENESIS</span>
@@ -599,7 +599,7 @@ const CreativeTemplate = ({
 
           {/* ══════════ LOCATION ══════════ */}
           <section id="location" className="scroll-mt-48">
-             <div className="grid lg:grid-cols-2 gap-32 items-center">
+             <div className="grid lg:grid-cols-2 gap-12 lg:gap-32 items-center">
                 <div className="space-y-16">
                    <div className="space-y-6">
                       <span className="text-[11px] font-black text-accent tracking-[0.3em] uppercase block">// PHYSICAL SPACE</span>
@@ -719,7 +719,7 @@ const CreativeTemplate = ({
 
         </main>
 
-        <footer className="p-32 border-t border-black/5 bg-white/40 backdrop-blur-md">
+        <footer className="p-6 md:p-32 border-t border-black/5 bg-white/40 backdrop-blur-md">
            <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-24 text-center md:text-left">
               <div>
                  <h2 className="text-6xl font-black tracking-tighter text-slate-900 uppercase mb-4">{pageData.title}</h2>
