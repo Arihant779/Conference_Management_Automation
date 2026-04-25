@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, ArrowRight, CheckCircle, Clock, MapPin, AlignLeft, Calendar, Terminal, Briefcase, Palette } from 'lucide-react';
+import { Sparkles, ArrowRight, CheckCircle, Clock, MapPin, AlignLeft, Calendar, Terminal, Briefcase, Palette, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../Supabase/supabaseclient';
 import { useApp } from '../../context/AppContext';
@@ -138,6 +138,16 @@ const CreateConference = ({ onCancel, onSuccess }) => {
           isDark ? 'bg-[#080B12] border-white/5 shadow-black/40' : 'bg-white border-zinc-200 shadow-zinc-200/50'
         }`}
       >
+        {/* Mobile Close Button */}
+        <button 
+          type="button"
+          onClick={onCancel}
+          className={`absolute top-6 right-6 z-50 md:hidden w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-md border transition-all ${
+            isDark ? 'bg-white/5 border-white/10 text-white/50 hover:text-white hover:bg-white/10' : 'bg-zinc-100 border-zinc-200 text-zinc-400 hover:text-zinc-800 hover:bg-zinc-200'
+          }`}
+        >
+          <X size={18} />
+        </button>
         
         {/* Sidebar */}
         <div className={`w-full md:w-[35%] p-8 md:p-12 border-r flex flex-col relative overflow-hidden transition-all duration-500 ${
@@ -193,8 +203,9 @@ const CreateConference = ({ onCancel, onSuccess }) => {
           </div>
 
           <button 
+            type="button"
             onClick={onCancel} 
-            className={`text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-3 mt-12 group relative z-10 ${
+            className={`hidden md:flex text-[10px] font-black uppercase tracking-[0.2em] transition-all items-center gap-3 mt-12 group relative z-10 ${
               isDark ? 'text-white/30 hover:text-white' : 'text-zinc-400 hover:text-zinc-900'
             }`}
           >
