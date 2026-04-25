@@ -113,9 +113,9 @@ const FloatingParticles = () => null;
 const CinematicBackground = () => (
   <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none" style={{ background: '#04070D' }}>
     <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay" />
-    <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] rounded-full opacity-[0.08]" 
+    <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] rounded-full opacity-[0.08]"
       style={{ background: 'radial-gradient(circle, #fbbf24 0%, transparent 70%)', filter: 'blur(100px)' }} />
-    <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full opacity-[0.05]" 
+    <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full opacity-[0.05]"
       style={{ background: 'radial-gradient(circle, #3b82f6 0%, transparent 70%)', filter: 'blur(120px)' }} />
   </div>
 );
@@ -599,11 +599,11 @@ const ModernTemplate = ({
       </div>
 
       {/* ── STICKY NAV ── */}
-      <nav className={`sticky top-0 z-[90] transition-all duration-700 ${scrolled ? 'py-4 opacity-100 translate-y-0' : 'py-6 opacity-0 -translate-y-4 pointer-events-none'}`}
+      <nav className={`sticky top-0 z-[90] transition-all duration-700 ${scrolled ? 'py-4' : 'py-6'}`}
         style={{
-          background: scrolled ? 'rgba(4,7,13,0.92)' : 'transparent',
-          backdropFilter: scrolled ? 'blur(20px)' : 'none',
-          borderBottom: scrolled ? '1px solid rgba(255,255,255,0.05)' : '1px solid transparent'
+          background: 'rgba(4,7,13,0.92)',
+          backdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(255,255,255,0.05)'
         }}>
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
@@ -617,8 +617,8 @@ const ModernTemplate = ({
           </div>
           <button
             onClick={handleRegisterClick}
-            className={`px-6 py-2 rounded-full text-xs font-bold text-black transition-all duration-300 ${scrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}
-            style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', boxShadow: '0 0 15px rgba(251,191,36,0.2)' }}
+            className={`px-6 py-2 rounded-full text-xs font-bold text-black transition-all duration-300 shadow-[0_0_15px_rgba(251,191,36,0.2)]`}
+            style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)' }}
           >
             Register Now
           </button>
@@ -799,10 +799,10 @@ const ModernTemplate = ({
                         <div className="w-full h-full rounded-full" style={{ background: '#0B0F1A' }} />
                       </motion.div>
                       <div className="absolute inset-[3px] rounded-full overflow-hidden relative">
-                        <img 
-                          src={sp.img || DEFAULT_AVATAR} 
-                          alt={sp.name} 
-                          className={`w-full h-full object-cover transition-all duration-500 ${!isEditing ? 'filter grayscale hover:grayscale-0' : ''}`} 
+                        <img
+                          src={sp.img || DEFAULT_AVATAR}
+                          alt={sp.name}
+                          className={`w-full h-full object-cover transition-all duration-500 ${!isEditing ? 'filter grayscale hover:grayscale-0' : ''}`}
                         />
                       </div>
                     </div>
@@ -810,13 +810,13 @@ const ModernTemplate = ({
                     {isEditing && (
                       <div className="mb-6 px-3 py-4 rounded-2xl bg-[#0B0F1A] border-2 border-amber-500 shadow-[0_0_20px_rgba(251,191,36,0.2)]">
                         <div className="text-[10px] font-black text-amber-400 uppercase tracking-[0.2em] text-center mb-3">Update Photo URL</div>
-                        <input 
+                        <input
                           type="text"
-                          value={sp.img || ''} 
-                          onChange={e => updateNested('speakers', i, 'img', e.target.value)} 
+                          value={sp.img || ''}
+                          onChange={e => updateNested('speakers', i, 'img', e.target.value)}
                           onBlur={handleSave}
-                          className="w-full bg-white/5 text-white text-[11px] px-3 py-2 rounded-xl border border-white/10 outline-none focus:ring-2 focus:ring-amber-500/50 font-mono" 
-                          placeholder="Paste image link here..." 
+                          className="w-full bg-white/5 text-white text-[11px] px-3 py-2 rounded-xl border border-white/10 outline-none focus:ring-2 focus:ring-amber-500/50 font-mono"
+                          placeholder="Paste image link here..."
                         />
                         <div className="mt-2 text-[8px] text-slate-500 text-center italic">Changes save when you click "Save Changes" at the top</div>
                       </div>
@@ -980,13 +980,13 @@ const ModernTemplate = ({
                 width="100%"
                 height="100%"
                 frameBorder="0"
-                style={{ 
-                  border: 0, 
+                style={{
+                  border: 0,
                   filter: 'grayscale(1) invert(0.9) contrast(1.2) brightness(0.8)',
                   transition: 'filter 0.5s ease-in-out'
                 }}
-                src={pageData.map_url && pageData.map_url.includes('google.com/maps/embed') 
-                  ? pageData.map_url 
+                src={pageData.map_url && pageData.map_url.includes('google.com/maps/embed')
+                  ? pageData.map_url
                   : `https://maps.google.com/maps?q=${encodeURIComponent(pageData.venue_address)}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
                 allowFullScreen
                 className="group-hover:filter-none transition-all duration-700"

@@ -329,7 +329,7 @@ const ConferenceView = ({
           </div>
         </div>
       </nav>
-      <div className="flex-1 flex flex-col bg-black overflow-y-auto relative no-scrollbar" id="conf-scroll-area">
+      <div className="flex-1 bg-black overflow-y-auto relative no-scrollbar" id="conf-scroll-area">
         {viewMode === 'home' ? (
           conf.template === 'classic'
             ? <ClassicTemplate {...templateProps} />

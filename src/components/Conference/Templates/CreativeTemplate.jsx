@@ -203,7 +203,7 @@ const CreativeTemplate = ({
   };
 
   return (
-    <div className="min-h-screen text-[#0f172a] selection:bg-p-primary/20 overflow-x-hidden relative"
+    <div className="min-h-screen text-[#0f172a] selection:bg-p-primary/20 relative"
       style={{ background: '#fdfcfd', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
 
       {/* ── HIGH-END AMBIENT EFFECTS ── */}
@@ -284,24 +284,24 @@ const CreativeTemplate = ({
 
         {/* ══════════ HERO SECTION ══════════ */}
         <section className="min-h-screen flex flex-col items-center justify-center p-8 relative overflow-hidden">
-           
-           {/* Banner Image with Overlays */}
-           {(pageData.banner_url || conf.banner_url) && (
-              <div className="absolute inset-0 z-0 overflow-hidden">
-                <motion.img 
-                  initial={{ scale: 1.1 }} animate={{ scale: 1 }} transition={{ duration: 2 }}
-                  src={pageData.banner_url || conf.banner_url} 
-                  className="w-full h-full object-cover opacity-[0.45] mix-blend-luminosity" 
-                  alt="" 
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-[#fdfcfd]/10 via-transparent to-[#fdfcfd]" />
-                <div className="absolute inset-0 bg-gradient-to-tr from-p-primary/10 via-transparent to-p-secondary/10" />
-              </div>
-           )}
 
-           <motion.div style={{ y: heroY, opacity: heroOpacity }} className="relative z-10 flex flex-col items-center w-full">
-           {/* Floating Geometric Elements */}
-           <motion.div 
+          {/* Banner Image with Overlays */}
+          {(pageData.banner_url || conf.banner_url) && (
+            <div className="absolute inset-0 z-0 overflow-hidden">
+              <motion.img
+                initial={{ scale: 1.1 }} animate={{ scale: 1 }} transition={{ duration: 2 }}
+                src={pageData.banner_url || conf.banner_url}
+                className="w-full h-full object-cover opacity-[0.45] mix-blend-luminosity"
+                alt=""
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-[#fdfcfd]/10 via-transparent to-[#fdfcfd]" />
+              <div className="absolute inset-0 bg-gradient-to-tr from-p-primary/10 via-transparent to-p-secondary/10" />
+            </div>
+          )}
+
+          <motion.div style={{ y: heroY, opacity: heroOpacity }} className="relative z-10 flex flex-col items-center w-full">
+            {/* Floating Geometric Elements */}
+            <motion.div
               animate={{ y: [0, -30, 0], rotate: [0, 45, 0] }}
               transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
               className="absolute top-[15%] left-[10%] w-48 h-48 bg-gradient-to-br from-p-primary/5 to-p-accent/10 blur-3xl rounded-full"
@@ -315,33 +315,33 @@ const CreativeTemplate = ({
             <div className="absolute top-[10%] left-[8%] w-32 h-32 text-p-primary/10 animate-bounce transition-all"><Sparkles size={120} /></div>
             <div className="absolute bottom-[20%] right-[12%] w-24 h-24 text-p-secondary/10 animate-spin transition-all" style={{ animationDuration: '10s' }}><Target size={90} /></div>
 
-           <motion.div 
-             initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2 }}
-             className="relative z-10 text-center max-w-5xl"
-           >
-                {isEditing && (
-                  <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="mb-12 w-full max-w-2xl mx-auto p-8 rounded-[2.5rem] bg-white/40 backdrop-blur-3xl border border-white/50 shadow-xl">
-                    <div className="text-[12px] font-black uppercase tracking-[0.4em] text-p-primary mb-4">Background Identity Surface</div>
-                    <EditableField 
-                      value={pageData.banner_url} 
-                      onChange={v => update('banner_url', v)} 
-                      isEditing={isEditing} 
-                      placeholder="Enter banner image URL (e.g. from Unsplash)..."
-                    />
-                  </motion.div>
-                )}
+            <motion.div
+              initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2 }}
+              className="relative z-10 text-center max-w-5xl"
+            >
+              {isEditing && (
+                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="mb-12 w-full max-w-2xl mx-auto p-8 rounded-[2.5rem] bg-white/40 backdrop-blur-3xl border border-white/50 shadow-xl">
+                  <div className="text-[12px] font-black uppercase tracking-[0.4em] text-p-primary mb-4">Background Identity Surface</div>
+                  <EditableField
+                    value={pageData.banner_url}
+                    onChange={v => update('banner_url', v)}
+                    isEditing={isEditing}
+                    placeholder="Enter banner image URL (e.g. from Unsplash)..."
+                  />
+                </motion.div>
+              )}
 
-                <motion.div 
-                 initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                 className="inline-flex items-center gap-4 px-10 py-4 rounded-full bg-white/40 border border-white focus-within:border-p-primary/50 backdrop-blur-3xl mb-16 shadow-[0_20px_50px_-20px_rgba(139,92,246,0.3)] group transition-all"
-               >
-                  <div className="w-8 h-8 rounded-full bg-p-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Sparkles size={16} className="text-p-primary" />
-                  </div>
-                  <span className="text-[12px] font-black uppercase tracking-[0.5em] text-slate-600">
-                     {conf.theme || 'The Annual Festival of Digital Imagination'}
-                  </span>
-               </motion.div>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                className="inline-flex items-center gap-4 px-10 py-4 rounded-full bg-white/40 border border-white focus-within:border-p-primary/50 backdrop-blur-3xl mb-16 shadow-[0_20px_50px_-20px_rgba(139,92,246,0.3)] group transition-all"
+              >
+                <div className="w-8 h-8 rounded-full bg-p-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Sparkles size={16} className="text-p-primary" />
+                </div>
+                <span className="text-[12px] font-black uppercase tracking-[0.5em] text-slate-600">
+                  {conf.theme || 'The Annual Festival of Digital Imagination'}
+                </span>
+              </motion.div>
 
               <h1 className="text-8xl md:text-[11rem] font-[950] tracking-tighter leading-[0.95] py-4 mb-12 text-transparent bg-clip-text bg-gradient-to-br from-p-accent via-p-primary to-p-secondary filter drop-shadow-[0_15px_30px_rgba(139,92,246,0.15)]">
                 {isEditing ? (
@@ -356,12 +356,12 @@ const CreativeTemplate = ({
               </div>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                 <PrismButton onClick={() => setShowReg(true)} className="w-full sm:min-w-[220px]">
-                    Join the Spectrum <ArrowRight size={20} />
-                 </PrismButton>
-                 <PrismButton onClick={() => document.getElementById('about').scrollIntoView({ behavior: 'smooth' })} variant="secondary" className="w-full sm:min-w-[220px]">
-                    Experience <MousePointer2 size={18} />
-                 </PrismButton>
+                <PrismButton onClick={() => setShowReg(true)} className="w-full sm:min-w-[220px]">
+                  Join the Spectrum <ArrowRight size={20} />
+                </PrismButton>
+                <PrismButton onClick={() => document.getElementById('about').scrollIntoView({ behavior: 'smooth' })} variant="secondary" className="w-full sm:min-w-[220px]">
+                  Experience <MousePointer2 size={18} />
+                </PrismButton>
               </div>
             </motion.div>
 
@@ -386,59 +386,59 @@ const CreativeTemplate = ({
                   ))}
                 </div>
               </div>
-           </div>
-         </motion.div>
+            </div>
+          </motion.div>
         </section>
 
         <nav className={`sticky top-0 z-[100] transition-all duration-500 ${scrolled ? 'py-4 bg-white/70 backdrop-blur-3xl border-b border-black/5' : 'py-10 bg-transparent border-transparent'}`}>
-           <div className="max-w-7xl mx-auto px-10 flex items-center justify-between">
-              <div className="flex gap-12 overflow-x-auto no-scrollbar">
-                {['about', 'sessions', 'creators', 'location', 'partners'].map(id => (
-                  <button key={id} onClick={() => { 
-                      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-                      setActiveNav(id);
-                    }}
-                    className={`text-[10px] font-black uppercase tracking-[0.25em] transition-all relative ${activeNav === id ? 'text-p-primary' : 'text-slate-300 hover:text-slate-900'}`}
-                  >
-                    {id}
-                    {activeNav === id && (
-                      <motion.div layoutId="prism-dot" className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-p-primary" />
-                    )}
-                  </button>
-                ))}
-              </div>
-              
-              <PrismButton
-                onClick={() => setShowReg(true)}
-                className={`!py-2 !px-6 !text-[10px] transition-all duration-500 ${scrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
-              >
-                Join the Spectrum
-              </PrismButton>
-           </div>
+          <div className="max-w-7xl mx-auto px-10 flex items-center justify-between">
+            <div className="flex gap-12 overflow-x-auto no-scrollbar">
+              {['about', 'sessions', 'creators', 'location', 'partners'].map(id => (
+                <button key={id} onClick={() => {
+                  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+                  setActiveNav(id);
+                }}
+                  className={`text-[10px] font-black uppercase tracking-[0.25em] transition-all relative ${activeNav === id ? 'text-p-primary' : 'text-slate-300 hover:text-slate-900'}`}
+                >
+                  {id}
+                  {activeNav === id && (
+                    <motion.div layoutId="prism-dot" className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-p-primary" />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            <PrismButton
+              onClick={() => setShowReg(true)}
+              className={`!py-2 !px-6 !text-[10px] transition-all duration-500 ${scrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+            >
+              Join the Spectrum
+            </PrismButton>
+          </div>
         </nav>
 
         <main className="max-w-7xl mx-auto px-6 md:px-10 py-20 md:py-48 space-y-24 md:space-y-64">
 
           {/* ══════════ ABOUT ══════════ */}
           <section id="about" className="scroll-mt-48">
-             <div className="grid lg:grid-cols-2 gap-32 items-start">
-                <div className="space-y-16">
-                   <div className="space-y-6">
-                      <span className="text-[11px] font-black text-p-secondary tracking-[0.3em] uppercase block">// THE GENESIS</span>
-                      <h2 className="text-6xl md:text-8xl font-black tracking-tighter text-slate-900">BRINGING<br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-p-primary to-p-accent">COLOR</span> TO LOGIC.</h2>
-                   </div>
-                   <div className="text-2xl text-slate-500 font-light leading-relaxed space-y-12">
-                      <p className="first-letter:text-8xl first-letter:font-black first-letter:text-p-primary first-letter:mr-6 first-letter:float-left">
-                        {isEditing ? <EditableField value={conf.description} onChange={v => setConf(p => ({ ...p, description: v }))} multiline isEditing /> : conf.description}
-                      </p>
-                      <div className="p-1? rounded-[3rem] bg-gradient-to-br from-p-primary/5 to-p-secondary/5 p-12 border border-white/50 relative overflow-hidden group">
-                         <div className="absolute -top-12 -right-12 w-32 h-32 bg-p-primary/10 blur-[50px] rounded-full group-hover:scale-150 transition-transform" />
-                         <p className="relative z-10 text-slate-600 font-medium tracking-tight">
-                            {isEditing ? <EditableField value={pageData.about_extra} onChange={v => update('about_extra', v)} multiline isEditing /> : pageData.about_extra}
-                         </p>
-                      </div>
-                   </div>
+            <div className="grid lg:grid-cols-2 gap-32 items-start">
+              <div className="space-y-16">
+                <div className="space-y-6">
+                  <span className="text-[11px] font-black text-p-secondary tracking-[0.3em] uppercase block">// THE GENESIS</span>
+                  <h2 className="text-6xl md:text-8xl font-black tracking-tighter text-slate-900">BRINGING<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-p-primary to-p-accent">COLOR</span> TO LOGIC.</h2>
                 </div>
+                <div className="text-2xl text-slate-500 font-light leading-relaxed space-y-12">
+                  <p className="first-letter:text-8xl first-letter:font-black first-letter:text-p-primary first-letter:mr-6 first-letter:float-left">
+                    {isEditing ? <EditableField value={conf.description} onChange={v => setConf(p => ({ ...p, description: v }))} multiline isEditing /> : conf.description}
+                  </p>
+                  <div className="p-1? rounded-[3rem] bg-gradient-to-br from-p-primary/5 to-p-secondary/5 p-12 border border-white/50 relative overflow-hidden group">
+                    <div className="absolute -top-12 -right-12 w-32 h-32 bg-p-primary/10 blur-[50px] rounded-full group-hover:scale-150 transition-transform" />
+                    <p className="relative z-10 text-slate-600 font-medium tracking-tight">
+                      {isEditing ? <EditableField value={pageData.about_extra} onChange={v => update('about_extra', v)} multiline isEditing /> : pageData.about_extra}
+                    </p>
+                  </div>
+                </div>
+              </div>
 
               <div className="relative">
                 <div className="absolute -inset-10 bg-gradient-to-tr from-p-accent/20 via-p-primary/20 to-p-secondary/20 blur-[100px] opacity-30 rounded-full" />
@@ -532,147 +532,147 @@ const CreativeTemplate = ({
               <h2 className="text-6xl md:text-8xl font-black tracking-tighter text-slate-900 uppercase">PRISM<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-p-accent via-p-primary to-p-secondary">CREATORS.</span></h2>
             </div>
 
-             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-12">
-                {pageData.speakers.map((sp, i) => (
-                  <PrismCard key={i} className="group overflow-hidden !rounded-[3rem]">
-                     {isEditing && (
-                        <button onClick={() => update('speakers', pageData.speakers.filter((_, idx) => idx !== i))}
-                                className="absolute top-6 right-6 z-20 w-12 h-12 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-xl hover:scale-110 transition-all"><Trash2 size={20} /></button>
-                     )}
-                     <div className="relative aspect-video overflow-hidden">
-                        {sp.img && !isEditing ? (
-                          <img src={sp.img} className="w-full h-full object-cover scale-110 group-hover:scale-100 group-hover:rotate-1 transition-all duration-1000" alt="" />
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-12">
+              {pageData.speakers.map((sp, i) => (
+                <PrismCard key={i} className="group overflow-hidden !rounded-[3rem]">
+                  {isEditing && (
+                    <button onClick={() => update('speakers', pageData.speakers.filter((_, idx) => idx !== i))}
+                      className="absolute top-6 right-6 z-20 w-12 h-12 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-xl hover:scale-110 transition-all"><Trash2 size={20} /></button>
+                  )}
+                  <div className="relative aspect-video overflow-hidden">
+                    {sp.img && !isEditing ? (
+                      <img src={sp.img} className="w-full h-full object-cover scale-110 group-hover:scale-100 group-hover:rotate-1 transition-all duration-1000" alt="" />
+                    ) : (
+                      <div className="w-full h-full bg-slate-50 flex items-center justify-center text-slate-200">
+                        {isEditing && sp.img ? (
+                          <img src={sp.img} className="w-full h-full object-cover opacity-30" alt="" />
                         ) : (
-                          <div className="w-full h-full bg-slate-50 flex items-center justify-center text-slate-200">
-                             {isEditing && sp.img ? (
-                               <img src={sp.img} className="w-full h-full object-cover opacity-30" alt="" />
-                             ) : (
-                               <Users size={64} />
-                             )}
-                          </div>
+                          <Users size={64} />
                         )}
-                         <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-transparent" />
-                         {isEditing && (
-                           <div className="absolute inset-0 z-30 flex items-center justify-center p-6 bg-white/20 backdrop-blur-sm">
-                             <div className="w-full space-y-2">
-                               <div className="text-[9px] font-black p-primary uppercase tracking-widest text-center">Photo URL</div>
-                               <EditableField 
-                                 value={sp.img} 
-                                 onChange={v => updateNested('speakers', i, 'img', v)} 
-                                 isEditing={isEditing} 
-                                 placeholder="Paste image link..."
-                               />
-                             </div>
-                           </div>
-                         )}
                       </div>
-                     <div className="p-10 space-y-6">
-                        <div>
-                           <span className="text-[10px] font-extrabold text-p-primary uppercase tracking-[0.2em] mb-2 block">
-                              {isEditing ? <EditableField value={sp.role} onChange={v => updateNested('speakers', i, 'role', v)} isEditing /> : sp.role}
-                           </span>
-                           <h4 className="text-4xl font-black tracking-tighter text-slate-900">
-                             {isEditing ? <EditableField value={sp.name} onChange={v => updateNested('speakers', i, 'name', v)} isEditing /> : sp.name}
-                           </h4>
-                           <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mt-1 block">
-                              {isEditing ? <EditableField value={sp.org} onChange={v => updateNested('speakers', i, 'org', v)} isEditing /> : `@${sp.org}`}
-                           </span>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-transparent" />
+                    {isEditing && (
+                      <div className="absolute inset-0 z-30 flex items-center justify-center p-6 bg-white/20 backdrop-blur-sm">
+                        <div className="w-full space-y-2">
+                          <div className="text-[9px] font-black p-primary uppercase tracking-widest text-center">Photo URL</div>
+                          <EditableField
+                            value={sp.img}
+                            onChange={v => updateNested('speakers', i, 'img', v)}
+                            isEditing={isEditing}
+                            placeholder="Paste image link..."
+                          />
                         </div>
-                        <p className="text-base text-slate-500 font-light italic leading-relaxed line-clamp-4">
-                           {isEditing ? <EditableField value={sp.bio} onChange={v => updateNested('speakers', i, 'bio', v)} multiline isEditing /> : `"${sp.bio}"`}
-                        </p>
-                     </div>
-                  </PrismCard>
-                ))}
-                {isEditing && (
-                  <button onClick={() => update('speakers', [...pageData.speakers, { name: 'New Creator', role: 'Artist', org: 'Studio', img: '', bio: 'Defining the edges...' }])}
-                    className="aspect-square rounded-[3rem] border-4 border-dashed border-p-primary/10 flex flex-col items-center justify-center gap-6 group hover:border-p-primary/40 hover:bg-p-primary/5 transition-all"
-                  >
-                     <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                        <Plus size={36} className="text-p-primary" />
-                     </div>
-                     <span className="text-[11px] font-black uppercase tracking-[0.2em] text-p-primary">Introduce Creator</span>
-                  </button>
-                )}
-             </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-10 space-y-6">
+                    <div>
+                      <span className="text-[10px] font-extrabold text-p-primary uppercase tracking-[0.2em] mb-2 block">
+                        {isEditing ? <EditableField value={sp.role} onChange={v => updateNested('speakers', i, 'role', v)} isEditing /> : sp.role}
+                      </span>
+                      <h4 className="text-4xl font-black tracking-tighter text-slate-900">
+                        {isEditing ? <EditableField value={sp.name} onChange={v => updateNested('speakers', i, 'name', v)} isEditing /> : sp.name}
+                      </h4>
+                      <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mt-1 block">
+                        {isEditing ? <EditableField value={sp.org} onChange={v => updateNested('speakers', i, 'org', v)} isEditing /> : `@${sp.org}`}
+                      </span>
+                    </div>
+                    <p className="text-base text-slate-500 font-light italic leading-relaxed line-clamp-4">
+                      {isEditing ? <EditableField value={sp.bio} onChange={v => updateNested('speakers', i, 'bio', v)} multiline isEditing /> : `"${sp.bio}"`}
+                    </p>
+                  </div>
+                </PrismCard>
+              ))}
+              {isEditing && (
+                <button onClick={() => update('speakers', [...pageData.speakers, { name: 'New Creator', role: 'Artist', org: 'Studio', img: '', bio: 'Defining the edges...' }])}
+                  className="aspect-square rounded-[3rem] border-4 border-dashed border-p-primary/10 flex flex-col items-center justify-center gap-6 group hover:border-p-primary/40 hover:bg-p-primary/5 transition-all"
+                >
+                  <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                    <Plus size={36} className="text-p-primary" />
+                  </div>
+                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-p-primary">Introduce Creator</span>
+                </button>
+              )}
+            </div>
           </section>
 
           {/* ══════════ LOCATION ══════════ */}
           <section id="location" className="scroll-mt-48">
-             <div className="grid lg:grid-cols-2 gap-12 lg:gap-32 items-center">
-                <div className="space-y-16">
-                   <div className="space-y-6">
-                      <span className="text-[11px] font-black text-accent tracking-[0.3em] uppercase block">// PHYSICAL SPACE</span>
-                      <h2 className="text-6xl md:text-8xl font-black tracking-tighter text-slate-900 uppercase">THE<br/><span className="text-accent">HUB.</span></h2>
-                   </div>
-                   <div className="space-y-12">
-                      <div className="group">
-                         <span className="text-[10px] font-extrabold text-slate-300 tracking-widest uppercase mb-2 block">Conference Venue</span>
-                         <h3 className="text-4xl font-black text-slate-900 uppercase tracking-tighter group-hover:text-accent transition-colors">
-                            {isEditing ? <EditableField value={pageData.venue_name} onChange={v => update('venue_name', v)} isEditing /> : pageData.venue_name}
-                         </h3>
-                      </div>
-                      <div className="group">
-                         <span className="text-[10px] font-extrabold text-slate-300 tracking-widest uppercase mb-2 block">Address</span>
-                         <span className="text-2xl font-bold text-slate-500 uppercase tracking-widest">
-                            {isEditing ? <EditableField value={pageData.venue_address} onChange={v => update('venue_address', v)} isEditing /> : pageData.venue_address}
-                         </span>
-                      </div>
-                      <p className="text-xl text-slate-400 font-light leading-relaxed italic">
-                         {isEditing ? <EditableField value={pageData.venue_description} onChange={v => update('venue_description', v)} multiline isEditing /> : pageData.venue_description}
-                      </p>
-                      
-                      {isEditing && (
-                        <div className="space-y-2 py-4 border-t border-p-primary/10">
-                          <span className="text-[10px] font-extrabold text-p-primary uppercase tracking-[0.2em] block">Custom Map URL (Optional)</span>
-                          <EditableField 
-                            value={pageData.map_url} 
-                            onChange={v => update('map_url', v)} 
-                            isEditing={isEditing} 
-                            placeholder="Paste Google Maps link here..."
-                          />
-                        </div>
-                      )}
-
-                      <PrismButton 
-                        variant="secondary" 
-                        onClick={() => window.open(pageData.map_url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pageData.venue_address)}`, '_blank')} 
-                        className="!rounded-full !px-8"
-                      >
-                        {pageData.map_url ? 'Navigate to Portal' : 'Get Coordinates'}
-                      </PrismButton>
-                   </div>
+            <div className="grid lg:grid-cols-2 gap-12 lg:gap-32 items-center">
+              <div className="space-y-16">
+                <div className="space-y-6">
+                  <span className="text-[11px] font-black text-accent tracking-[0.3em] uppercase block">// PHYSICAL SPACE</span>
+                  <h2 className="text-6xl md:text-8xl font-black tracking-tighter text-slate-900 uppercase">THE<br /><span className="text-accent">HUB.</span></h2>
                 </div>
-                 <div className="relative">
-                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 60, ease: "linear" }}
-                      className="absolute -inset-16 border-2 border-accent/10 border-dashed rounded-full" />
-                    <PrismCard className="aspect-square p-2 overflow-hidden !rounded-full shadow-2xl relative">
-                       {/* Real Google Map with Circular Mask */}
-                       <div className="absolute inset-0 z-0 overflow-hidden rounded-full">
-                          <iframe
-                            title="Prism Location"
-                            width="100%"
-                            height="100%"
-                            frameBorder="0"
-                            style={{ 
-                              border: 0, 
-                              filter: 'hue-rotate(240deg) grayscale(0.2) contrast(1.1) brightness(0.9)',
-                            }}
-                            src={pageData.map_url && pageData.map_url.includes('google.com/maps/embed') 
-                              ? pageData.map_url 
-                              : `https://maps.google.com/maps?q=${encodeURIComponent(pageData.venue_address)}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
-                            allowFullScreen
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-p-primary/20 to-transparent pointer-events-none" />
-                       </div>
+                <div className="space-y-12">
+                  <div className="group">
+                    <span className="text-[10px] font-extrabold text-slate-300 tracking-widest uppercase mb-2 block">Conference Venue</span>
+                    <h3 className="text-4xl font-black text-slate-900 uppercase tracking-tighter group-hover:text-accent transition-colors">
+                      {isEditing ? <EditableField value={pageData.venue_name} onChange={v => update('venue_name', v)} isEditing /> : pageData.venue_name}
+                    </h3>
+                  </div>
+                  <div className="group">
+                    <span className="text-[10px] font-extrabold text-slate-300 tracking-widest uppercase mb-2 block">Address</span>
+                    <span className="text-2xl font-bold text-slate-500 uppercase tracking-widest">
+                      {isEditing ? <EditableField value={pageData.venue_address} onChange={v => update('venue_address', v)} isEditing /> : pageData.venue_address}
+                    </span>
+                  </div>
+                  <p className="text-xl text-slate-400 font-light leading-relaxed italic">
+                    {isEditing ? <EditableField value={pageData.venue_description} onChange={v => update('venue_description', v)} multiline isEditing /> : pageData.venue_description}
+                  </p>
 
-                       <div className="w-full h-full rounded-full bg-slate-900/10 flex flex-col items-center justify-center p-12 text-center relative overflow-hidden group pointer-events-none hover:bg-transparent transition-all">
-                          <div className="absolute inset-0 bg-gradient-to-br from-accent/20 to-transparent opacity-40 group-hover:opacity-0 transition-opacity" />
-                          {!isEditing && <MapPin size={80} className="text-accent mb-8 animate-pulse drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]" />}
-                       </div>
-                    </PrismCard>
-                 </div>
-             </div>
+                  {isEditing && (
+                    <div className="space-y-2 py-4 border-t border-p-primary/10">
+                      <span className="text-[10px] font-extrabold text-p-primary uppercase tracking-[0.2em] block">Custom Map URL (Optional)</span>
+                      <EditableField
+                        value={pageData.map_url}
+                        onChange={v => update('map_url', v)}
+                        isEditing={isEditing}
+                        placeholder="Paste Google Maps link here..."
+                      />
+                    </div>
+                  )}
+
+                  <PrismButton
+                    variant="secondary"
+                    onClick={() => window.open(pageData.map_url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pageData.venue_address)}`, '_blank')}
+                    className="!rounded-full !px-8"
+                  >
+                    {pageData.map_url ? 'Navigate to Portal' : 'Get Coordinates'}
+                  </PrismButton>
+                </div>
+              </div>
+              <div className="relative">
+                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 60, ease: "linear" }}
+                  className="absolute -inset-16 border-2 border-accent/10 border-dashed rounded-full" />
+                <PrismCard className="aspect-square p-2 overflow-hidden !rounded-full shadow-2xl relative">
+                  {/* Real Google Map with Circular Mask */}
+                  <div className="absolute inset-0 z-0 overflow-hidden rounded-full">
+                    <iframe
+                      title="Prism Location"
+                      width="100%"
+                      height="100%"
+                      frameBorder="0"
+                      style={{
+                        border: 0,
+                        filter: 'hue-rotate(240deg) grayscale(0.2) contrast(1.1) brightness(0.9)',
+                      }}
+                      src={pageData.map_url && pageData.map_url.includes('google.com/maps/embed')
+                        ? pageData.map_url
+                        : `https://maps.google.com/maps?q=${encodeURIComponent(pageData.venue_address)}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
+                      allowFullScreen
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-p-primary/20 to-transparent pointer-events-none" />
+                  </div>
+
+                  <div className="w-full h-full rounded-full bg-slate-900/10 flex flex-col items-center justify-center p-12 text-center relative overflow-hidden group pointer-events-none hover:bg-transparent transition-all">
+                    <div className="absolute inset-0 bg-gradient-to-br from-accent/20 to-transparent opacity-40 group-hover:opacity-0 transition-opacity" />
+                    {!isEditing && <MapPin size={80} className="text-accent mb-8 animate-pulse drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]" />}
+                  </div>
+                </PrismCard>
+              </div>
+            </div>
           </section>
 
           {/* ══════════ PARTNERS ══════════ */}
@@ -720,24 +720,24 @@ const CreativeTemplate = ({
         </main>
 
         <footer className="p-32 border-t border-black/5 bg-white/40 backdrop-blur-md">
-           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-24 text-center md:text-left">
-              <div>
-                 <h2 className="text-6xl font-black tracking-tighter text-slate-900 uppercase mb-4">{pageData.title}</h2>
-                 <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                    {['Twitter', 'Instagram', 'Discord', 'LinkedIn'].map(s => (
-                       <span key={s} className="text-[10px] font-black text-slate-300 hover:text-primary cursor-pointer uppercase tracking-widest">{s}</span>
-                    ))}
-                 </div>
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-24 text-center md:text-left">
+            <div>
+              <h2 className="text-6xl font-black tracking-tighter text-slate-900 uppercase mb-4">{pageData.title}</h2>
+              <div className="flex flex-wrap justify-center md:justify-start gap-4">
+                {['Twitter', 'Instagram', 'Discord', 'LinkedIn'].map(s => (
+                  <span key={s} className="text-[10px] font-black text-slate-300 hover:text-primary cursor-pointer uppercase tracking-widest">{s}</span>
+                ))}
               </div>
-              <div className="flex items-center gap-16">
-                 <div className="text-right hidden md:block">
-                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest block mb-2">Developed By</span>
-                    <span className="text-sm font-extrabold uppercase tracking-[0.2em] text-primary">Prism_Studio_v5</span>
-                 </div>
-                 <div className="w-px h-24 bg-black/5" />
-                 <span className="text-[12px] font-black text-slate-300 uppercase tracking-widest whitespace-nowrap">© {new Date().getFullYear()} THE SPECTRUM</span>
+            </div>
+            <div className="flex items-center gap-16">
+              <div className="text-right hidden md:block">
+                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest block mb-2">Developed By</span>
+                <span className="text-sm font-extrabold uppercase tracking-[0.2em] text-primary">Prism_Studio_v5</span>
               </div>
-           </div>
+              <div className="w-px h-24 bg-black/5" />
+              <span className="text-[12px] font-black text-slate-300 uppercase tracking-widest whitespace-nowrap">© {new Date().getFullYear()} THE SPECTRUM</span>
+            </div>
+          </div>
         </footer>
       </div>
     </div>
