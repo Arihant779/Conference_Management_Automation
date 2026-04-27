@@ -1153,16 +1153,16 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
         style={{ borderBottomColor: navBorderColor }}
         className={`sticky top-0 z-40 px-6 py-3 border-b transition-colors duration-500 ${isDark ? 'border-white/[0.04]' : 'border-zinc-900/[0.08]'}`}
       >
-        <div className="max-w-[90rem] mx-auto flex flex-wrap justify-between items-center gap-3">
-          <div className="flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-sm transition-colors duration-200 ${isDark ? 'bg-white' : 'bg-zinc-900'}`}>
-              <Layout size={17} className={isDark ? 'text-zinc-900' : 'text-white'} />
+        <div className="max-w-[90rem] mx-auto grid grid-cols-2 md:flex md:flex-wrap md:justify-between items-center gap-y-3 md:gap-3">
+          <div className="flex items-center gap-3 justify-self-start md:justify-self-auto">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 ${isDark ? 'bg-white shadow-sm' : 'bg-gradient-to-r from-amber-400 to-amber-500 shadow-[0_0_10px_rgba(251,191,36,0.3)]'}`}>
+              <Layout size={17} className={isDark ? 'text-zinc-900' : 'text-black'} />
             </div>
             <span className={`font-bold text-lg tracking-tight transition-colors duration-200 ${isDark ? 'text-white' : 'text-zinc-900'}`}>ConfHub</span>
           </div>
 
           {/* Center nav items */}
-          <div className="flex overflow-x-auto items-center gap-1 w-full md:w-auto order-last md:order-none pb-2 md:pb-0 scroll-smooth custom-scrollbar">
+          <div className="col-span-2 md:col-span-1 border-t md:border-transparent pt-2 md:pt-0 flex overflow-x-auto justify-between md:justify-start items-center gap-1 w-full md:w-auto order-3 md:order-none pb-2 md:pb-0 scroll-smooth custom-scrollbar border-white/5 dark:border-white/5">
             {[
               { key: 'conferences', label: 'Dashboard', icon: Layout },
               { key: 'profile', label: 'Profile', icon: User },
@@ -1182,7 +1182,7 @@ const UserDashboard = ({ onSelectConf, onCreateConf }) => {
           </div>
 
           {/* Right controls */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 justify-self-end md:justify-self-auto order-2 md:order-none">
             {/* Search */}
             <motion.div
               animate={{ width: searchFocused ? 280 : 200 }}
