@@ -1,331 +1,146 @@
 # Architecture Documentation
 
 ## Overview
-ConfManager is a modern React-based conference management platform with role-based access control and a beautiful dark-themed UI.
+ConfManager is a full-stack enterprise-grade conference management platform. It features a modern React-based frontend, a robust Node.js/Express backend, and seamless integration with Supabase for data persistence and authentication.
 
 ## Technology Stack
 
 ### Frontend
-- **React 18.2** - Component-based UI library
-- **Tailwind CSS 3.3** - Utility-first CSS framework
-- **Lucide React** - Icon library
+- **React 18.2** - UI Library
+- **Tailwind CSS 3.3** - Utility-first styling
+- **Framer Motion** - High-fidelity animations
+- **Lucide React** - Icon system
+- **Axios** - API communication
+- **jsPDF** - Client-side certificate generation
 
-### State Management
-- **React Context API** - Global state management
-- **useState/useEffect** - Local component state
+### Backend & API
+- **Node.js & Express** - Server runtime and framework
+- **Supabase JS** - Database ORM and Service integration
+- **Nodemailer** - Professional email automation
+- **Node-cron & Vercel Crons** - Scheduled background tasks
+- **Multer** - Multipart/form-data handling for paper submissions
+
+### Data Layer
+- **Supabase (PostgreSQL)** - Relational database
+- **Supabase Auth** - Secure identity management
+- **Supabase Storage** - File storage for papers and assets
+
+---
 
 ## Application Flow
 
-```
-┌─────────────────┐
-│   Entry Point   │
-│   (index.js)    │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│   AppProvider   │
-│  (Context API)  │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│      App        │
-│  (Main Router)  │
-└────────┬────────┘
-         │
-    ┌────┴────┐
-    ▼         ▼
-┌────────┐ ┌──────────┐
-│  Auth  │ │Dashboard │
-└────────┘ └────┬─────┘
-                │
-       ┌────────┼────────┐
-       ▼        ▼        ▼
-   ┌────────┬────────┬────────┐
-   │  User  │ Create │  Conf  │
-   │  Dash  │  Conf  │  View  │
-   └────────┴────────┴────┬───┘
-                          │
-                 ┌────────┴────────┐
-                 ▼                 ▼
-            ┌─────────┐      ┌──────────┐
-            │Template │      │Role Dash │
-            └─────────┘      └────┬─────┘
-                                  │
-                    ┌─────────────┼─────────────┐
-                    ▼             ▼             ▼
-               ┌─────────┐  ┌─────────┐  ┌─────────┐
-               │Organizer│  │Presenter│  │Reviewer │
-               └─────────┘  └─────────┘  └─────────┘
+```mermaid
+graph TD
+    User((User)) -->|Interacts| Frontend[React Frontend]
+    
+    subgraph "Frontend Layer"
+        Frontend --> Context[App Context / Global State]
+        Frontend --> Hooks[Custom Hooks - usePermissions]
+        Frontend --> Components[UI Components]
+    end
+    
+    Context -->|API Requests| Backend[Express Backend]
+    
+    subgraph "Backend Layer"
+        Backend --> Middleware[Auth/RBAC Middleware]
+        Middleware --> Routes[API Routes]
+        Routes --> Services[Business Logic Services]
+        Services --> SupabaseSDK[Supabase SDK]
+    end
+    
+    SupabaseSDK -->|Query/Auth| SupabaseCloud[(Supabase Cloud)]
+    
+    subgraph "Specialized Services"
+        Services --> EmailService[Email Service - Nodemailer]
+        Services --> AIService[LLM Service - AI Speaker Finder]
+        Services --> Scheduler[Scheduler - node-cron]
+    end
 ```
 
-## Component Architecture
+---
 
-### Core Components
+## Directory Structure
+- **`/src`**: Frontend React application.
+    - **`/components`**: UI modules (Auth, Dashboard, Conference).
+    - **`/context`**: Global state management (AppContext).
+    - **`/hooks`**: Custom React hooks (e.g., `usePermissions`).
+- **`/server`**: Backend implementation.
+    - **`/routes`**: API endpoints (Auth, Emails, Papers, etc.).
+    - **`/services`**: Core business logic modules.
+    - **`/middleware`**: Request interceptors (Authentication).
+- **`/api`**: Vercel-specific API entry points.
+- **`/testing`**: Comprehensive Python-based testing suite.
 
-#### 1. AppContext (Global State)
-**Location**: `src/context/AppContext.jsx`
+---
 
-**Responsibilities**:
-- User authentication state
-- Conference data management
-- Paper submission tracking
-- Task management
-- CRUD operations
+## Backend Architecture
 
-**State Structure**:
-```javascript
-{
-  user: {
-    id: string,
-    name: string,
-    email: string,
-    password: string
-  },
-  users: User[],
-  conferences: Conference[],
-  papers: Paper[],
-  tasks: Task[]
-}
-```
+The backend is structured into modular layers to ensure scalability and maintainability.
 
-#### 2. Authentication Module
-**Location**: `src/components/Auth/AuthModule.jsx`
+### 1. API Entry Point
+**Location**: `api/index.mjs`
+The server initializes and mounts all route handlers. It handles CORS, JSON parsing, and environment configuration. In production (Vercel), it acts as the primary serverless function entry.
 
-**Features**:
-- Login/Register toggle
-- Form validation
-- Error handling
-- Premium dark UI design
+### 2. Routes (`server/routes/`)
+- **auth.mjs**: User registration and login flows.
+- **conferences.mjs**: CRUD operations for conference entities.
+- **dashboards.mjs**: Aggregated data for role-specific dashboards.
+- **email.mjs**: Endpoints for triggering manual and automated emails.
+- **papers.mjs**: Submission and review workflow management.
+- **schedule.mjs**: Conference session scheduling and timeline management.
+- **speakers.mjs**: Speaker profile management and discovery.
+- **teams.mjs**: Collaborative management tools for organizers.
 
-#### 3. User Dashboard
-**Location**: `src/components/Dashboard/UserDashboard.jsx`
+### 3. Middleware (`server/middleware/`)
+- **authMiddleware.mjs**: Verifies JWT tokens from headers, extracts user identity, and ensures requests are authenticated before reaching business logic.
 
-**Features**:
-- Conference grid view
-- My Conferences / Explore tabs
-- Search functionality
-- Create new conference button
+---
 
-#### 4. Conference Creation
-**Location**: `src/components/Conference/CreateConference.jsx`
+## Frontend Logic & State
 
-**Features**:
-- Multi-step wizard
-- Form validation
-- Template selection
-- Progress indicator
+### 1. State Management
+The application uses the **React Context API** (`AppContext.jsx`) to manage:
+- User sessions and profile data.
+- Global loading states.
+- Cached conference and paper data.
 
-#### 5. Conference View
-**Location**: `src/components/Conference/ConferenceView.jsx`
+### 2. Role-Based Access Control (RBAC)
+The `usePermissions` hook provides a centralized way to check user roles (Organizer, Reviewer, Presenter, Attendee) and conditionally render UI elements or restrict access to specific dashboard features.
 
-**Features**:
-- Template rendering (Modern/Classic)
-- Dashboard toggle
-- Navigation controls
+---
 
-#### 6. Role-Based Dashboards
-**Location**: `src/components/Dashboard/[Role]Dashboard.jsx`
+## Testing Infrastructure
 
-**Organizer Dashboard**:
-- Statistics cards
-- Paper management
-- Task tracking
-- Accept/reject papers
+ConfManager maintains a high-quality codebase through an extensive **Python-based testing suite** located in the `/testing` directory.
 
-**Presenter Dashboard**:
-- Paper submission
-- Status tracking
-- Acceptance notifications
+### 1. Automated Test Categories
+- **Security Tests**: Validate login flows (`security_tc_01`), RBAC enforcement (`security_tc_04`), SQL injection prevention, and XSS protection.
+- **Performance Tests**: Benchmark API submission speeds, dashboard load times, and large file upload performance.
+- **Functional API Tests**: Individual test scripts for every API module (Auth, Conferences, Email, Papers, etc.).
+- **Reliability Tests**: Ensure database integrity and system availability.
 
-**Reviewer Dashboard**:
-- Review queue
-- Feedback forms
-- Accept/reject interface
+### 2. Technology
+- **Pytest**: Primary testing framework.
+- **Python-Requests**: For API interaction simulation.
 
-## Data Flow
-
-### Authentication Flow
-```
-User Input → AuthModule → AppContext.login() → 
-Update user state → Trigger re-render → Show Dashboard
-```
-
-### Conference Creation Flow
-```
-User Input → CreateConference → Multi-step form → 
-AppContext.createConference() → Update conferences → 
-Navigate to Dashboard
-```
-
-### Paper Review Flow
-```
-Reviewer selects paper → Review form → Accept/Reject → 
-AppContext.updatePaperStatus() → Update paper state → 
-Notify presenter (if accepted)
-```
-
-## Design System
-
-### Color Tokens
-```css
---bg-primary: #020617      /* Deep navy */
---bg-secondary: #0f1117    /* Charcoal */
---bg-tertiary: #1e293b     /* Slate 800 */
---accent-primary: #6366f1   /* Indigo 500 */
---accent-secondary: #a855f7 /* Purple 500 */
---text-primary: #f1f5f9     /* Slate 100 */
---text-secondary: #94a3b8   /* Slate 400 */
---border: rgba(255,255,255,0.05)
-```
-
-### Typography Scale
-- Display: 3xl-8xl (Headings)
-- Body: sm-xl (Content)
-- Caption: xs-sm (Labels)
-
-### Spacing Scale
-- Micro: 0.5rem - 1rem
-- Small: 1.5rem - 2rem
-- Medium: 3rem - 4rem
-- Large: 6rem - 8rem
-
-### Border Radius
-- Small: 0.5rem
-- Medium: 1rem
-- Large: 1.5rem - 2rem
-- Extra Large: 3rem
-
-## State Management Patterns
-
-### Context Pattern
-```javascript
-const AppContext = createContext();
-
-export const useApp = () => {
-  const context = useContext(AppContext);
-  if (!context) throw new Error('useApp must be within AppProvider');
-  return context;
-};
-```
-
-### Component State Pattern
-```javascript
-const [localState, setLocalState] = useState(initialValue);
-
-const handleAction = () => {
-  setLocalState(newValue);
-  // Optional: Sync with global state
-  globalAction(newValue);
-};
-```
-
-## Performance Considerations
-
-### Optimization Strategies
-1. **Component Memoization**: Use React.memo for expensive components
-2. **Context Splitting**: Separate contexts for different concerns
-3. **Lazy Loading**: Code-split routes if app grows
-4. **Image Optimization**: Use optimized images and lazy loading
-
-### Current Performance
-- Initial load: < 2s
-- Route transitions: < 300ms
-- State updates: Instantaneous
+---
 
 ## Security Considerations
 
-### Current Implementation
-- Client-side only (demo purposes)
-- No encryption
-- Simple password validation
+1. **Authentication**: Powered by Supabase Auth with JWT-based session management.
+2. **RBAC**: Multi-layered enforcement. Frontend components are restricted via `usePermissions`, while backend routes are protected via roles stored in the database and verified in middleware.
+3. **Data Protection**: Sensitive keys and credentials are stored in environment variables (`.env`).
+4. **Input Sanitization**: Built-in protections against common web vulnerabilities (XSS, SQLi, CSRF).
 
-### Production Recommendations
-1. **Backend Integration**: Implement proper API
-2. **JWT Authentication**: Secure token-based auth
-3. **Password Hashing**: bcrypt or similar
-4. **HTTPS Only**: Enforce secure connections
-5. **Input Validation**: Server-side validation
-6. **CORS Configuration**: Proper CORS setup
+---
 
-## Scalability Path
+## Deployment & Scalability
 
-### Phase 1: Current (MVP)
-- Single-page application
-- Context API state
-- Client-side routing
+### 1. Vercel Integration
+The platform is optimized for Vercel deployment:
+- **Serverless Functions**: The Express backend is bridged to Vercel's serverless environment via `vercel.json` rewrites.
+- **Cron Jobs**: Automated email processing is scheduled via native Vercel CRON paths (e.g., `/api/cron/process-emails`).
 
-### Phase 2: Backend Integration
-- REST API or GraphQL
-- Database (PostgreSQL/MongoDB)
-- JWT authentication
-- File uploads
-
-### Phase 3: Advanced Features
-- Real-time updates (WebSocket)
-- Email notifications
-- Payment integration
-- Analytics dashboard
-
-### Phase 4: Enterprise
-- Multi-tenancy
-- SSO integration
-- Advanced permissions
-- Audit logs
-- API rate limiting
-
-## Testing Strategy
-
-### Unit Tests
-- Component rendering
-- User interactions
-- State updates
-- Context operations
-
-### Integration Tests
-- Authentication flow
-- Conference CRUD
-- Paper submission
-- Role transitions
-
-### E2E Tests
-- Complete user journeys
-- Cross-browser compatibility
-- Responsive design
-
-## Deployment
-
-### Build Process
-```bash
-npm run build
-```
-
-### Environment Variables
-```
-REACT_APP_API_URL=
-REACT_APP_ENV=production
-```
-
-### Hosting Options
-- Vercel (Recommended)
-- Netlify
-- AWS S3 + CloudFront
-- GitHub Pages
-
-## Maintenance
-
-### Code Quality
-- ESLint for linting
-- Prettier for formatting
-- PropTypes or TypeScript for type checking
-
-### Dependency Updates
-- Regular npm audit
-- Update minor versions monthly
-- Major versions quarterly
-
-### Monitoring
-- Error tracking (Sentry)
-- Analytics (Google Analytics)
-- Performance monitoring (Lighthouse)
+### 2. Infrastructure
+- **PostgreSQL**: Managed via Supabase for high availability.
+- **Storage**: Scalable file storage for conference papers and reviewer feedback artifacts.

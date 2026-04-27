@@ -25,12 +25,11 @@ const Sidebar = ({ nav, section, setSection, isOrganizer, roleLabel, mobileMenuO
         />
       )}
 
-    <aside className={`fixed md:sticky top-0 z-50 transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} w-64 shrink-0 flex flex-col gap-1 overflow-y-auto no-scrollbar transition-colors duration-500 ${isDark ? 'bg-[#0B0F1A]/95 md:bg-[#0B0F1A]/50' : 'bg-white/95 md:bg-white/80'}`}
+    <aside className={`fixed md:sticky top-0 z-50 transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} w-64 h-screen shrink-0 flex flex-col gap-1 overflow-y-auto custom-scrollbar transition-colors duration-500 ${isDark ? 'bg-[#0B0F1A]/95 md:bg-[#0B0F1A]/50' : 'bg-white/95 md:bg-white/80'}`}
       style={{
         backdropFilter: 'blur(20px)',
         borderRight: isDark ? '1px solid rgba(251,191,36,0.1)' : '1px solid rgba(15,23,42,0.15)',
-        padding: mobileMenuOpen ? '24px 16px' : '0 16px', // mobile padding only when open
-        paddingTop: '32px', // overridden by md below, but just in case
+        padding: '32px 16px', // consistent padding
       }}>
 
       {/* Hidden close button on mobile since header chevron toggles it */}
